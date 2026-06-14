@@ -59,8 +59,8 @@ export default function TripsListPage() {
         <ul className="grid gap-3 sm:grid-cols-2">
           {trips.map((trip) => {
             const days = tripDurationDays(trip);
-            const toPack = trip.items.filter((i) => i.status === 'pack').length;
-            const packed = trip.items.filter((i) => i.status === 'pack' && i.packed).length;
+            const toPack = trip.items.length;
+            const packed = trip.items.filter((i) => i.packed).length;
             return (
               <li key={trip.id} className="card flex flex-col p-4">
                 <Link to={`/trip/${trip.id}`} className="group flex-1">

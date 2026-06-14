@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import type { Trip, TagType } from '../types';
-import { tripDurationDays } from '../types';
+import { tagKey, tripDurationDays } from '../types';
 import { uid } from '../db/db';
+import { BUILTIN_TAGS } from '../data/tags';
 
 interface Props {
   trip: Trip;
@@ -19,16 +20,21 @@ export default function ContextPanel({ trip, update }: Props) {
   const [tagLabel, setTagLabel] = useState('');
   const [tagType, setTagType] = useState<TagType>('activity');
   const [destLabel, setDestLabel] = useState('');
-  const [bagName, setBagName] = useState('');
 
   const days = tripDurationDays(trip);
+  const activeKeys = new Set(trip.tags.map((t) => tagKey(t.label)));
+  const quickTags = BUILTIN_TAGS.filter((b) => !activeKeys.has(b.key));
 
-  function addTag() {
-    const label = tagLabel.trim();
-    if (!label) return;
+  function addTag(label: string, type: TagType) {
+    const clean = label.trim();
+    if (!clean || activeKeys.has(tagKey(clean))) return;
     update((d) => {
-      d.tags.push({ id: uid(), label, type: tagType });
+      d.tags.push({ id: uid(), label: clean, type });
     });
+  }
+
+  function addCustomTag() {
+    addTag(tagLabel, tagType);
     setTagLabel('');
   }
 
@@ -43,15 +49,6 @@ export default function ContextPanel({ trip, update }: Props) {
       });
     });
     setDestLabel('');
-  }
-
-  function addBag() {
-    const name = bagName.trim();
-    if (!name) return;
-    update((d) => {
-      d.bags.push({ id: uid(), name, type: 'custom' });
-    });
-    setBagName('');
   }
 
   return (
@@ -173,6 +170,20 @@ export default function ContextPanel({ trip, update }: Props) {
             </span>
           ))}
         </div>
+        {/* Quick-add built-in tags (these drive suggestions) */}
+        {quickTags.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {quickTags.map((b) => (
+              <button
+                key={b.key}
+                className={`chip ${TAG_TYPE_STYLES[b.type]} opacity-70 hover:opacity-100`}
+                onClick={() => addTag(b.key, b.type)}
+              >
+                + {b.key}
+              </button>
+            ))}
+          </div>
+        )}
         <div className="mt-2 flex gap-2">
           <select
             className="input w-auto"
@@ -189,58 +200,10 @@ export default function ContextPanel({ trip, update }: Props) {
             className="input"
             value={tagLabel}
             onChange={(e) => setTagLabel(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && addTag()}
+            onKeyDown={(e) => e.key === 'Enter' && addCustomTag()}
             placeholder="Add a tag…"
           />
-          <button className="btn-secondary" onClick={addTag}>
-            Add
-          </button>
-        </div>
-      </div>
-
-      {/* Bags */}
-      <div>
-        <span className="label">Bags</span>
-        <ul className="mt-1 space-y-1">
-          {trip.bags.map((bag) => (
-            <li key={bag.id} className="flex items-center gap-2 text-sm">
-              <input
-                className="input py-1"
-                value={bag.name}
-                aria-label={`Bag name`}
-                onChange={(e) =>
-                  update((d) => {
-                    const b = d.bags.find((x) => x.id === bag.id);
-                    if (b) b.name = e.target.value;
-                  })
-                }
-              />
-              <button
-                className="btn-ghost px-1.5 py-0.5"
-                aria-label={`Remove ${bag.name}`}
-                onClick={() =>
-                  update((d) => {
-                    d.bags = d.bags.filter((x) => x.id !== bag.id);
-                    d.items.forEach((it) => {
-                      if (it.bagId === bag.id) it.bagId = undefined;
-                    });
-                  })
-                }
-              >
-                ✕
-              </button>
-            </li>
-          ))}
-        </ul>
-        <div className="mt-2 flex gap-2">
-          <input
-            className="input"
-            value={bagName}
-            onChange={(e) => setBagName(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && addBag()}
-            placeholder="Add a bag…"
-          />
-          <button className="btn-secondary" onClick={addBag}>
+          <button className="btn-secondary" onClick={addCustomTag}>
             Add
           </button>
         </div>

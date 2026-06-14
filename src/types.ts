@@ -1,5 +1,5 @@
 // Domain model for the packing checklist app.
-// See SPEC.md §4. v1 = single packer, local-only.
+// See SPEC.md §4. v1 = single packer, local-only, no bags/statuses.
 
 export type ID = string;
 export type ISODate = string; // 'YYYY-MM-DD'
@@ -17,18 +17,7 @@ export const CATEGORIES = [
 ] as const;
 export type Category = (typeof CATEGORIES)[number];
 
-/** A line item's packing status (SPEC §4.2). Only 'pack' counts toward bags. */
-export const ITEM_STATUSES = ['pack', 'rent', 'buy-there', 'have-there'] as const;
-export type ItemStatus = (typeof ITEM_STATUSES)[number];
-
-export const ITEM_STATUS_LABELS: Record<ItemStatus, string> = {
-  pack: 'Pack',
-  rent: 'Rent there',
-  'buy-there': 'Buy there',
-  'have-there': 'Have there',
-};
-
-/** Typed tags drive suggestions (later phases) and filtering (SPEC §4.4). */
+/** Typed tags drive suggestions and filtering (SPEC §4.4). */
 export type TagType = 'activity' | 'weather' | 'destination' | 'custom';
 
 export interface Tag {
@@ -46,26 +35,16 @@ export interface Destination {
   isPrimary: boolean;
 }
 
-export type BagType = 'carry-on' | 'checked' | 'daypack' | 'personal' | 'custom';
-
-export interface Bag {
-  id: ID;
-  name: string;
-  type: BagType;
-  notes?: string;
-}
-
 export interface Item {
   id: ID;
   name: string;
   category: Category;
   tagIds: ID[];
-  status: ItemStatus;
   quantitySuggested: number | null;
   quantityTaken: number;
   packed: boolean;
-  bagId?: ID; // only meaningful when status === 'pack'
   source: 'suggested' | 'custom';
+  catalogId?: string; // origin in the built-in catalog, so we can de-dupe suggestions
   notes?: string;
 }
 
@@ -80,7 +59,6 @@ export interface Trip {
   endDate?: ISODate;
   destinations: Destination[];
   tags: Tag[];
-  bags: Bag[];
   items: Item[];
   settings: TripSettings;
   createdAt: number;
@@ -95,4 +73,55 @@ export function tripDurationDays(trip: Pick<Trip, 'startDate' | 'endDate'>): num
   const ms = end.getTime() - start.getTime();
   if (Number.isNaN(ms) || ms < 0) return null;
   return Math.round(ms / 86_400_000) + 1;
+}
+
+// ---------------------------------------------------------------------------
+// Suggestion catalog (built-in, static) — SPEC §4.6 / §5
+// ---------------------------------------------------------------------------
+
+/** How a catalog item's suggested quantity is derived (SPEC §5.4). */
+export type QuantityRule =
+  | { kind: 'perDay'; factor: number; max: number; laundryCap?: number }
+  | { kind: 'perTrip'; count: number }
+  | { kind: 'bucket'; weekend: number; week: number; long: number }
+  | { kind: 'none' };
+
+export interface CatalogItem {
+  id: string;
+  name: string;
+  category: Category;
+  /** Suggested on every trip regardless of tags (essentials). */
+  always?: boolean;
+  /** Tag keys (normalized labels) that surface this item, with ranking weight. */
+  tagKeys: { key: string; weight: number }[];
+  quantity: QuantityRule;
+}
+
+/** Normalize a tag label for matching against catalog keys. */
+export function tagKey(label: string): string {
+  return label.trim().toLowerCase();
+}
+
+/** Compute a suggested quantity from a rule, trip length and laundry setting. */
+export function computeQuantity(
+  rule: QuantityRule,
+  days: number | null,
+  laundryAvailable: boolean,
+): number {
+  const d = days ?? 7;
+  switch (rule.kind) {
+    case 'perDay': {
+      let q = Math.min(Math.ceil(d * rule.factor), rule.max);
+      if (laundryAvailable && rule.laundryCap != null) q = Math.min(q, rule.laundryCap);
+      return Math.max(1, q);
+    }
+    case 'perTrip':
+      return rule.count;
+    case 'bucket':
+      if (d <= 3) return rule.weekend;
+      if (d <= 9) return rule.week;
+      return rule.long;
+    case 'none':
+      return 1;
+  }
 }

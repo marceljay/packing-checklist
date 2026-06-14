@@ -1,5 +1,5 @@
 import type { Item, Trip } from '../types';
-import { CATEGORIES, ITEM_STATUSES, ITEM_STATUS_LABELS } from '../types';
+import { CATEGORIES } from '../types';
 
 interface Props {
   item: Item;
@@ -15,7 +15,6 @@ export default function ItemRow({ item, trip, update }: Props) {
     });
   }
 
-  const isPack = item.status === 'pack';
   const itemTags = trip.tags.filter((t) => item.tagIds.includes(t.id));
   const availableTags = trip.tags.filter((t) => !item.tagIds.includes(t.id));
 
@@ -24,9 +23,8 @@ export default function ItemRow({ item, trip, update }: Props) {
       {/* Packed checkbox */}
       <input
         type="checkbox"
-        className="h-5 w-5 shrink-0 rounded border-slate-300 text-brand-500 focus:ring-brand-500 disabled:opacity-40"
+        className="h-5 w-5 shrink-0 rounded border-slate-300 text-brand-500 focus:ring-brand-500"
         checked={item.packed}
-        disabled={!isPack}
         aria-label={`Mark ${item.name} packed`}
         onChange={(e) => patch((it) => void (it.packed = e.target.checked))}
       />
@@ -52,7 +50,7 @@ export default function ItemRow({ item, trip, update }: Props) {
 
       {/* Name */}
       <input
-        className={`input flex-1 ${item.packed && isPack ? 'text-slate-400 line-through' : ''}`}
+        className={`input flex-1 ${item.packed ? 'text-slate-400 line-through' : ''}`}
         value={item.name}
         aria-label="Item name"
         onChange={(e) => patch((it) => void (it.name = e.target.value))}
@@ -72,43 +70,6 @@ export default function ItemRow({ item, trip, update }: Props) {
             </option>
           ))}
         </select>
-
-        <select
-          className="input w-auto py-1 text-xs"
-          aria-label="Status"
-          value={item.status}
-          onChange={(e) =>
-            patch((it) => {
-              it.status = e.target.value as Item['status'];
-              if (it.status !== 'pack') {
-                it.packed = false;
-                it.bagId = undefined;
-              }
-            })
-          }
-        >
-          {ITEM_STATUSES.map((s) => (
-            <option key={s} value={s}>
-              {ITEM_STATUS_LABELS[s]}
-            </option>
-          ))}
-        </select>
-
-        {isPack && (
-          <select
-            className="input w-auto py-1 text-xs"
-            aria-label="Bag"
-            value={item.bagId ?? ''}
-            onChange={(e) => patch((it) => void (it.bagId = e.target.value || undefined))}
-          >
-            <option value="">No bag</option>
-            {trip.bags.map((b) => (
-              <option key={b.id} value={b.id}>
-                {b.name}
-              </option>
-            ))}
-          </select>
-        )}
 
         {/* Tags */}
         {itemTags.map((t) => (

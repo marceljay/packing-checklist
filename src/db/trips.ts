@@ -1,13 +1,5 @@
 import { db, uid, CURRENT_SCHEMA_VERSION, type StoredTrip } from './db';
-import type { Bag, Trip } from '../types';
-
-/** Two sensible default bags on every new trip (SPEC §4.3). */
-function defaultBags(): Bag[] {
-  return [
-    { id: uid(), name: 'Carry-on', type: 'carry-on' },
-    { id: uid(), name: 'Checked', type: 'checked' },
-  ];
-}
+import type { Trip } from '../types';
 
 function now() {
   return Date.now();
@@ -28,7 +20,6 @@ export async function createTrip(name = 'Untitled trip'): Promise<string> {
     name,
     destinations: [],
     tags: [],
-    bags: defaultBags(),
     items: [],
     settings: { laundryAvailable: false },
     createdAt: ts,
@@ -57,14 +48,7 @@ export async function cloneTrip(id: string): Promise<string | undefined> {
   const src = await db.trips.get(id);
   if (!src) return undefined;
 
-  // Remap nested ids so references (item.bagId, item.tagIds) stay consistent.
-  const bagIdMap = new Map<string, string>();
-  const bags = src.bags.map((b) => {
-    const newId = uid();
-    bagIdMap.set(b.id, newId);
-    return { ...b, id: newId };
-  });
-
+  // Remap tag ids so item.tagIds references stay consistent.
   const tagIdMap = new Map<string, string>();
   const tags = src.tags.map((t) => {
     const newId = uid();
@@ -76,7 +60,6 @@ export async function cloneTrip(id: string): Promise<string | undefined> {
     ...it,
     id: uid(),
     packed: false,
-    bagId: it.bagId ? bagIdMap.get(it.bagId) : undefined,
     tagIds: it.tagIds.map((t) => tagIdMap.get(t) ?? t).filter(Boolean),
   }));
 
@@ -85,7 +68,6 @@ export async function cloneTrip(id: string): Promise<string | undefined> {
     ...src,
     id: uid(),
     name: `${src.name} (copy)`,
-    bags,
     tags,
     items,
     createdAt: ts,

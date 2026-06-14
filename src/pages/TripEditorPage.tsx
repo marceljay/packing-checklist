@@ -2,6 +2,7 @@ import { Link, useParams } from 'react-router-dom';
 import { useTripEditor } from './useTripEditor';
 import ContextPanel from '../components/ContextPanel';
 import Checklist from '../components/Checklist';
+import SuggestionsTray from '../components/SuggestionsTray';
 
 export default function TripEditorPage() {
   const { tripId } = useParams();
@@ -29,7 +30,10 @@ export default function TripEditorPage() {
       </Link>
       <div className="grid gap-4 lg:grid-cols-[20rem_1fr]">
         <ContextPanel trip={trip} update={update} />
-        <Checklist trip={trip} update={update} />
+        <div className="flex flex-col gap-4">
+          <SuggestionsTray trip={trip} update={update} />
+          <Checklist trip={trip} update={update} />
+        </div>
       </div>
     </div>
   );

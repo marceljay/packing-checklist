@@ -9,7 +9,7 @@ interface Props {
   update: (mutator: (draft: Trip) => void) => void;
 }
 
-type GroupBy = 'category' | 'bag' | 'tag';
+type GroupBy = 'category' | 'tag';
 
 interface Group {
   key: string;
@@ -29,7 +29,6 @@ export default function Checklist({ trip, update }: Props) {
       name,
       category: 'Comfort & Misc',
       tagIds: [],
-      status: 'pack',
       quantitySuggested: null,
       quantityTaken: 1,
       packed: false,
@@ -48,19 +47,6 @@ export default function Checklist({ trip, update }: Props) {
         items: items.filter((i) => i.category === cat),
       })).filter((g) => g.items.length > 0);
     }
-    if (groupBy === 'bag') {
-      const out: Group[] = trip.bags.map((b) => ({
-        key: b.id,
-        label: b.name,
-        items: items.filter((i) => i.status === 'pack' && i.bagId === b.id),
-      }));
-      out.push({
-        key: '__unassigned',
-        label: 'Unassigned / not packing',
-        items: items.filter((i) => i.status !== 'pack' || !i.bagId),
-      });
-      return out.filter((g) => g.items.length > 0);
-    }
     // group by tag
     const out: Group[] = trip.tags.map((t) => ({
       key: t.id,
@@ -73,10 +59,10 @@ export default function Checklist({ trip, update }: Props) {
       items: items.filter((i) => i.tagIds.length === 0),
     });
     return out.filter((g) => g.items.length > 0);
-  }, [trip.items, trip.bags, trip.tags, groupBy]);
+  }, [trip.items, trip.tags, groupBy]);
 
-  const packCount = trip.items.filter((i) => i.status === 'pack').length;
-  const packedCount = trip.items.filter((i) => i.status === 'pack' && i.packed).length;
+  const packCount = trip.items.length;
+  const packedCount = trip.items.filter((i) => i.packed).length;
 
   return (
     <section className="card flex flex-col">
@@ -90,7 +76,7 @@ export default function Checklist({ trip, update }: Props) {
         )}
         <div className="ml-auto flex items-center gap-1 text-xs">
           <span className="text-slate-400">Group by</span>
-          {(['category', 'bag', 'tag'] as GroupBy[]).map((g) => (
+          {(['category', 'tag'] as GroupBy[]).map((g) => (
             <button
               key={g}
               className={`rounded px-2 py-1 capitalize ${
