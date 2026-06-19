@@ -5,6 +5,12 @@ All notable changes to this project are documented here.
 ## [Unreleased]
 
 ### Added
+- **Destination autocomplete.** Type a place and pick from geocoded matches
+  (Open-Meteo) with region/country; selecting stores lat/lon + country code
+  (sharpens the IATA code and weather lookup). Free-text add still works offline.
+- **Import / export trips (JSON).** Export any trip to a JSON file and import it
+  back as a new, independent trip (ids regenerated, references rewired). Local-only
+  portability/backup — no account. TDD'd serialize/parse.
 - **Print / Save as PDF.** Print-only packing sheet grouped by category with
   hand-checkable boxes and quantities; `window.print()` covers print and
   Save-as-PDF (no extra deps, fully offline). New `itemsByCategory` helper.

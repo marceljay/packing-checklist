@@ -7,6 +7,8 @@ import LibraryTray from '../components/LibraryTray';
 import PrintSheet from '../components/PrintSheet';
 import { tripDurationDays, destinationCode } from '../types';
 import type { Trip } from '../types';
+import { serializeTrip } from '../db/transfer';
+import { downloadText, slugify } from '../lib/file';
 
 function formatDate(d?: string): string {
   if (!d) return '— — —';
@@ -110,14 +112,22 @@ export default function TripEditorPage() {
           <Link to="/" className="btn-ghost -ml-3 px-3 py-1.5 text-xs">
             ← All trips
           </Link>
-          <button
-            className="btn-secondary text-xs"
-            onClick={() => window.print()}
-            disabled={trip.items.length === 0}
-            title={trip.items.length === 0 ? 'Add items first' : undefined}
-          >
-            Print / Save as PDF
-          </button>
+          <div className="flex gap-2">
+            <button
+              className="btn-secondary text-xs"
+              onClick={() => downloadText(`${slugify(trip.name)}.json`, serializeTrip(trip))}
+            >
+              Export
+            </button>
+            <button
+              className="btn-secondary text-xs"
+              onClick={() => window.print()}
+              disabled={trip.items.length === 0}
+              title={trip.items.length === 0 ? 'Add items first' : undefined}
+            >
+              Print / Save as PDF
+            </button>
+          </div>
         </div>
 
         <PassHeader trip={trip} />

@@ -1,8 +1,9 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
-import { listTrips, createTrip, cloneTrip, deleteTrip } from '../db/trips';
+import { listTrips, createTrip, cloneTrip, deleteTrip, importTripFromText } from '../db/trips';
 import { tripDurationDays, destinationCode } from '../types';
+import { pickTextFile } from '../lib/file';
 
 function formatDateRange(start?: string, end?: string): string {
   if (!start && !end) return 'No dates set';
@@ -35,6 +36,17 @@ export default function TripsListPage() {
     }
   }
 
+  async function handleImport() {
+    const text = await pickTextFile();
+    if (text == null) return;
+    try {
+      const id = await importTripFromText(text);
+      navigate(`/trip/${id}`);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Could not import that file.');
+    }
+  }
+
   return (
     <div>
       <div className="mb-7 flex items-end justify-between gap-4">
@@ -42,9 +54,14 @@ export default function TripsListPage() {
           <p className="label">Departures</p>
           <h1 className="mt-1 font-display text-3xl font-bold tracking-tight">Your trips</h1>
         </div>
-        <button className="btn-primary" onClick={handleNew}>
-          + New trip
-        </button>
+        <div className="flex gap-2">
+          <button className="btn-secondary" onClick={handleImport}>
+            Import
+          </button>
+          <button className="btn-primary" onClick={handleNew}>
+            + New trip
+          </button>
+        </div>
       </div>
 
       {trips === undefined ? (

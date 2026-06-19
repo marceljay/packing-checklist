@@ -1,5 +1,6 @@
 import { db, uid, CURRENT_SCHEMA_VERSION, type StoredTrip } from './db';
 import type { Trip } from '../types';
+import { parseTrip } from './transfer';
 
 function now() {
   return Date.now();
@@ -41,6 +42,14 @@ export async function saveTrip(trip: Trip): Promise<void> {
 
 export async function deleteTrip(id: string): Promise<void> {
   await db.trips.delete(id);
+}
+
+/** Import a trip from exported JSON text as a new, independent trip. Throws on
+ *  invalid input (see `parseTrip`). Returns the new trip id. */
+export async function importTripFromText(text: string): Promise<string> {
+  const trip = parseTrip(text, uid, now());
+  await db.trips.add({ ...trip, schemaVersion: CURRENT_SCHEMA_VERSION });
+  return trip.id;
 }
 
 /** Deep-clone a trip with fresh ids so the copy is fully independent (SPEC §8). */
