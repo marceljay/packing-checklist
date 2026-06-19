@@ -21,8 +21,15 @@ See [`SPEC.md`](./SPEC.md) for the full specification.
   weight and shows why each was suggested.
 - **Smart quantities** — per-day / per-trip / bucket rules scaled to trip length,
   reduced when laundry is available.
+- **Weather tags** — one tap fetches the destination's forecast (Open-Meteo) and
+  adds hot/cold/rainy/sunny/windy tags; works for trips within ~16 days, with a
+  graceful fallback to manual tags when offline.
+- **Your item library** — custom items you add are remembered globally (not stuck
+  in one trip) and resurface on future trips, ranked by how often you use them.
 - **Manifest checklist** — adjustable quantities, packed check-off with a packed
   meter, and grouping by category or tag.
+- **Print / Save as PDF** — a clean, category-grouped sheet you can print or save
+  as PDF straight from the browser.
 
 ## Tech stack
 
@@ -67,6 +74,7 @@ GitHub Pages, Cloudflare Pages). No server runtime required.
 ## Privacy
 
 All trip data stays in your browser (IndexedDB) — no analytics, no accounts.
-The current outbound request is for web fonts (Google Fonts CDN); self-hosting
-those for full offline use is on the backlog. A user-triggered weather/geocoding
-lookup is planned for a later phase.
+The only outbound requests are: web fonts (Google Fonts CDN; self-hosting is on
+the backlog) and the **user-triggered** weather/geocoding lookup (Open-Meteo),
+which sends only the destination name and coordinates and runs only when you tap
+"Suggest weather tags."

@@ -3,6 +3,7 @@ import { useTripEditor } from './useTripEditor';
 import ContextPanel from '../components/ContextPanel';
 import Checklist from '../components/Checklist';
 import SuggestionsTray from '../components/SuggestionsTray';
+import LibraryTray from '../components/LibraryTray';
 import PrintSheet from '../components/PrintSheet';
 import { tripDurationDays, destinationCode } from '../types';
 import type { Trip } from '../types';
@@ -125,6 +126,7 @@ export default function TripEditorPage() {
           <ContextPanel trip={trip} update={update} />
           <div className="flex flex-col gap-5">
             <SuggestionsTray trip={trip} update={update} />
+            <LibraryTray trip={trip} update={update} />
             <Checklist trip={trip} update={update} />
           </div>
         </div>

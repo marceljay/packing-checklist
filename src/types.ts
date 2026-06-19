@@ -75,6 +75,34 @@ export function tripDurationDays(trip: Pick<Trip, 'startDate' | 'endDate'>): num
   return Math.round(ms / 86_400_000) + 1;
 }
 
+/**
+ * A custom item the user has added on past trips, stored in a global library
+ * (not inside any one trip) so it resurfaces on future trips. The trip still
+ * owns the per-trip instance (quantity, packed); the library owns the memory.
+ */
+export interface LibraryItem {
+  /** Normalized name, used as the primary key and for de-duping. */
+  nameKey: string;
+  name: string;
+  category: Category;
+  /** Times added across all trips (drives ranking). */
+  count: number;
+  /** Epoch ms of the most recent add. */
+  lastUsed: number;
+}
+
+/** Rank library items for the "Your items" tray: most-used first, then most
+ *  recent, then alphabetical. Items already on the trip (by name key) drop out. */
+export function rankLibrary(items: LibraryItem[], excludeKeys: string[]): LibraryItem[] {
+  const excluded = new Set(excludeKeys.map((k) => k.toLowerCase()));
+  return items
+    .filter((i) => !excluded.has(i.nameKey))
+    .sort(
+      (a, b) =>
+        b.count - a.count || b.lastUsed - a.lastUsed || a.name.localeCompare(b.name),
+    );
+}
+
 /** Group items under their category in canonical {@link CATEGORIES} order,
  *  dropping empty categories. Used by the checklist and the print sheet. */
 export function itemsByCategory(items: Item[]): { category: Category; items: Item[] }[] {

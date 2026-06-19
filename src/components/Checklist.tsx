@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import type { Item, Trip } from '../types';
 import { itemsByCategory } from '../types';
 import { uid } from '../db/db';
+import { rememberItem } from '../db/library';
 import ItemRow from './ItemRow';
 
 interface Props {
@@ -35,6 +36,7 @@ export default function Checklist({ trip, update }: Props) {
       source: 'custom',
     };
     update((d) => void d.items.push(item));
+    void rememberItem(item.name, item.category); // resurfaces on future trips
     setNewName('');
   }
 
