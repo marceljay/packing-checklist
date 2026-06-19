@@ -35,6 +35,10 @@ All notable changes to this project are documented here.
 - Vite dev server binds `--host` on port 5000; devcontainer forwards the port.
 
 ### Changed
+- **Date range picker.** The two date fields are replaced by a single range
+  calendar in a popover (react-day-picker, themed to match) — pick start and end
+  as one highlighted range. Fixes the date-field overflow in the context panel.
+
 - Dropped **bags** and the **rent/buy-there/have-there** item statuses for v1;
   items are now simple check-off lines. Grouping is by category or tag.
 

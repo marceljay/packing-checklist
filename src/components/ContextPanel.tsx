@@ -4,6 +4,7 @@ import { tagKey, tripDurationDays } from '../types';
 import { uid } from '../db/db';
 import { BUILTIN_TAGS } from '../data/tags';
 import { lookupWeatherTags } from '../engine/weather';
+import DateRangeField from './DateRangeField';
 
 interface Props {
   trip: Trip;
@@ -113,23 +114,16 @@ export default function ContextPanel({ trip, update }: Props) {
       {/* Dates */}
       <div>
         <SectionLabel>Dates</SectionLabel>
-        <div className="mt-1.5 flex items-center gap-2">
-          <input
-            type="date"
-            aria-label="Start date"
-            className="input min-w-0 flex-1 font-mono"
-            value={trip.startDate ?? ''}
-            onChange={(e) => update((d) => void (d.startDate = e.target.value || undefined))}
-          />
-          <span className="shrink-0 text-ink-faint">→</span>
-          <input
-            type="date"
-            aria-label="End date"
-            className="input min-w-0 flex-1 font-mono"
-            value={trip.endDate ?? ''}
-            onChange={(e) => update((d) => void (d.endDate = e.target.value || undefined))}
-          />
-        </div>
+        <DateRangeField
+          start={trip.startDate}
+          end={trip.endDate}
+          onChange={(startDate, endDate) =>
+            update((d) => {
+              d.startDate = startDate;
+              d.endDate = endDate;
+            })
+          }
+        />
         {days != null && (
           <p className="mt-1.5 font-mono text-xs text-ink-soft">
             {days} night{days === 1 ? '' : 's'}
