@@ -3,6 +3,7 @@ import type { Trip, TagType } from '../types';
 import { tagKey, tripDurationDays } from '../types';
 import { uid } from '../db/db';
 import { BUILTIN_TAGS } from '../data/tags';
+import { lookupWeatherTags } from '../engine/weather';
 
 interface Props {
   trip: Trip;
@@ -24,8 +25,44 @@ export default function ContextPanel({ trip, update }: Props) {
   const [tagLabel, setTagLabel] = useState('');
   const [tagType, setTagType] = useState<TagType>('activity');
   const [destLabel, setDestLabel] = useState('');
+  const [weatherStatus, setWeatherStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
+  const [weatherMsg, setWeatherMsg] = useState('');
 
   const days = tripDurationDays(trip);
+  const primaryDest = trip.destinations.find((d) => d.isPrimary) ?? trip.destinations[0];
+
+  async function suggestWeather() {
+    if (!primaryDest) return;
+    setWeatherStatus('loading');
+    setWeatherMsg('');
+    try {
+      const res = await lookupWeatherTags(primaryDest.label, trip.startDate, trip.endDate);
+      if (!res) {
+        setWeatherStatus('error');
+        setWeatherMsg(`Couldn't find “${primaryDest.label}”. Add weather tags manually.`);
+        return;
+      }
+      const existing = new Set(trip.tags.map((t) => tagKey(t.label)));
+      const toAdd = res.tags.filter((k) => !existing.has(k));
+      if (toAdd.length > 0) {
+        update((d) => {
+          for (const k of toAdd) d.tags.push({ id: uid(), label: k, type: 'weather' });
+        });
+      }
+      const note = res.datedWindow ? '' : ' (7-day forecast — set trip dates for accuracy)';
+      setWeatherStatus('done');
+      setWeatherMsg(
+        toAdd.length > 0
+          ? `Added ${toAdd.join(', ')}${note}`
+          : res.tags.length > 0
+            ? `Already covered${note}`
+            : `No strong weather signal${note}`,
+      );
+    } catch {
+      setWeatherStatus('error');
+      setWeatherMsg('Forecast lookup failed (offline?). Add weather tags manually.');
+    }
+  }
   const activeKeys = new Set(trip.tags.map((t) => tagKey(t.label)));
   const quickTags = BUILTIN_TAGS.filter((b) => !activeKeys.has(b.key));
 
@@ -215,6 +252,30 @@ export default function ContextPanel({ trip, update }: Props) {
           <button className="btn-secondary" onClick={addCustomTag}>
             Add
           </button>
+        </div>
+
+        {/* Weather lookup (Open-Meteo, user-triggered) */}
+        <div className="mt-3 border-t border-line pt-3">
+          <button
+            className="btn-secondary w-full text-xs"
+            onClick={() => void suggestWeather()}
+            disabled={!primaryDest || weatherStatus === 'loading'}
+            title={!primaryDest ? 'Add a destination first' : undefined}
+          >
+            {weatherStatus === 'loading' ? 'Checking forecast…' : '☀ Suggest weather tags'}
+          </button>
+          {weatherMsg && (
+            <p
+              className={`mt-1.5 text-xs ${
+                weatherStatus === 'error' ? 'text-vermilion-deep' : 'text-ink-soft'
+              }`}
+            >
+              {weatherMsg}
+            </p>
+          )}
+          {!primaryDest && (
+            <p className="mt-1.5 text-xs text-ink-faint">Add a destination to check its forecast.</p>
+          )}
         </div>
       </div>
 
