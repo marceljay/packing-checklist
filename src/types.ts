@@ -75,6 +75,17 @@ export function tripDurationDays(trip: Pick<Trip, 'startDate' | 'endDate'>): num
   return Math.round(ms / 86_400_000) + 1;
 }
 
+/**
+ * IATA-style 3-letter code for a trip, derived from its primary destination
+ * (falls back to the trip name). Drives the luggage-tag / boarding-pass UI.
+ */
+export function destinationCode(trip: Pick<Trip, 'destinations' | 'name'>): string {
+  const primary = trip.destinations.find((d) => d.isPrimary) ?? trip.destinations[0];
+  const source = primary?.countryCode || primary?.label || trip.name || '';
+  const letters = source.replace(/[^a-zA-Z]/g, '').toUpperCase();
+  return letters.slice(0, 3) || 'TRP';
+}
+
 // ---------------------------------------------------------------------------
 // Suggestion catalog (built-in, static) — SPEC §4.6 / §5
 // ---------------------------------------------------------------------------

@@ -7,41 +7,91 @@
     @apply antialiased;
   }
   body {
-    @apply bg-slate-50 text-slate-900;
+    @apply bg-paper font-sans text-ink;
+    /* Faint document grain so the paper reads as paper, not flat white. */
+    background-image: radial-gradient(rgba(22, 32, 46, 0.025) 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
+  ::selection {
+    @apply bg-vermilion text-paper-raised;
   }
 }
 
 @layer components {
+  /* ---- Buttons ---------------------------------------------------------- */
   .btn {
     @apply inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-2
            text-sm font-medium transition-colors focus:outline-none
-           focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-1
+           focus-visible:ring-2 focus-visible:ring-vermilion focus-visible:ring-offset-2
+           focus-visible:ring-offset-paper
            disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn-primary {
-    @apply btn bg-brand-500 text-white hover:bg-brand-600;
+    @apply btn bg-vermilion text-paper-raised hover:bg-vermilion-deep;
   }
   .btn-secondary {
-    @apply btn border border-slate-300 bg-white text-slate-700 hover:bg-slate-100;
+    @apply btn border border-ink/20 bg-paper-raised text-ink hover:border-ink/40 hover:bg-paper-sunk;
   }
   .btn-ghost {
-    @apply btn text-slate-600 hover:bg-slate-100;
+    @apply btn text-ink-soft hover:bg-paper-sunk hover:text-ink;
   }
   .btn-danger {
-    @apply btn text-red-600 hover:bg-red-50;
+    @apply btn text-vermilion hover:bg-vermilion-soft;
   }
+
+  /* ---- Forms ------------------------------------------------------------ */
   .input {
-    @apply w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm
-           shadow-sm focus:border-brand-500 focus:outline-none
-           focus:ring-1 focus:ring-brand-500;
+    @apply w-full rounded-md border border-line bg-paper-raised px-3 py-2 text-sm
+           text-ink placeholder:text-ink-faint focus:border-vermilion focus:outline-none
+           focus:ring-1 focus:ring-vermilion;
   }
+  /* Mono eyebrow label — the "field code" voice of a boarding pass. */
   .label {
-    @apply block text-xs font-semibold uppercase tracking-wide text-slate-500;
+    @apply block font-mono text-[0.6875rem] font-bold uppercase tracking-code text-ink-faint;
   }
+
+  /* ---- Surfaces --------------------------------------------------------- */
   .card {
-    @apply rounded-lg border border-slate-200 bg-white shadow-sm;
+    @apply rounded-xl border border-line bg-paper-raised shadow-tag;
   }
   .chip {
-    @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium;
+    @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-mono
+           text-[0.6875rem] font-bold uppercase tracking-wide;
+  }
+  /* Destination / boarding-pass code. */
+  .code {
+    @apply font-mono font-bold uppercase tracking-code;
+  }
+}
+
+@layer utilities {
+  /* Signature: airmail-striped edge (red / blue / gaps) for accent rules. */
+  .airmail {
+    background-image: repeating-linear-gradient(
+      -45deg,
+      #d83a2b 0 9px,
+      transparent 9px 18px,
+      #1f5673 18px 27px,
+      transparent 27px 36px
+    );
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+@media print {
+  body {
+    background: #fff;
+  }
+  .card {
+    @apply border-line shadow-none;
   }
 }

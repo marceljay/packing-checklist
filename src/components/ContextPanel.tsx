@@ -10,11 +10,15 @@ interface Props {
 }
 
 const TAG_TYPE_STYLES: Record<TagType, string> = {
-  activity: 'bg-emerald-100 text-emerald-800',
-  weather: 'bg-sky-100 text-sky-800',
-  destination: 'bg-amber-100 text-amber-800',
-  custom: 'bg-slate-200 text-slate-700',
+  activity: 'bg-stamp-soft text-stamp',
+  weather: 'bg-airblue-soft text-airblue',
+  destination: 'bg-vermilion-soft text-vermilion-deep',
+  custom: 'bg-paper-sunk text-ink-soft',
 };
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return <span className="label">{children}</span>;
+}
 
 export default function ContextPanel({ trip, update }: Props) {
   const [tagLabel, setTagLabel] = useState('');
@@ -52,7 +56,9 @@ export default function ContextPanel({ trip, update }: Props) {
   }
 
   return (
-    <aside className="card flex flex-col gap-5 p-4">
+    <aside className="card flex h-fit flex-col gap-6 p-5">
+      <p className="label -mb-2">Trip details</p>
+
       {/* Name */}
       <div>
         <label className="label" htmlFor="trip-name">
@@ -60,49 +66,49 @@ export default function ContextPanel({ trip, update }: Props) {
         </label>
         <input
           id="trip-name"
-          className="input mt-1"
+          className="input mt-1.5"
           value={trip.name}
           onChange={(e) => update((d) => void (d.name = e.target.value))}
-          placeholder="e.g. Portugal surf, Oct 2026"
+          placeholder="Portugal surf, Oct 2026"
         />
       </div>
 
       {/* Dates */}
       <div>
-        <span className="label">Dates</span>
-        <div className="mt-1 flex items-center gap-2">
+        <SectionLabel>Dates</SectionLabel>
+        <div className="mt-1.5 flex items-center gap-2">
           <input
             type="date"
             aria-label="Start date"
-            className="input"
+            className="input font-mono"
             value={trip.startDate ?? ''}
             onChange={(e) => update((d) => void (d.startDate = e.target.value || undefined))}
           />
-          <span className="text-slate-400">–</span>
+          <span className="text-ink-faint">→</span>
           <input
             type="date"
             aria-label="End date"
-            className="input"
+            className="input font-mono"
             value={trip.endDate ?? ''}
             onChange={(e) => update((d) => void (d.endDate = e.target.value || undefined))}
           />
         </div>
         {days != null && (
-          <p className="mt-1 text-xs text-slate-500">
-            {days} day{days === 1 ? '' : 's'}
+          <p className="mt-1.5 font-mono text-xs text-ink-soft">
+            {days} night{days === 1 ? '' : 's'}
           </p>
         )}
       </div>
 
       {/* Destinations */}
       <div>
-        <span className="label">Destinations</span>
-        <ul className="mt-1 space-y-1">
+        <SectionLabel>Destinations</SectionLabel>
+        <ul className="mt-1.5 space-y-1">
           {trip.destinations.map((dest) => (
             <li key={dest.id} className="flex items-center gap-2 text-sm">
               <span className="flex-1 truncate">{dest.label}</span>
               <button
-                className={`chip ${dest.isPrimary ? 'bg-brand-100 text-brand-700' : 'bg-slate-100 text-slate-500'}`}
+                className={`chip ${dest.isPrimary ? 'bg-vermilion-soft text-vermilion-deep' : 'bg-paper-sunk text-ink-faint hover:text-ink'}`}
                 title="Set as primary destination"
                 onClick={() =>
                   update((d) => {
@@ -145,10 +151,13 @@ export default function ContextPanel({ trip, update }: Props) {
 
       {/* Tags */}
       <div>
-        <span className="label">Tags</span>
-        <div className="mt-1 flex flex-wrap gap-1.5">
+        <SectionLabel>Tags</SectionLabel>
+        <p className="mt-1 text-xs text-ink-soft">
+          Tags drive your suggestions. Tap one to add it.
+        </p>
+        <div className="mt-2 flex flex-wrap gap-1.5">
           {trip.tags.length === 0 && (
-            <span className="text-xs text-slate-400">No tags yet</span>
+            <span className="font-mono text-xs text-ink-faint">No tags yet</span>
           )}
           {trip.tags.map((tag) => (
             <span key={tag.id} className={`chip ${TAG_TYPE_STYLES[tag.type]}`}>
@@ -172,11 +181,11 @@ export default function ContextPanel({ trip, update }: Props) {
         </div>
         {/* Quick-add built-in tags (these drive suggestions) */}
         {quickTags.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-1.5">
+          <div className="mt-3 flex flex-wrap gap-1.5">
             {quickTags.map((b) => (
               <button
                 key={b.key}
-                className={`chip ${TAG_TYPE_STYLES[b.type]} opacity-70 hover:opacity-100`}
+                className="chip border border-dashed border-line bg-transparent text-ink-soft transition-colors hover:border-solid hover:border-ink/30 hover:bg-paper-sunk hover:text-ink"
                 onClick={() => addTag(b.key, b.type)}
               >
                 + {b.key}
@@ -184,9 +193,9 @@ export default function ContextPanel({ trip, update }: Props) {
             ))}
           </div>
         )}
-        <div className="mt-2 flex gap-2">
+        <div className="mt-3 flex gap-2">
           <select
-            className="input w-auto"
+            className="input w-auto font-mono text-xs"
             aria-label="Tag type"
             value={tagType}
             onChange={(e) => setTagType(e.target.value as TagType)}
@@ -210,16 +219,17 @@ export default function ContextPanel({ trip, update }: Props) {
       </div>
 
       {/* Laundry */}
-      <label className="flex items-center gap-2 text-sm">
+      <label className="flex items-start gap-2.5 border-t border-line pt-4 text-sm">
         <input
           type="checkbox"
-          className="h-4 w-4 rounded border-slate-300 text-brand-500 focus:ring-brand-500"
+          className="mt-0.5 h-4 w-4 shrink-0 rounded border-line text-vermilion focus:ring-vermilion"
           checked={trip.settings.laundryAvailable}
-          onChange={(e) =>
-            update((d) => void (d.settings.laundryAvailable = e.target.checked))
-          }
+          onChange={(e) => update((d) => void (d.settings.laundryAvailable = e.target.checked))}
         />
-        Laundry available (reduces suggested quantities)
+        <span>
+          Laundry available
+          <span className="block text-xs text-ink-faint">Reduces suggested quantities</span>
+        </span>
       </label>
     </aside>
   );

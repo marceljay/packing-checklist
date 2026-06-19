@@ -2,17 +2,16 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { listTrips, createTrip, cloneTrip, deleteTrip } from '../db/trips';
-import { tripDurationDays } from '../types';
+import { tripDurationDays, destinationCode } from '../types';
 
 function formatDateRange(start?: string, end?: string): string {
-  if (!start && !end) return 'No dates yet';
+  if (!start && !end) return 'No dates set';
   const fmt = (d: string) =>
     new Date(d + 'T00:00:00').toLocaleDateString(undefined, {
       month: 'short',
       day: 'numeric',
-      year: 'numeric',
     });
-  if (start && end) return `${fmt(start)} – ${fmt(end)}`;
+  if (start && end) return `${fmt(start)} → ${fmt(end)}`;
   return fmt((start || end)!);
 }
 
@@ -38,51 +37,94 @@ export default function TripsListPage() {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Your trips</h1>
+      <div className="mb-7 flex items-end justify-between gap-4">
+        <div>
+          <p className="label">Departures</p>
+          <h1 className="mt-1 font-display text-3xl font-bold tracking-tight">Your trips</h1>
+        </div>
         <button className="btn-primary" onClick={handleNew}>
           + New trip
         </button>
       </div>
 
       {trips === undefined ? (
-        <p className="text-slate-500">Loading…</p>
+        <p className="font-mono text-sm text-ink-faint">Loading…</p>
       ) : trips.length === 0 ? (
-        <div className="card flex flex-col items-center gap-3 px-6 py-12 text-center">
-          <span aria-hidden className="text-4xl">🧳</span>
-          <p className="text-slate-600">No trips yet.</p>
+        <div className="card flex flex-col items-center gap-4 px-6 py-16 text-center">
+          <span aria-hidden className="airmail h-1 w-24 rounded-full" />
+          <h2 className="font-display text-xl font-bold">No trips on the board</h2>
+          <p className="max-w-sm text-sm text-ink-soft">
+            Start a trip, set your dates and destination, then let the suggestions
+            fill your manifest.
+          </p>
           <button className="btn-primary" onClick={handleNew}>
-            Create your first trip
+            Start your first trip
           </button>
         </div>
       ) : (
-        <ul className="grid gap-3 sm:grid-cols-2">
+        <ul className="grid gap-4 sm:grid-cols-2">
           {trips.map((trip) => {
             const days = tripDurationDays(trip);
-            const toPack = trip.items.length;
+            const total = trip.items.length;
             const packed = trip.items.filter((i) => i.packed).length;
+            const pct = total > 0 ? Math.round((packed / total) * 100) : 0;
+            const code = destinationCode(trip);
+            const primary = trip.destinations.find((d) => d.isPrimary) ?? trip.destinations[0];
             return (
-              <li key={trip.id} className="card flex flex-col p-4">
-                <Link to={`/trip/${trip.id}`} className="group flex-1">
-                  <h2 className="font-semibold group-hover:text-brand-600">{trip.name}</h2>
-                  <p className="mt-0.5 text-sm text-slate-500">
-                    {formatDateRange(trip.startDate, trip.endDate)}
-                    {days ? ` · ${days} day${days === 1 ? '' : 's'}` : ''}
-                  </p>
-                  <p className="mt-2 text-xs text-slate-400">
-                    {trip.items.length} item{trip.items.length === 1 ? '' : 's'}
-                    {toPack > 0 ? ` · ${packed}/${toPack} packed` : ''}
-                  </p>
+              <li key={trip.id} className="card group relative flex flex-col overflow-hidden">
+                {/* Eyelet — the luggage-tag punch hole */}
+                <span
+                  aria-hidden
+                  className="absolute left-4 top-4 h-3 w-3 rounded-full border border-line bg-paper"
+                />
+                <Link to={`/trip/${trip.id}`} className="flex flex-1 flex-col gap-4 p-4 pl-10">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <h2 className="truncate font-display text-lg font-bold leading-tight group-hover:text-vermilion">
+                        {trip.name}
+                      </h2>
+                      <p className="mt-1 font-mono text-xs uppercase tracking-wide text-ink-soft">
+                        {formatDateRange(trip.startDate, trip.endDate)}
+                        {days ? ` · ${days}d` : ''}
+                      </p>
+                    </div>
+                    <span
+                      className="code shrink-0 text-2xl leading-none text-ink"
+                      title={primary?.label ?? trip.name}
+                    >
+                      {code}
+                    </span>
+                  </div>
+
+                  {/* Packed meter — the load gauge */}
+                  <div className="mt-auto">
+                    <div className="mb-1 flex items-center justify-between font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">
+                      <span>Packed</span>
+                      <span className="tabular-nums">
+                        {packed}/{total || 0}
+                      </span>
+                    </div>
+                    <div className="h-1.5 overflow-hidden rounded-full bg-paper-sunk">
+                      <div
+                        className="h-full rounded-full bg-vermilion transition-[width]"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                  </div>
                 </Link>
-                <div className="mt-3 flex gap-1 border-t border-slate-100 pt-2">
-                  <Link to={`/trip/${trip.id}`} className="btn-ghost">
+
+                <div className="flex gap-1 border-t border-line px-3 py-2">
+                  <Link to={`/trip/${trip.id}`} className="btn-ghost px-2 py-1.5 text-xs">
                     Open
                   </Link>
-                  <button className="btn-ghost" onClick={() => handleClone(trip.id)}>
-                    Clone
+                  <button
+                    className="btn-ghost px-2 py-1.5 text-xs"
+                    onClick={() => handleClone(trip.id)}
+                  >
+                    Duplicate
                   </button>
                   <button
-                    className="btn-danger ml-auto"
+                    className="btn-danger ml-auto px-2 py-1.5 text-xs"
                     onClick={() => handleDelete(trip.id, trip.name)}
                   >
                     Delete

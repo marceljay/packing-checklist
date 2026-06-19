@@ -61,26 +61,28 @@ export default function Checklist({ trip, update }: Props) {
     return out.filter((g) => g.items.length > 0);
   }, [trip.items, trip.tags, groupBy]);
 
-  const packCount = trip.items.length;
+  const total = trip.items.length;
   const packedCount = trip.items.filter((i) => i.packed).length;
 
   return (
     <section className="card flex flex-col">
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 p-3">
-        <h2 className="font-semibold">Checklist</h2>
-        {packCount > 0 && (
-          <span className="text-xs text-slate-500">
-            {packedCount}/{packCount} packed
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-line p-4">
+        <h2 className="font-display text-base font-bold">Manifest</h2>
+        {total > 0 && (
+          <span className="font-mono text-xs tabular-nums text-ink-faint">
+            {packedCount}/{total} packed
           </span>
         )}
-        <div className="ml-auto flex items-center gap-1 text-xs">
-          <span className="text-slate-400">Group by</span>
+        <div className="ml-auto flex items-center gap-1">
+          <span className="label mr-1">Group</span>
           {(['category', 'tag'] as GroupBy[]).map((g) => (
             <button
               key={g}
-              className={`rounded px-2 py-1 capitalize ${
-                groupBy === g ? 'bg-brand-100 text-brand-700' : 'text-slate-500 hover:bg-slate-100'
+              className={`rounded px-2 py-1 font-mono text-[0.6875rem] uppercase tracking-wide transition-colors ${
+                groupBy === g
+                  ? 'bg-ink text-paper-raised'
+                  : 'text-ink-faint hover:bg-paper-sunk hover:text-ink'
               }`}
               onClick={() => setGroupBy(g)}
             >
@@ -91,13 +93,13 @@ export default function Checklist({ trip, update }: Props) {
       </div>
 
       {/* Add item */}
-      <div className="flex gap-2 border-b border-slate-100 p-3">
+      <div className="flex gap-2 border-b border-line p-4">
         <input
           className="input"
           value={newName}
           onChange={(e) => setNewName(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && addItem()}
-          placeholder="Add an item…"
+          placeholder="Add an item to the manifest…"
         />
         <button className="btn-primary" onClick={addItem}>
           Add
@@ -106,20 +108,25 @@ export default function Checklist({ trip, update }: Props) {
 
       {/* Groups */}
       {trip.items.length === 0 ? (
-        <p className="px-3 py-8 text-center text-sm text-slate-400">
-          No items yet. Add one above.
-        </p>
+        <div className="px-4 py-12 text-center">
+          <p className="text-sm text-ink-soft">Your manifest is empty.</p>
+          <p className="mt-1 font-mono text-xs text-ink-faint">
+            Add items above or pull from suggestions.
+          </p>
+        </div>
       ) : (
-        <div className="divide-y divide-slate-100">
+        <div className="divide-y divide-line">
           {groups.map((group) => (
             <div key={group.key}>
-              <h3 className="bg-slate-50 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                {group.label}{' '}
-                <span className="font-normal normal-case text-slate-400">
-                  ({group.items.length})
+              <h3 className="flex items-baseline gap-2 bg-paper-sunk px-4 py-1.5">
+                <span className="font-mono text-[0.6875rem] font-bold uppercase tracking-code text-ink-soft">
+                  {group.label}
+                </span>
+                <span className="font-mono text-[0.625rem] tabular-nums text-ink-faint">
+                  {group.items.length}
                 </span>
               </h3>
-              <div className="divide-y divide-slate-50">
+              <div className="divide-y divide-line/60">
                 {group.items.map((item) => (
                   <ItemRow key={item.id} item={item} trip={trip} update={update} />
                 ))}

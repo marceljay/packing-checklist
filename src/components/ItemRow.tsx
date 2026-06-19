@@ -19,11 +19,15 @@ export default function ItemRow({ item, trip, update }: Props) {
   const availableTags = trip.tags.filter((t) => !item.tagIds.includes(t.id));
 
   return (
-    <div className="flex flex-col gap-2 px-3 py-2 sm:flex-row sm:items-center">
+    <div
+      className={`flex flex-col gap-2 px-4 py-2 transition-colors sm:flex-row sm:items-center ${
+        item.packed ? 'bg-paper-sunk/40' : 'hover:bg-paper-sunk/40'
+      }`}
+    >
       {/* Packed checkbox */}
       <input
         type="checkbox"
-        className="h-5 w-5 shrink-0 rounded border-slate-300 text-brand-500 focus:ring-brand-500"
+        className="h-5 w-5 shrink-0 rounded border-line text-vermilion focus:ring-vermilion focus:ring-offset-0"
         checked={item.packed}
         aria-label={`Mark ${item.name} packed`}
         onChange={(e) => patch((it) => void (it.packed = e.target.checked))}
@@ -32,15 +36,17 @@ export default function ItemRow({ item, trip, update }: Props) {
       {/* Quantity stepper */}
       <div className="flex items-center gap-1" aria-label="Quantity">
         <button
-          className="btn-secondary h-7 w-7 p-0"
+          className="btn-secondary h-7 w-7 p-0 text-base leading-none"
           aria-label="Decrease quantity"
           onClick={() => patch((it) => void (it.quantityTaken = Math.max(1, it.quantityTaken - 1)))}
         >
           −
         </button>
-        <span className="w-6 text-center text-sm tabular-nums">{item.quantityTaken}</span>
+        <span className="w-6 text-center font-mono text-sm tabular-nums">
+          {item.quantityTaken}
+        </span>
         <button
-          className="btn-secondary h-7 w-7 p-0"
+          className="btn-secondary h-7 w-7 p-0 text-base leading-none"
           aria-label="Increase quantity"
           onClick={() => patch((it) => void (it.quantityTaken = it.quantityTaken + 1))}
         >
@@ -50,7 +56,7 @@ export default function ItemRow({ item, trip, update }: Props) {
 
       {/* Name */}
       <input
-        className={`input flex-1 ${item.packed ? 'text-slate-400 line-through' : ''}`}
+        className={`input flex-1 ${item.packed ? 'text-ink-faint line-through' : ''}`}
         value={item.name}
         aria-label="Item name"
         onChange={(e) => patch((it) => void (it.name = e.target.value))}
@@ -59,7 +65,7 @@ export default function ItemRow({ item, trip, update }: Props) {
       {/* Meta controls */}
       <div className="flex flex-wrap items-center gap-1.5">
         <select
-          className="input w-auto py-1 text-xs"
+          className="input w-auto py-1 font-mono text-xs"
           aria-label="Category"
           value={item.category}
           onChange={(e) => patch((it) => void (it.category = e.target.value as Item['category']))}
@@ -73,7 +79,7 @@ export default function ItemRow({ item, trip, update }: Props) {
 
         {/* Tags */}
         {itemTags.map((t) => (
-          <span key={t.id} className="chip bg-slate-200 text-slate-700">
+          <span key={t.id} className="chip bg-paper-sunk text-ink-soft">
             {t.label}
             <button
               className="ml-0.5 opacity-60 hover:opacity-100"
@@ -86,7 +92,7 @@ export default function ItemRow({ item, trip, update }: Props) {
         ))}
         {availableTags.length > 0 && (
           <select
-            className="input w-auto py-1 text-xs"
+            className="input w-auto py-1 font-mono text-xs"
             aria-label="Add tag to item"
             value=""
             onChange={(e) => {

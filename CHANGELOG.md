@@ -5,6 +5,14 @@ All notable changes to this project are documented here.
 ## [Unreleased]
 
 ### Added
+- **Visual overhaul — "Manifest" design system.** Travel-document identity:
+  luggage-tag trip cards with IATA-style destination codes (`destinationCode()`),
+  a boarding-pass stub editor header (route · dates · nights · packed gauge),
+  airmail-striped accent edges, and a paper/ink-navy palette with one airmail
+  vermilion accent. Type: Space Grotesk (display/UI) + Space Mono (codes/data).
+  New tokens in `tailwind.config.js` + `src/index.css`; reduced-motion respected.
+  Fonts load from Google Fonts (self-host later for full offline — backlog).
+
 - Suggestion engine (rule-based): built-in tag catalog (~60 items) with
   union matching + weighted ranking; essentials always suggested; laundry-aware
   quantity rules (per-day/per-trip/bucket).
