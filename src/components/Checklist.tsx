@@ -130,7 +130,13 @@ export default function Checklist({ trip, update }: Props) {
               </h3>
               <div className="divide-y divide-line/60">
                 {group.items.map((item) => (
-                  <ItemRow key={item.id} item={item} trip={trip} update={update} />
+                  <ItemRow
+                    key={item.id}
+                    item={item}
+                    trip={trip}
+                    update={update}
+                    showCategory={groupBy !== 'category'}
+                  />
                 ))}
               </div>
             </div>
