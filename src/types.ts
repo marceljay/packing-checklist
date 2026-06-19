@@ -75,6 +75,15 @@ export function tripDurationDays(trip: Pick<Trip, 'startDate' | 'endDate'>): num
   return Math.round(ms / 86_400_000) + 1;
 }
 
+/** Group items under their category in canonical {@link CATEGORIES} order,
+ *  dropping empty categories. Used by the checklist and the print sheet. */
+export function itemsByCategory(items: Item[]): { category: Category; items: Item[] }[] {
+  return CATEGORIES.map((category) => ({
+    category,
+    items: items.filter((i) => i.category === category),
+  })).filter((g) => g.items.length > 0);
+}
+
 /**
  * IATA-style 3-letter code for a trip, derived from its primary destination
  * (falls back to the trip name). Drives the luggage-tag / boarding-pass UI.

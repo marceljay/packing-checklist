@@ -4,8 +4,25 @@ import {
   tripDurationDays,
   destinationCode,
   computeQuantity,
+  itemsByCategory,
+  type Item,
+  type Category,
   type QuantityRule,
 } from './types';
+
+function item(name: string, category: Category, over: Partial<Item> = {}): Item {
+  return {
+    id: name,
+    name,
+    category,
+    tagIds: [],
+    quantitySuggested: null,
+    quantityTaken: 1,
+    packed: false,
+    source: 'custom',
+    ...over,
+  };
+}
 
 describe('tagKey', () => {
   it('lowercases and trims a label', () => {
@@ -137,5 +154,38 @@ describe('computeQuantity', () => {
 
   it('returns 1 for none rules', () => {
     expect(computeQuantity({ kind: 'none' }, 10, false)).toBe(1);
+  });
+});
+
+describe('itemsByCategory', () => {
+  it('groups items under their category in canonical order', () => {
+    const groups = itemsByCategory([
+      item('Sunscreen', 'Toiletries & Health'),
+      item('Passport', 'Documents'),
+      item('T-shirt', 'Clothing'),
+    ]);
+    expect(groups.map((g) => g.category)).toEqual([
+      'Documents',
+      'Clothing',
+      'Toiletries & Health',
+    ]);
+  });
+
+  it('keeps every item with its category', () => {
+    const groups = itemsByCategory([
+      item('Passport', 'Documents'),
+      item('Visa', 'Documents'),
+    ]);
+    expect(groups).toHaveLength(1);
+    expect(groups[0].items.map((i) => i.name)).toEqual(['Passport', 'Visa']);
+  });
+
+  it('omits empty categories', () => {
+    const groups = itemsByCategory([item('Passport', 'Documents')]);
+    expect(groups.map((g) => g.category)).toEqual(['Documents']);
+  });
+
+  it('returns nothing for an empty list', () => {
+    expect(itemsByCategory([])).toEqual([]);
   });
 });

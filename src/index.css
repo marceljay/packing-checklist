@@ -90,6 +90,12 @@
 @media print {
   body {
     background: #fff;
+    background-image: none;
+  }
+  /* Honour the filled "packed" boxes and rules on the print sheet. */
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
   .card {
     @apply border-line shadow-none;

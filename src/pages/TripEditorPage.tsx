@@ -3,6 +3,7 @@ import { useTripEditor } from './useTripEditor';
 import ContextPanel from '../components/ContextPanel';
 import Checklist from '../components/Checklist';
 import SuggestionsTray from '../components/SuggestionsTray';
+import PrintSheet from '../components/PrintSheet';
 import { tripDurationDays, destinationCode } from '../types';
 import type { Trip } from '../types';
 
@@ -102,23 +103,34 @@ export default function TripEditorPage() {
   }
 
   return (
-    <div className="flex flex-col gap-5">
-      <Link
-        to="/"
-        className="btn-ghost -ml-3 self-start px-3 py-1.5 text-xs print:hidden"
-      >
-        ← All trips
-      </Link>
+    <>
+      <div className="flex flex-col gap-5 print:hidden">
+        <div className="flex items-center justify-between gap-2">
+          <Link to="/" className="btn-ghost -ml-3 px-3 py-1.5 text-xs">
+            ← All trips
+          </Link>
+          <button
+            className="btn-secondary text-xs"
+            onClick={() => window.print()}
+            disabled={trip.items.length === 0}
+            title={trip.items.length === 0 ? 'Add items first' : undefined}
+          >
+            Print / Save as PDF
+          </button>
+        </div>
 
-      <PassHeader trip={trip} />
+        <PassHeader trip={trip} />
 
-      <div className="grid gap-5 lg:grid-cols-[20rem_1fr]">
-        <ContextPanel trip={trip} update={update} />
-        <div className="flex flex-col gap-5">
-          <SuggestionsTray trip={trip} update={update} />
-          <Checklist trip={trip} update={update} />
+        <div className="grid gap-5 lg:grid-cols-[20rem_1fr]">
+          <ContextPanel trip={trip} update={update} />
+          <div className="flex flex-col gap-5">
+            <SuggestionsTray trip={trip} update={update} />
+            <Checklist trip={trip} update={update} />
+          </div>
         </div>
       </div>
-    </div>
+
+      <PrintSheet trip={trip} />
+    </>
   );
 }

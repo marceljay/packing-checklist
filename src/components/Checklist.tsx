@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { Item, Trip } from '../types';
-import { CATEGORIES } from '../types';
+import { itemsByCategory } from '../types';
 import { uid } from '../db/db';
 import ItemRow from './ItemRow';
 
@@ -41,11 +41,11 @@ export default function Checklist({ trip, update }: Props) {
   const groups = useMemo<Group[]>(() => {
     const items = trip.items;
     if (groupBy === 'category') {
-      return CATEGORIES.map((cat) => ({
-        key: cat,
-        label: cat,
-        items: items.filter((i) => i.category === cat),
-      })).filter((g) => g.items.length > 0);
+      return itemsByCategory(items).map((g) => ({
+        key: g.category,
+        label: g.category,
+        items: g.items,
+      }));
     }
     // group by tag
     const out: Group[] = trip.tags.map((t) => ({
