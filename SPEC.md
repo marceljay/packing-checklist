@@ -2,6 +2,13 @@
 
 > Status: Draft v1 — derived from requirements interview (2026-06).
 > Scope below is **v1** unless explicitly marked "Later".
+>
+> **⚠️ Scope changes since this draft (see CHANGELOG):** two concepts described
+> below were **dropped from the built v1** — physical **bags** (bag assignment)
+> and per-item **rent / buy-there / have-there** statuses. Items are now simple
+> check-off lines grouped by category or tag. The implementation also adds the
+> "Manifest" design system and a Vitest suite. Sections mentioning bags/statuses
+> are kept for historical context but no longer reflect the code.
 
 ## 1. Summary
 
