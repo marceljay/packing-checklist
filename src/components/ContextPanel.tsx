@@ -22,9 +22,38 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   return <span className="label">{children}</span>;
 }
 
+/** A labelled, wrapping palette of quick-add tag chips. */
+function TagPalette({
+  label,
+  tags,
+  onAdd,
+}: {
+  label: string;
+  tags: { key: string; type: TagType }[];
+  onAdd: (key: string, type: TagType) => void;
+}) {
+  return (
+    <div className="mt-3">
+      <p className="mb-1.5 font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">
+        {label}
+      </p>
+      <div className="flex flex-wrap gap-1.5">
+        {tags.map((b) => (
+          <button
+            key={b.key}
+            className="chip border border-dashed border-line bg-transparent text-ink-soft transition-colors hover:border-solid hover:border-ink/30 hover:bg-paper-sunk hover:text-ink"
+            onClick={() => onAdd(b.key, b.type)}
+          >
+            + {b.key}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function ContextPanel({ trip, update }: Props) {
   const [tagLabel, setTagLabel] = useState('');
-  const [tagType, setTagType] = useState<TagType>('activity');
   const [destLabel, setDestLabel] = useState('');
   const [weatherStatus, setWeatherStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
   const [weatherMsg, setWeatherMsg] = useState('');
@@ -66,6 +95,8 @@ export default function ContextPanel({ trip, update }: Props) {
   }
   const activeKeys = new Set(trip.tags.map((t) => tagKey(t.label)));
   const quickTags = BUILTIN_TAGS.filter((b) => !activeKeys.has(b.key));
+  const quickActivities = quickTags.filter((b) => b.type === 'activity');
+  const quickWeather = quickTags.filter((b) => b.type === 'weather');
 
   function addTag(label: string, type: TagType) {
     const clean = label.trim();
@@ -76,7 +107,7 @@ export default function ContextPanel({ trip, update }: Props) {
   }
 
   function addCustomTag() {
-    addTag(tagLabel, tagType);
+    addTag(tagLabel, 'custom');
     setTagLabel('');
   }
 
@@ -137,7 +168,7 @@ export default function ContextPanel({ trip, update }: Props) {
         <ul className="mt-1.5 space-y-1">
           {trip.destinations.map((dest) => (
             <li key={dest.id} className="flex items-center gap-2 text-sm">
-              <span className="flex-1 truncate">{dest.label}</span>
+              <span className="min-w-0 flex-1 truncate">{dest.label}</span>
               <button
                 className={`chip ${dest.isPrimary ? 'bg-vermilion-soft text-vermilion-deep' : 'bg-paper-sunk text-ink-faint hover:text-ink'}`}
                 title="Set as primary destination"
@@ -168,13 +199,13 @@ export default function ContextPanel({ trip, update }: Props) {
         </ul>
         <div className="mt-2 flex gap-2">
           <input
-            className="input"
+            className="input min-w-0 flex-1"
             value={destLabel}
             onChange={(e) => setDestLabel(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && addDestination()}
             placeholder="Add a place…"
           />
-          <button className="btn-secondary" onClick={addDestination}>
+          <button className="btn-secondary shrink-0" onClick={addDestination}>
             Add
           </button>
         </div>
@@ -210,67 +241,54 @@ export default function ContextPanel({ trip, update }: Props) {
             </span>
           ))}
         </div>
-        {/* Quick-add built-in tags (these drive suggestions) */}
-        {quickTags.length > 0 && (
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            {quickTags.map((b) => (
-              <button
-                key={b.key}
-                className="chip border border-dashed border-line bg-transparent text-ink-soft transition-colors hover:border-solid hover:border-ink/30 hover:bg-paper-sunk hover:text-ink"
-                onClick={() => addTag(b.key, b.type)}
-              >
-                + {b.key}
-              </button>
-            ))}
-          </div>
+        {/* Quick-add palettes — grouped so the choice reads as intentional. */}
+        {quickActivities.length > 0 && (
+          <TagPalette label="Activities" tags={quickActivities} onAdd={addTag} />
         )}
+        {quickWeather.length > 0 && (
+          <TagPalette label="Weather" tags={quickWeather} onAdd={addTag} />
+        )}
+
+        {/* Custom tag — single shrink-safe row. */}
         <div className="mt-3 flex gap-2">
-          <select
-            className="input w-auto font-mono text-xs"
-            aria-label="Tag type"
-            value={tagType}
-            onChange={(e) => setTagType(e.target.value as TagType)}
-          >
-            <option value="activity">activity</option>
-            <option value="weather">weather</option>
-            <option value="destination">destination</option>
-            <option value="custom">custom</option>
-          </select>
           <input
-            className="input"
+            className="input min-w-0 flex-1"
             value={tagLabel}
             onChange={(e) => setTagLabel(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && addCustomTag()}
-            placeholder="Add a tag…"
+            placeholder="Add your own tag…"
           />
-          <button className="btn-secondary" onClick={addCustomTag}>
+          <button className="btn-secondary shrink-0" onClick={addCustomTag}>
             Add
           </button>
         </div>
+      </div>
 
-        {/* Weather lookup (Open-Meteo, user-triggered) */}
-        <div className="mt-3 border-t border-line pt-3">
-          <button
-            className="btn-secondary w-full text-xs"
-            onClick={() => void suggestWeather()}
-            disabled={!primaryDest || weatherStatus === 'loading'}
-            title={!primaryDest ? 'Add a destination first' : undefined}
+      {/* Weather lookup (Open-Meteo, user-triggered) */}
+      <div>
+        <SectionLabel>Forecast</SectionLabel>
+        <button
+          className="btn-secondary mt-1.5 w-full"
+          onClick={() => void suggestWeather()}
+          disabled={!primaryDest || weatherStatus === 'loading'}
+          title={!primaryDest ? 'Add a destination first' : undefined}
+        >
+          {weatherStatus === 'loading' ? 'Checking forecast…' : '☀ Suggest weather tags'}
+        </button>
+        {weatherMsg && (
+          <p
+            className={`mt-1.5 text-xs ${
+              weatherStatus === 'error' ? 'text-vermilion-deep' : 'text-ink-soft'
+            }`}
           >
-            {weatherStatus === 'loading' ? 'Checking forecast…' : '☀ Suggest weather tags'}
-          </button>
-          {weatherMsg && (
-            <p
-              className={`mt-1.5 text-xs ${
-                weatherStatus === 'error' ? 'text-vermilion-deep' : 'text-ink-soft'
-              }`}
-            >
-              {weatherMsg}
-            </p>
-          )}
-          {!primaryDest && (
-            <p className="mt-1.5 text-xs text-ink-faint">Add a destination to check its forecast.</p>
-          )}
-        </div>
+            {weatherMsg}
+          </p>
+        )}
+        {!primaryDest && (
+          <p className="mt-1.5 text-xs text-ink-faint">
+            Add a destination to check its forecast.
+          </p>
+        )}
       </div>
 
       {/* Laundry */}

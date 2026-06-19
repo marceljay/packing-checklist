@@ -88,7 +88,7 @@ export default function DateRangeField({ start, end, onChange }: Props) {
         <div
           role="dialog"
           aria-label="Choose trip dates"
-          className="absolute left-0 z-20 mt-1.5 rounded-xl border border-line bg-paper-raised p-2 shadow-pass"
+          className="rdp-popover absolute left-0 z-20 mt-1.5 max-w-[calc(100vw-2rem)] rounded-xl border border-line bg-paper-raised p-3 shadow-pass"
         >
           <DayPicker
             mode="range"

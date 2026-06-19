@@ -87,6 +87,36 @@
   }
 }
 
+/* react-day-picker: size it to fit the panel and match the Manifest type. */
+.rdp-popover .rdp-root {
+  --rdp-day-width: 2.1rem;
+  --rdp-day-height: 2.1rem;
+  --rdp-day_button-width: 2.1rem;
+  --rdp-day_button-height: 2.1rem;
+  margin: 0;
+  font-size: 0.8125rem;
+}
+.rdp-popover .rdp-month_caption {
+  font-weight: 700;
+  font-size: 0.875rem;
+}
+.rdp-popover .rdp-weekday {
+  font-family: theme('fontFamily.mono');
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  color: theme('colors.ink.faint');
+  font-weight: 700;
+}
+.rdp-popover .rdp-button_previous,
+.rdp-popover .rdp-button_next {
+  color: theme('colors.ink.soft');
+}
+.rdp-popover .rdp-button_previous:hover,
+.rdp-popover .rdp-button_next:hover {
+  background: theme('colors.paper.sunk');
+  border-radius: 0.375rem;
+}
+
 @media print {
   body {
     background: #fff;
