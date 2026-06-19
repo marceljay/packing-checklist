@@ -117,15 +117,15 @@ export default function ContextPanel({ trip, update }: Props) {
           <input
             type="date"
             aria-label="Start date"
-            className="input font-mono"
+            className="input min-w-0 flex-1 font-mono"
             value={trip.startDate ?? ''}
             onChange={(e) => update((d) => void (d.startDate = e.target.value || undefined))}
           />
-          <span className="text-ink-faint">→</span>
+          <span className="shrink-0 text-ink-faint">→</span>
           <input
             type="date"
             aria-label="End date"
-            className="input font-mono"
+            className="input min-w-0 flex-1 font-mono"
             value={trip.endDate ?? ''}
             onChange={(e) => update((d) => void (d.endDate = e.target.value || undefined))}
           />
