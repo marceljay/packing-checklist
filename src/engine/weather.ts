@@ -77,21 +77,61 @@ export interface GeoResult {
   lat: number;
   lon: number;
   countryCode?: string;
+  country?: string;
+  /** Region / state / province, when the API provides it. */
+  admin1?: string;
+}
+
+interface RawGeo {
+  name: string;
+  latitude: number;
+  longitude: number;
+  country_code?: string;
+  country?: string;
+  admin1?: string;
+}
+
+function toGeoResult(r: RawGeo): GeoResult {
+  return {
+    name: r.name,
+    lat: r.latitude,
+    lon: r.longitude,
+    countryCode: r.country_code,
+    country: r.country,
+    admin1: r.admin1,
+  };
+}
+
+/** Human-readable place label, e.g. "Faro, Faro District, Portugal".
+ *  Skips a region that merely repeats the name and any missing parts. */
+export function placeLabel(r: Pick<GeoResult, 'name' | 'admin1' | 'country'>): string {
+  return [r.name, r.admin1, r.country]
+    .filter((v): v is string => Boolean(v))
+    .filter((v, i, a) => a.indexOf(v) === i)
+    .join(', ');
 }
 
 /** Geocode a place name to coordinates via Open-Meteo's free geocoding API. */
 export async function geocode(name: string): Promise<GeoResult | null> {
+  const hits = await searchPlaces(name, 1);
+  return hits[0] ?? null;
+}
+
+/** Search place names for autocomplete — returns ranked matches with region/country. */
+export async function searchPlaces(
+  name: string,
+  count = 8,
+  signal?: AbortSignal,
+): Promise<GeoResult[]> {
+  const q = name.trim();
+  if (q.length < 2) return [];
   const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(
-    name,
-  )}&count=1&language=en&format=json`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Geocoding failed (${res.status})`);
-  const data = (await res.json()) as {
-    results?: { name: string; latitude: number; longitude: number; country_code?: string }[];
-  };
-  const hit = data.results?.[0];
-  if (!hit) return null;
-  return { name: hit.name, lat: hit.latitude, lon: hit.longitude, countryCode: hit.country_code };
+    q,
+  )}&count=${count}&language=en&format=json`;
+  const res = await fetch(url, { signal });
+  if (!res.ok) throw new Error(`Place search failed (${res.status})`);
+  const data = (await res.json()) as { results?: RawGeo[] };
+  return (data.results ?? []).map(toGeoResult);
 }
 
 /** Fetch daily forecast aggregates for a location and (optional) date window. */

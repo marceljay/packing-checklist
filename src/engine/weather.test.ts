@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { deriveWeatherTags, forecastRange, type DailyWeather } from './weather';
+import { deriveWeatherTags, forecastRange, placeLabel, type DailyWeather } from './weather';
 
 function daily(over: Partial<DailyWeather>): DailyWeather {
   return { tMax: [], tMin: [], precip: [], wind: [], ...over };
@@ -89,5 +89,24 @@ describe('forecastRange', () => {
   it('returns null when dates are missing', () => {
     expect(forecastRange(undefined, '2026-06-25', today)).toBeNull();
     expect(forecastRange('2026-06-20', undefined, today)).toBeNull();
+  });
+});
+
+describe('placeLabel', () => {
+  it('joins name, region and country', () => {
+    expect(placeLabel({ name: 'Faro', admin1: 'Faro District', country: 'Portugal' })).toBe(
+      'Faro, Faro District, Portugal',
+    );
+  });
+
+  it('drops a region that just repeats the name', () => {
+    expect(placeLabel({ name: 'Lisbon', admin1: 'Lisbon', country: 'Portugal' })).toBe(
+      'Lisbon, Portugal',
+    );
+  });
+
+  it('omits missing parts', () => {
+    expect(placeLabel({ name: 'Berlin', country: 'Germany' })).toBe('Berlin, Germany');
+    expect(placeLabel({ name: 'Springfield' })).toBe('Springfield');
   });
 });

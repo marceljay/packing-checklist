@@ -3,8 +3,9 @@ import type { Trip, TagType } from '../types';
 import { tagKey, tripDurationDays } from '../types';
 import { uid } from '../db/db';
 import { BUILTIN_TAGS } from '../data/tags';
-import { lookupWeatherTags } from '../engine/weather';
+import { lookupWeatherTags, placeLabel, type GeoResult } from '../engine/weather';
 import DateRangeField from './DateRangeField';
+import PlaceSearch from './PlaceSearch';
 
 interface Props {
   trip: Trip;
@@ -54,7 +55,6 @@ function TagPalette({
 
 export default function ContextPanel({ trip, update }: Props) {
   const [tagLabel, setTagLabel] = useState('');
-  const [destLabel, setDestLabel] = useState('');
   const [weatherStatus, setWeatherStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
   const [weatherMsg, setWeatherMsg] = useState('');
 
@@ -111,17 +111,23 @@ export default function ContextPanel({ trip, update }: Props) {
     setTagLabel('');
   }
 
-  function addDestination() {
-    const label = destLabel.trim();
-    if (!label) return;
+  function addPlace(place: GeoResult) {
     update((d) => {
       d.destinations.push({
         id: uid(),
-        label,
+        label: placeLabel(place),
+        lat: place.lat,
+        lon: place.lon,
+        countryCode: place.countryCode,
         isPrimary: d.destinations.length === 0,
       });
     });
-    setDestLabel('');
+  }
+
+  function addManualPlace(label: string) {
+    update((d) => {
+      d.destinations.push({ id: uid(), label, isPrimary: d.destinations.length === 0 });
+    });
   }
 
   return (
@@ -197,18 +203,7 @@ export default function ContextPanel({ trip, update }: Props) {
             </li>
           ))}
         </ul>
-        <div className="mt-2 flex gap-2">
-          <input
-            className="input min-w-0 flex-1"
-            value={destLabel}
-            onChange={(e) => setDestLabel(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && addDestination()}
-            placeholder="Add a place…"
-          />
-          <button className="btn-secondary shrink-0" onClick={addDestination}>
-            Add
-          </button>
-        </div>
+        <PlaceSearch onSelect={addPlace} onAddManual={addManualPlace} />
       </div>
 
       {/* Tags */}
