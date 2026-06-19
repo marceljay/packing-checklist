@@ -5,6 +5,11 @@ All notable changes to this project are documented here.
 ## [Unreleased]
 
 ### Added
+- **Unit tests (Vitest).** 33 colocated tests covering the pure domain logic —
+  `tagKey`, `tripDurationDays`, `destinationCode`, `computeQuantity`, and the
+  suggestion engine (`suggestItems`: essentials, union matching, weighted
+  ranking, reason chips, dedupe of already-added, quantity). `npm test` /
+  `test:watch` / `test:ui`. Pinned Vitest v3 to match Vite 5 (clean output).
 - **Visual overhaul — "Manifest" design system.** Travel-document identity:
   luggage-tag trip cards with IATA-style destination codes (`destinationCode()`),
   a boarding-pass stub editor header (route · dates · nights · packed gauge),
