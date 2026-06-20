@@ -81,10 +81,18 @@ export default function ContextPanel({ trip, update }: Props) {
         setWeatherMsg('Couldn’t find weather for those places. Add weather tags manually.');
         return;
       }
-      const existing = new Set(trip.tags.map((t) => tagKey(t.label)));
-      const toAdd = res.tags.filter((k) => !existing.has(k));
       update((d) => {
-        for (const k of toAdd) d.tags.push({ id: uid(), label: k, type: 'weather' });
+        // Regenerate weather tags from scratch so stale ones (e.g. from a
+        // since-removed destination) don't linger — drop existing weather-type
+        // tags and their item references, then add the current union.
+        const staleIds = new Set(d.tags.filter((t) => t.type === 'weather').map((t) => t.id));
+        d.tags = d.tags.filter((t) => t.type !== 'weather');
+        if (staleIds.size > 0) {
+          d.items.forEach((it) => {
+            it.tagIds = it.tagIds.filter((id) => !staleIds.has(id));
+          });
+        }
+        for (const k of res.tags) d.tags.push({ id: uid(), label: k, type: 'weather' });
         d.weather = {
           fetchedAt: Date.now(),
           cities: res.cities.map((c) => ({
@@ -101,7 +109,9 @@ export default function ContextPanel({ trip, update }: Props) {
         };
       });
       setWeatherStatus('done');
-      setWeatherMsg(toAdd.length > 0 ? `Added ${toAdd.join(', ')}` : 'Forecast updated');
+      setWeatherMsg(
+        res.tags.length > 0 ? `Weather tags: ${res.tags.join(', ')}` : 'No strong weather signal',
+      );
     } catch {
       setWeatherStatus('error');
       setWeatherMsg('Forecast lookup failed (offline?). Add weather tags manually.');
@@ -208,6 +218,15 @@ export default function ContextPanel({ trip, update }: Props) {
                     d.destinations = d.destinations.filter((x) => x.id !== dest.id);
                     if (!d.destinations.some((x) => x.isPrimary) && d.destinations[0]) {
                       d.destinations[0].isPrimary = true;
+                    }
+                    // No destinations left → drop the now-meaningless forecast.
+                    if (d.destinations.length === 0) {
+                      const wIds = new Set(d.tags.filter((t) => t.type === 'weather').map((t) => t.id));
+                      d.tags = d.tags.filter((t) => t.type !== 'weather');
+                      d.items.forEach((it) => {
+                        it.tagIds = it.tagIds.filter((id) => !wIds.has(id));
+                      });
+                      d.weather = undefined;
                     }
                   })
                 }
