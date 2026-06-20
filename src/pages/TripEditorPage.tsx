@@ -4,6 +4,7 @@ import ContextPanel from '../components/ContextPanel';
 import Checklist from '../components/Checklist';
 import SuggestionsTray from '../components/SuggestionsTray';
 import LibraryTray from '../components/LibraryTray';
+import WeatherCard from '../components/WeatherCard';
 import PrintSheet from '../components/PrintSheet';
 import { tripDurationDays, destinationCode } from '../types';
 import type { Trip } from '../types';
@@ -135,6 +136,7 @@ export default function TripEditorPage() {
         <div className="grid gap-5 lg:grid-cols-[20rem_1fr]">
           <ContextPanel trip={trip} update={update} />
           <div className="flex flex-col gap-5">
+            {trip.weather && <WeatherCard weather={trip.weather} />}
             <SuggestionsTray trip={trip} update={update} />
             <LibraryTray trip={trip} update={update} />
             <Checklist trip={trip} update={update} />

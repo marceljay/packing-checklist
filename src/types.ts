@@ -52,6 +52,21 @@ export interface TripSettings {
   laundryAvailable: boolean;
 }
 
+/** Cached forecast summary for a trip's primary destination (SPEC §6). Temps °C. */
+export interface TripWeather {
+  place: string;
+  fetchedAt: number;
+  /** True when the trip dates were used; false for a 7-day peek. */
+  datedWindow: boolean;
+  highC: number;
+  lowC: number;
+  maxC: number;
+  minC: number;
+  precipMm: number;
+  windMaxKmh: number;
+  days: number;
+}
+
 export interface Trip {
   id: ID;
   name: string;
@@ -61,6 +76,8 @@ export interface Trip {
   tags: Tag[];
   items: Item[];
   settings: TripSettings;
+  /** Last weather lookup, cached so it shows after reload / offline. */
+  weather?: TripWeather;
   createdAt: number;
   updatedAt: number;
 }

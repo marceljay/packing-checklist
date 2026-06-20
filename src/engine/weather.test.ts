@@ -5,6 +5,7 @@ import {
   placeLabel,
   geocodeQuery,
   lookupWeatherTags,
+  summarizeWeather,
   type DailyWeather,
 } from './weather';
 
@@ -117,6 +118,47 @@ describe('placeLabel', () => {
   it('omits missing parts', () => {
     expect(placeLabel({ name: 'Berlin', country: 'Germany' })).toBe('Berlin, Germany');
     expect(placeLabel({ name: 'Springfield' })).toBe('Springfield');
+  });
+});
+
+describe('summarizeWeather', () => {
+  function daily(over: Partial<DailyWeather>): DailyWeather {
+    return { tMax: [], tMin: [], precip: [], wind: [], ...over };
+  }
+
+  it('computes average high/low, extremes, totals and day count', () => {
+    const s = summarizeWeather(
+      daily({ tMax: [20, 30], tMin: [10, 14], precip: [0, 5], wind: [10, 40] }),
+    );
+    expect(s).toEqual({
+      highC: 25, // avg of highs
+      lowC: 12, // avg of lows
+      maxC: 30,
+      minC: 10,
+      precipMm: 5, // total
+      windMaxKmh: 40,
+      days: 2,
+    });
+  });
+
+  it('rounds to whole numbers', () => {
+    const s = summarizeWeather(daily({ tMax: [21, 22], tMin: [9, 10], precip: [1.4], wind: [12.6] }));
+    expect(s.highC).toBe(22); // 21.5 -> 22
+    expect(s.lowC).toBe(10); // 9.5 -> 10
+    expect(s.precipMm).toBe(1); // 1.4 -> 1
+    expect(s.windMaxKmh).toBe(13); // 12.6 -> 13
+  });
+
+  it('returns zeros and no days for empty data', () => {
+    expect(summarizeWeather(daily({}))).toEqual({
+      highC: 0,
+      lowC: 0,
+      maxC: 0,
+      minC: 0,
+      precipMm: 0,
+      windMaxKmh: 0,
+      days: 0,
+    });
   });
 });
 

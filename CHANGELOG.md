@@ -14,9 +14,11 @@ All notable changes to this project are documented here.
 - **Print / Save as PDF.** Print-only packing sheet grouped by category with
   hand-checkable boxes and quantities; `window.print()` covers print and
   Save-as-PDF (no extra deps, fully offline). New `itemsByCategory` helper.
-- **Weather tags (Open-Meteo).** User-triggered forecast lookup for the primary
-  destination derives weather tags (hot/cold/rainy/sunny/windy); clamps to the
-  16-day forecast horizon; falls back gracefully when offline or not found.
+- **Weather tags + forecast card (Open-Meteo).** User-triggered forecast lookup
+  for the primary destination derives weather tags (hot/cold/rainy/sunny/windy)
+  and shows a **forecast summary card** (avg high/low, range, total rain, max
+  wind, day count), cached on the trip so it survives reload. Clamps to the
+  16-day horizon; uses stored coordinates; falls back gracefully when offline.
 - **Personal item library ("Your items").** Custom items now live in a global
   IndexedDB store (DB v2), not inside a single trip, so they resurface on future
   trips ranked by use count + recency. Tap to add; remove from the tray to forget.

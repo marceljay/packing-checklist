@@ -78,11 +78,15 @@ export default function ContextPanel({ trip, update }: Props) {
       }
       const existing = new Set(trip.tags.map((t) => tagKey(t.label)));
       const toAdd = res.tags.filter((k) => !existing.has(k));
-      if (toAdd.length > 0) {
-        update((d) => {
-          for (const k of toAdd) d.tags.push({ id: uid(), label: k, type: 'weather' });
-        });
-      }
+      update((d) => {
+        for (const k of toAdd) d.tags.push({ id: uid(), label: k, type: 'weather' });
+        d.weather = {
+          place: res.place.name,
+          fetchedAt: Date.now(),
+          datedWindow: res.datedWindow,
+          ...res.summary,
+        };
+      });
       const note = res.datedWindow ? '' : ' (7-day forecast — set trip dates for accuracy)';
       setWeatherStatus('done');
       setWeatherMsg(

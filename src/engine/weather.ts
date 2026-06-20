@@ -42,6 +42,43 @@ export function deriveWeatherTags(d: DailyWeather): WeatherTagKey[] {
   return WEATHER_TAG_KEYS.filter((k) => flags[k]);
 }
 
+/** A compact, displayable summary of a forecast window. Temps °C, precip mm. */
+export interface WeatherSummary {
+  /** Average daily high. */
+  highC: number;
+  /** Average daily low. */
+  lowC: number;
+  /** Warmest day. */
+  maxC: number;
+  /** Coldest night. */
+  minC: number;
+  /** Total precipitation over the window. */
+  precipMm: number;
+  /** Strongest daily gust. */
+  windMaxKmh: number;
+  /** Number of days summarized. */
+  days: number;
+}
+
+const sum = (xs: number[]): number => xs.reduce((a, b) => a + b, 0);
+
+/** Reduce daily aggregates to a human-readable summary (rounded to whole units). */
+export function summarizeWeather(d: DailyWeather): WeatherSummary {
+  const days = d.tMax.length;
+  if (days === 0) {
+    return { highC: 0, lowC: 0, maxC: 0, minC: 0, precipMm: 0, windMaxKmh: 0, days: 0 };
+  }
+  return {
+    highC: Math.round(avg(d.tMax)),
+    lowC: Math.round(avg(d.tMin)),
+    maxC: Math.round(Math.max(...d.tMax)),
+    minC: Math.round(Math.min(...d.tMin)),
+    precipMm: Math.round(sum(d.precip)),
+    windMaxKmh: Math.round(Math.max(...d.wind)),
+    days,
+  };
+}
+
 // --- Date window -----------------------------------------------------------
 
 const FORECAST_HORIZON_DAYS = 16;
@@ -180,6 +217,7 @@ export async function fetchDailyWeather(
 export interface WeatherLookup {
   place: GeoResult;
   tags: WeatherTagKey[];
+  summary: WeatherSummary;
   /** True when the trip dates were used; false when we fell back to a 7-day peek. */
   datedWindow: boolean;
 }
@@ -203,5 +241,10 @@ export async function lookupWeatherTags(
   if (!geo) return null;
   const range = forecastRange(start, end, today);
   const daily = await fetchDailyWeather(geo.lat, geo.lon, range);
-  return { place: geo, tags: deriveWeatherTags(daily), datedWindow: range != null };
+  return {
+    place: geo,
+    tags: deriveWeatherTags(daily),
+    summary: summarizeWeather(daily),
+    datedWindow: range != null,
+  };
 }
