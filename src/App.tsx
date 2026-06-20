@@ -25,7 +25,7 @@ export default function App() {
                 Packing Checklist
               </span>
               <span className="mt-0.5 font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">
-                Pack manifest
+                Packing lists
               </span>
             </span>
           </Link>

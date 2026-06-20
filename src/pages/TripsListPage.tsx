@@ -72,7 +72,7 @@ export default function TripsListPage() {
           <h2 className="font-display text-xl font-bold">No trips on the board</h2>
           <p className="max-w-sm text-sm text-ink-soft">
             Start a trip, set your dates and destination, then let the suggestions
-            fill your manifest.
+            fill your packing list.
           </p>
           <button className="btn-primary" onClick={handleNew}>
             Start your first trip

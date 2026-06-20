@@ -70,7 +70,7 @@ export default function Checklist({ trip, update }: Props) {
     <section className="card flex flex-col">
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-line p-4">
-        <h2 className="font-display text-base font-bold">Manifest</h2>
+        <h2 className="font-display text-base font-bold">Packing list</h2>
         {total > 0 && (
           <span className="font-mono text-xs tabular-nums text-ink-faint">
             {packedCount}/{total} packed
@@ -101,7 +101,7 @@ export default function Checklist({ trip, update }: Props) {
           value={newName}
           onChange={(e) => setNewName(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && addItem()}
-          placeholder="Add an item to the manifest…"
+          placeholder="Add an item…"
         />
         <button className="btn-primary" onClick={addItem}>
           Add
@@ -111,7 +111,7 @@ export default function Checklist({ trip, update }: Props) {
       {/* Groups */}
       {trip.items.length === 0 ? (
         <div className="px-4 py-12 text-center">
-          <p className="text-sm text-ink-soft">Your manifest is empty.</p>
+          <p className="text-sm text-ink-soft">Your packing list is empty.</p>
           <p className="mt-1 font-mono text-xs text-ink-faint">
             Add items above or pull from suggestions.
           </p>

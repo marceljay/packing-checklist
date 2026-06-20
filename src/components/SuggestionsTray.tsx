@@ -58,7 +58,7 @@ export default function SuggestionsTray({ trip, update }: Props) {
           {suggestions.length === 0 ? (
             <p className="border-t border-line px-4 py-6 text-center text-sm text-ink-soft">
               Add activity or weather tags (or dates) to get tailored suggestions.
-              Anything already on your manifest is hidden here.
+              Anything already on your list is hidden here.
             </p>
           ) : (
             <>

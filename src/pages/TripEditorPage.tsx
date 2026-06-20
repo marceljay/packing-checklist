@@ -35,7 +35,7 @@ function PassHeader({ trip }: { trip: Trip }) {
           <span className="code text-5xl leading-none">{code}</span>
           <div className="min-w-0">
             <p className="font-mono text-[0.625rem] uppercase tracking-code text-paper-raised/50">
-              Manifest
+              Packing list
             </p>
             <h1 className="truncate font-display text-xl font-bold leading-tight">
               {trip.name || 'Untitled trip'}
