@@ -1,5 +1,14 @@
-import { describe, it, expect } from 'vitest';
-import { deriveWeatherTags, forecastRange, placeLabel, type DailyWeather } from './weather';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import {
+  deriveWeatherTags,
+  forecastRange,
+  placeLabel,
+  geocodeQuery,
+  lookupWeatherTags,
+  type DailyWeather,
+} from './weather';
+
+afterEach(() => vi.unstubAllGlobals());
 
 function daily(over: Partial<DailyWeather>): DailyWeather {
   return { tMax: [], tMin: [], precip: [], wind: [], ...over };
@@ -108,5 +117,65 @@ describe('placeLabel', () => {
   it('omits missing parts', () => {
     expect(placeLabel({ name: 'Berlin', country: 'Germany' })).toBe('Berlin, Germany');
     expect(placeLabel({ name: 'Springfield' })).toBe('Springfield');
+  });
+});
+
+describe('geocodeQuery', () => {
+  it('uses only the city portion of a labelled place', () => {
+    expect(geocodeQuery('Lisbon, Lisboa, Portugal')).toBe('Lisbon');
+  });
+
+  it('passes a plain name through', () => {
+    expect(geocodeQuery('Berlin')).toBe('Berlin');
+  });
+});
+
+describe('lookupWeatherTags', () => {
+  const HOT = {
+    daily: {
+      temperature_2m_max: [30, 31],
+      temperature_2m_min: [20, 21],
+      precipitation_sum: [0, 0],
+      wind_speed_10m_max: [10, 12],
+    },
+  };
+
+  it('uses stored coordinates and never geocodes the labelled name', async () => {
+    const fetchMock = vi.fn(async (url: string) => {
+      if (String(url).includes('geocoding')) throw new Error('should not geocode when coords known');
+      return { ok: true, json: async () => HOT };
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const res = await lookupWeatherTags(
+      { label: 'Lisbon, Lisboa, Portugal', lat: 38.7, lon: -9.1 },
+      '2026-06-21',
+      '2026-06-22',
+      '2026-06-20',
+    );
+
+    expect(res?.tags).toContain('hot');
+    for (const call of fetchMock.mock.calls) {
+      expect(String(call[0])).toContain('forecast');
+    }
+  });
+
+  it('geocodes by city name when no coordinates are stored', async () => {
+    const urls: string[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string) => {
+        urls.push(String(url));
+        const json = String(url).includes('geocoding')
+          ? { results: [{ name: 'Lisbon', latitude: 38.7, longitude: -9.1, country: 'Portugal' }] }
+          : HOT;
+        return { ok: true, json: async () => json };
+      }),
+    );
+
+    const res = await lookupWeatherTags({ label: 'Lisbon' }, undefined, undefined, '2026-06-20');
+
+    expect(res).not.toBeNull();
+    expect(urls.some((u) => u.includes('geocoding'))).toBe(true);
   });
 });

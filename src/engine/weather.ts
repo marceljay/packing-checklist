@@ -111,9 +111,15 @@ export function placeLabel(r: Pick<GeoResult, 'name' | 'admin1' | 'country'>): s
     .join(', ');
 }
 
+/** Reduce a stored destination label ("Lisbon, Lisboa, Portugal") to just the
+ *  city, which is what the geocoder expects. */
+export function geocodeQuery(label: string): string {
+  return label.split(',')[0].trim();
+}
+
 /** Geocode a place name to coordinates via Open-Meteo's free geocoding API. */
 export async function geocode(name: string): Promise<GeoResult | null> {
-  const hits = await searchPlaces(name, 1);
+  const hits = await searchPlaces(geocodeQuery(name), 1);
   return hits[0] ?? null;
 }
 
@@ -179,17 +185,21 @@ export interface WeatherLookup {
 }
 
 /**
- * End-to-end: geocode a destination, fetch its forecast for the trip window
- * (or a 7-day peek when dates are out of range), and derive weather tags.
- * Returns null when the place can't be found.
+ * End-to-end: resolve a destination to coordinates (using stored lat/lon when
+ * the place was picked from autocomplete, otherwise geocoding the city name),
+ * fetch its forecast for the trip window (or a 7-day peek when dates are out of
+ * range), and derive weather tags. Returns null when the place can't be found.
  */
 export async function lookupWeatherTags(
-  place: string,
+  place: { label: string; lat?: number; lon?: number },
   start: string | undefined,
   end: string | undefined,
   today: string = new Date().toISOString().slice(0, 10),
 ): Promise<WeatherLookup | null> {
-  const geo = await geocode(place);
+  const geo: GeoResult | null =
+    place.lat != null && place.lon != null
+      ? { name: place.label, lat: place.lat, lon: place.lon }
+      : await geocode(place.label);
   if (!geo) return null;
   const range = forecastRange(start, end, today);
   const daily = await fetchDailyWeather(geo.lat, geo.lon, range);

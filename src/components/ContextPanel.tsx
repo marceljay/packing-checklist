@@ -66,7 +66,11 @@ export default function ContextPanel({ trip, update }: Props) {
     setWeatherStatus('loading');
     setWeatherMsg('');
     try {
-      const res = await lookupWeatherTags(primaryDest.label, trip.startDate, trip.endDate);
+      const res = await lookupWeatherTags(
+        { label: primaryDest.label, lat: primaryDest.lat, lon: primaryDest.lon },
+        trip.startDate,
+        trip.endDate,
+      );
       if (!res) {
         setWeatherStatus('error');
         setWeatherMsg(`Couldn't find “${primaryDest.label}”. Add weather tags manually.`);
