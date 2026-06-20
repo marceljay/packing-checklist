@@ -52,19 +52,26 @@ export interface TripSettings {
   laundryAvailable: boolean;
 }
 
-/** Cached forecast summary for a trip's primary destination (SPEC §6). Temps °C. */
-export interface TripWeather {
+/** Where a forecast came from: live forecast, historical typical, or a mix. */
+export type WeatherBasis = 'forecast' | 'typical' | 'mixed';
+
+/** Forecast summary for one destination (SPEC §6). Temps °C, precip mm. */
+export interface CityForecast {
   place: string;
-  fetchedAt: number;
-  /** True when the trip dates were used; false for a 7-day peek. */
-  datedWindow: boolean;
+  basis: WeatherBasis;
+  days: number;
   highC: number;
   lowC: number;
   maxC: number;
   minC: number;
   precipMm: number;
   windMaxKmh: number;
-  days: number;
+}
+
+/** Cached weather for the trip's destinations, shown in the forecast card. */
+export interface TripWeather {
+  fetchedAt: number;
+  cities: CityForecast[];
 }
 
 export interface Trip {

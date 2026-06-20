@@ -3,6 +3,7 @@
  * client. The lookup is user-triggered and the only outbound request the app
  * makes; failures fall back to manual tags.
  */
+import type { WeatherBasis } from '../types';
 
 /** Daily aggregates for the trip window. Temps °C, precip mm/day, wind km/h. */
 export interface DailyWeather {
@@ -82,11 +83,72 @@ export function summarizeWeather(d: DailyWeather): WeatherSummary {
 // --- Date window -----------------------------------------------------------
 
 const FORECAST_HORIZON_DAYS = 16;
+/** Days of live forecast we trust; beyond this we use historical typical data. */
+const FORECAST_TRUST_DAYS = 7;
 
 function addDays(iso: string, n: number): string {
   const d = new Date(iso + 'T00:00:00');
   d.setDate(d.getDate() + n);
   return d.toISOString().slice(0, 10);
+}
+
+/** Shift an ISO date by a number of years (month/day preserved where possible). */
+export function shiftDateYears(iso: string, delta: number): string {
+  const d = new Date(iso + 'T00:00:00');
+  d.setFullYear(d.getFullYear() + delta);
+  return d.toISOString().slice(0, 10);
+}
+
+type DateRange = { startDate: string; endDate: string };
+
+/**
+ * Split a trip window into the part we can forecast ([today, today+7]) and the
+ * part we must estimate from historical normals (beyond today+7). Either side is
+ * null when empty; both null when the trip has no dates or is already over.
+ */
+export function splitWeatherWindow(
+  start: string | undefined,
+  end: string | undefined,
+  today: string,
+): { forecast: DateRange | null; historical: DateRange | null } {
+  if (!start || !end || end < today) return { forecast: null, historical: null };
+  const cutoff = addDays(today, FORECAST_TRUST_DAYS); // last forecast day
+  const lo = start > today ? start : today;
+
+  const forecast: DateRange | null =
+    lo <= cutoff ? { startDate: lo, endDate: end < cutoff ? end : cutoff } : null;
+
+  const histStart = addDays(cutoff, 1);
+  const realHistStart = start > histStart ? start : histStart;
+  const historical: DateRange | null =
+    end >= realHistStart ? { startDate: realHistStart, endDate: end } : null;
+
+  return { forecast, historical };
+}
+
+/** Average daily series element-wise across years (truncated to the shortest). */
+export function averageDaily(perYear: DailyWeather[]): DailyWeather {
+  if (perYear.length === 0) return { tMax: [], tMin: [], precip: [], wind: [] };
+  const len = Math.min(...perYear.map((d) => d.tMax.length));
+  const mean = (pick: (d: DailyWeather) => number[], i: number) =>
+    perYear.reduce((a, d) => a + pick(d)[i], 0) / perYear.length;
+  const series = (pick: (d: DailyWeather) => number[]) =>
+    Array.from({ length: len }, (_, i) => mean(pick, i));
+  return {
+    tMax: series((d) => d.tMax),
+    tMin: series((d) => d.tMin),
+    precip: series((d) => d.precip),
+    wind: series((d) => d.wind),
+  };
+}
+
+function mergeDaily(parts: DailyWeather[]): DailyWeather {
+  return {
+    tMax: parts.flatMap((d) => d.tMax),
+    tMin: parts.flatMap((d) => d.tMin),
+    precip: parts.flatMap((d) => d.precip),
+    wind: parts.flatMap((d) => d.wind),
+  };
 }
 
 /**
@@ -177,26 +239,19 @@ export async function searchPlaces(
   return (data.results ?? []).map(toGeoResult);
 }
 
-/** Fetch daily forecast aggregates for a location and (optional) date window. */
-export async function fetchDailyWeather(
-  lat: number,
-  lon: number,
-  range: { startDate: string; endDate: string } | null,
-): Promise<DailyWeather> {
+const DAILY_VARS = 'temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max';
+
+async function fetchDaily(baseUrl: string, lat: number, lon: number, range: DateRange) {
   const params = new URLSearchParams({
     latitude: String(lat),
     longitude: String(lon),
-    daily: 'temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max',
+    daily: DAILY_VARS,
     timezone: 'auto',
+    start_date: range.startDate,
+    end_date: range.endDate,
   });
-  if (range) {
-    params.set('start_date', range.startDate);
-    params.set('end_date', range.endDate);
-  } else {
-    params.set('forecast_days', '7');
-  }
-  const res = await fetch(`https://api.open-meteo.com/v1/forecast?${params}`);
-  if (!res.ok) throw new Error(`Forecast failed (${res.status})`);
+  const res = await fetch(`${baseUrl}?${params}`);
+  if (!res.ok) throw new Error(`Weather request failed (${res.status})`);
   const data = (await res.json()) as {
     daily?: {
       temperature_2m_max: number[];
@@ -214,37 +269,87 @@ export async function fetchDailyWeather(
   };
 }
 
-export interface WeatherLookup {
+/** Live forecast aggregates for a date window (≤16 days out). */
+export function fetchForecastDaily(lat: number, lon: number, range: DateRange) {
+  return fetchDaily('https://api.open-meteo.com/v1/forecast', lat, lon, range);
+}
+
+/** Historical "typical" weather: the same dates averaged over recent years. */
+export async function fetchTypicalDaily(
+  lat: number,
+  lon: number,
+  range: DateRange,
+  years?: number[],
+): Promise<DailyWeather> {
+  const base = new Date(range.startDate + 'T00:00:00').getFullYear();
+  const yrs = years ?? [base - 1, base - 2, base - 3];
+  const perYear = await Promise.all(
+    yrs.map((y) => {
+      const delta = y - base;
+      return fetchDaily('https://archive-api.open-meteo.com/v1/archive', lat, lon, {
+        startDate: shiftDateYears(range.startDate, delta),
+        endDate: shiftDateYears(range.endDate, delta),
+      });
+    }),
+  );
+  return averageDaily(perYear);
+}
+
+export interface DestinationWeather {
   place: GeoResult;
   tags: WeatherTagKey[];
   summary: WeatherSummary;
-  /** True when the trip dates were used; false when we fell back to a 7-day peek. */
-  datedWindow: boolean;
+  basis: WeatherBasis;
 }
 
 /**
- * End-to-end: resolve a destination to coordinates (using stored lat/lon when
- * the place was picked from autocomplete, otherwise geocoding the city name),
- * fetch its forecast for the trip window (or a 7-day peek when dates are out of
- * range), and derive weather tags. Returns null when the place can't be found.
+ * Weather for one destination: live forecast for the next {@link FORECAST_TRUST_DAYS}
+ * days of the trip and historical normals beyond, merged. Uses stored coordinates
+ * when present, else geocodes the city name. Returns null with no dates / no match.
  */
-export async function lookupWeatherTags(
+export async function lookupDestinationWeather(
   place: { label: string; lat?: number; lon?: number },
   start: string | undefined,
   end: string | undefined,
   today: string = new Date().toISOString().slice(0, 10),
-): Promise<WeatherLookup | null> {
+): Promise<DestinationWeather | null> {
+  const { forecast, historical } = splitWeatherWindow(start, end, today);
+  if (!forecast && !historical) return null;
+
   const geo: GeoResult | null =
     place.lat != null && place.lon != null
       ? { name: place.label, lat: place.lat, lon: place.lon }
       : await geocode(place.label);
   if (!geo) return null;
-  const range = forecastRange(start, end, today);
-  const daily = await fetchDailyWeather(geo.lat, geo.lon, range);
-  return {
-    place: geo,
-    tags: deriveWeatherTags(daily),
-    summary: summarizeWeather(daily),
-    datedWindow: range != null,
-  };
+
+  const parts: DailyWeather[] = [];
+  if (forecast) parts.push(await fetchForecastDaily(geo.lat, geo.lon, forecast));
+  if (historical) parts.push(await fetchTypicalDaily(geo.lat, geo.lon, historical));
+
+  const daily = mergeDaily(parts);
+  const basis: WeatherBasis = forecast && historical ? 'mixed' : forecast ? 'forecast' : 'typical';
+  return { place: geo, tags: deriveWeatherTags(daily), summary: summarizeWeather(daily), basis };
+}
+
+export interface TripWeatherResult {
+  cities: DestinationWeather[];
+  /** Union of weather tags across all destinations (pack for every climate). */
+  tags: WeatherTagKey[];
+}
+
+/** Weather for up to `max` of a trip's destinations, with union tags. */
+export async function lookupTripWeather(
+  destinations: { label: string; lat?: number; lon?: number }[],
+  start: string | undefined,
+  end: string | undefined,
+  today: string = new Date().toISOString().slice(0, 10),
+  max = 5,
+): Promise<TripWeatherResult> {
+  const cities: DestinationWeather[] = [];
+  for (const dest of destinations.slice(0, max)) {
+    const r = await lookupDestinationWeather(dest, start, end, today);
+    if (r) cities.push(r);
+  }
+  const tags = WEATHER_TAG_KEYS.filter((k) => cities.some((c) => c.tags.includes(k)));
+  return { cities, tags };
 }

@@ -4,8 +4,11 @@ import {
   forecastRange,
   placeLabel,
   geocodeQuery,
-  lookupWeatherTags,
   summarizeWeather,
+  splitWeatherWindow,
+  shiftDateYears,
+  averageDaily,
+  lookupDestinationWeather,
   type DailyWeather,
 } from './weather';
 
@@ -162,6 +165,78 @@ describe('summarizeWeather', () => {
   });
 });
 
+describe('splitWeatherWindow', () => {
+  const today = '2026-06-20'; // forecast horizon today+7 = 2026-06-27
+
+  it('uses forecast only for a trip within the next 7 days', () => {
+    expect(splitWeatherWindow('2026-06-21', '2026-06-25', today)).toEqual({
+      forecast: { startDate: '2026-06-21', endDate: '2026-06-25' },
+      historical: null,
+    });
+  });
+
+  it('uses historical only for a trip entirely beyond the horizon', () => {
+    expect(splitWeatherWindow('2026-08-01', '2026-08-10', today)).toEqual({
+      forecast: null,
+      historical: { startDate: '2026-08-01', endDate: '2026-08-10' },
+    });
+  });
+
+  it('mixes forecast and historical across the boundary', () => {
+    expect(splitWeatherWindow('2026-06-21', '2026-08-15', today)).toEqual({
+      forecast: { startDate: '2026-06-21', endDate: '2026-06-27' },
+      historical: { startDate: '2026-06-28', endDate: '2026-08-15' },
+    });
+  });
+
+  it('clamps a start in the past to today', () => {
+    expect(splitWeatherWindow('2026-06-10', '2026-06-25', today)).toEqual({
+      forecast: { startDate: '2026-06-20', endDate: '2026-06-25' },
+      historical: null,
+    });
+  });
+
+  it('returns nothing for a finished trip or missing dates', () => {
+    expect(splitWeatherWindow('2026-05-01', '2026-05-10', today)).toEqual({
+      forecast: null,
+      historical: null,
+    });
+    expect(splitWeatherWindow(undefined, '2026-06-25', today)).toEqual({
+      forecast: null,
+      historical: null,
+    });
+  });
+});
+
+describe('shiftDateYears', () => {
+  it('shifts the year while keeping month and day', () => {
+    expect(shiftDateYears('2026-08-01', -1)).toBe('2025-08-01');
+    expect(shiftDateYears('2026-08-01', -3)).toBe('2023-08-01');
+  });
+});
+
+describe('averageDaily', () => {
+  it('averages each metric element-wise across years', () => {
+    const avg = averageDaily([
+      { tMax: [10, 20], tMin: [0, 10], precip: [0, 4], wind: [10, 20] },
+      { tMax: [20, 30], tMin: [10, 20], precip: [2, 6], wind: [30, 40] },
+    ]);
+    expect(avg).toEqual({ tMax: [15, 25], tMin: [5, 15], precip: [1, 5], wind: [20, 30] });
+  });
+
+  it('truncates to the shortest series', () => {
+    const avg = averageDaily([
+      { tMax: [10, 20, 30], tMin: [0, 0, 0], precip: [0, 0, 0], wind: [0, 0, 0] },
+      { tMax: [20, 30], tMin: [0, 0], precip: [0, 0], wind: [0, 0] },
+    ]);
+    expect(avg.tMax).toEqual([15, 25]);
+  });
+
+  it('returns empty series for no input', () => {
+    expect(averageDaily([])).toEqual({ tMax: [], tMin: [], precip: [], wind: [] });
+  });
+});
+
 describe('geocodeQuery', () => {
   it('uses only the city portion of a labelled place', () => {
     expect(geocodeQuery('Lisbon, Lisboa, Portugal')).toBe('Lisbon');
@@ -172,24 +247,24 @@ describe('geocodeQuery', () => {
   });
 });
 
-describe('lookupWeatherTags', () => {
-  const HOT = {
+describe('lookupDestinationWeather', () => {
+  const dailyJson = (hot: boolean) => ({
     daily: {
-      temperature_2m_max: [30, 31],
-      temperature_2m_min: [20, 21],
+      temperature_2m_max: hot ? [30, 31] : [12, 13],
+      temperature_2m_min: hot ? [20, 21] : [4, 5],
       precipitation_sum: [0, 0],
       wind_speed_10m_max: [10, 12],
     },
-  };
+  });
 
   it('uses stored coordinates and never geocodes the labelled name', async () => {
     const fetchMock = vi.fn(async (url: string) => {
       if (String(url).includes('geocoding')) throw new Error('should not geocode when coords known');
-      return { ok: true, json: async () => HOT };
+      return { ok: true, json: async () => dailyJson(true) };
     });
     vi.stubGlobal('fetch', fetchMock);
 
-    const res = await lookupWeatherTags(
+    const res = await lookupDestinationWeather(
       { label: 'Lisbon, Lisboa, Portugal', lat: 38.7, lon: -9.1 },
       '2026-06-21',
       '2026-06-22',
@@ -197,27 +272,62 @@ describe('lookupWeatherTags', () => {
     );
 
     expect(res?.tags).toContain('hot');
-    for (const call of fetchMock.mock.calls) {
-      expect(String(call[0])).toContain('forecast');
-    }
+    expect(res?.basis).toBe('forecast');
+    for (const call of fetchMock.mock.calls) expect(String(call[0])).toContain('forecast');
   });
 
-  it('geocodes by city name when no coordinates are stored', async () => {
+  it('uses the historical archive for a far-future trip (basis: typical)', async () => {
     const urls: string[] = [];
     vi.stubGlobal(
       'fetch',
       vi.fn(async (url: string) => {
         urls.push(String(url));
-        const json = String(url).includes('geocoding')
-          ? { results: [{ name: 'Lisbon', latitude: 38.7, longitude: -9.1, country: 'Portugal' }] }
-          : HOT;
-        return { ok: true, json: async () => json };
+        return { ok: true, json: async () => dailyJson(false) };
       }),
     );
 
-    const res = await lookupWeatherTags({ label: 'Lisbon' }, undefined, undefined, '2026-06-20');
+    const res = await lookupDestinationWeather(
+      { label: 'Tromsø', lat: 69.6, lon: 18.9 },
+      '2026-12-01',
+      '2026-12-05',
+      '2026-06-20',
+    );
 
-    expect(res).not.toBeNull();
-    expect(urls.some((u) => u.includes('geocoding'))).toBe(true);
+    expect(res?.basis).toBe('typical');
+    expect(urls.some((u) => u.includes('archive'))).toBe(true);
+    expect(urls.some((u) => u.includes('/forecast'))).toBe(false);
+  });
+
+  it('mixes forecast and archive across the horizon (basis: mixed)', async () => {
+    const urls: string[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string) => {
+        urls.push(String(url));
+        return { ok: true, json: async () => dailyJson(true) };
+      }),
+    );
+
+    const res = await lookupDestinationWeather(
+      { label: 'Rome', lat: 41.9, lon: 12.5 },
+      '2026-06-21',
+      '2026-08-15',
+      '2026-06-20',
+    );
+
+    expect(res?.basis).toBe('mixed');
+    expect(urls.some((u) => u.includes('/forecast'))).toBe(true);
+    expect(urls.some((u) => u.includes('archive'))).toBe(true);
+  });
+
+  it('returns null when the trip has no dates', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, json: async () => ({}) })));
+    const res = await lookupDestinationWeather(
+      { label: 'Lisbon', lat: 38.7, lon: -9.1 },
+      undefined,
+      undefined,
+      '2026-06-20',
+    );
+    expect(res).toBeNull();
   });
 });

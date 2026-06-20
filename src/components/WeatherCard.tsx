@@ -1,8 +1,14 @@
-import type { TripWeather } from '../types';
+import type { CityForecast, TripWeather, WeatherBasis } from '../types';
 
 interface Props {
   weather: TripWeather;
 }
+
+const BASIS_LABEL: Record<WeatherBasis, string> = {
+  forecast: 'Forecast',
+  typical: 'Typical',
+  mixed: 'Forecast + typical',
+};
 
 function relativeTime(ts: number): string {
   const mins = Math.round((Date.now() - ts) / 60000);
@@ -13,40 +19,47 @@ function relativeTime(ts: number): string {
   return `${Math.round(hrs / 24)}d ago`;
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function CityRow({ c }: { c: CityForecast }) {
   return (
-    <div>
-      <p className="font-mono text-[0.625rem] uppercase tracking-code text-paper-raised/50">
-        {label}
-      </p>
-      <p className="mt-0.5 font-mono text-lg font-bold tabular-nums">{value}</p>
+    <div className="flex flex-col gap-1 px-5 py-3 sm:flex-row sm:items-center sm:gap-4">
+      <div className="min-w-0 sm:w-40">
+        <p className="truncate font-display font-bold">{c.place}</p>
+        <p className="font-mono text-[0.625rem] uppercase tracking-code text-paper-raised/50">
+          {BASIS_LABEL[c.basis]} · {c.days}d
+        </p>
+      </div>
+      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 font-mono text-sm tabular-nums">
+        <span>
+          <span className="text-paper-raised/50">↑</span> {c.highC}°{' '}
+          <span className="text-paper-raised/50">↓</span> {c.lowC}°
+        </span>
+        <span className="text-paper-raised/70">
+          {c.minC}–{c.maxC}°
+        </span>
+        <span className="text-paper-raised/70">{c.precipMm} mm</span>
+        <span className="text-paper-raised/70">{c.windMaxKmh} km/h</span>
+      </div>
     </div>
   );
 }
 
-/** Cached forecast summary for the trip's primary destination. */
+/** Cached forecast for each of the trip's destinations. */
 export default function WeatherCard({ weather: w }: Props) {
+  if (w.cities.length === 0) return null;
   return (
     <section className="card overflow-hidden bg-ink text-paper-raised shadow-pass">
       <div className="flex items-center gap-2.5 border-b border-paper-raised/15 px-5 py-3">
         <span aria-hidden>☀</span>
         <h2 className="font-display text-base font-bold">Forecast</h2>
-        <span className="truncate font-mono text-xs text-paper-raised/60">{w.place}</span>
-        <span className="ml-auto shrink-0 font-mono text-[0.625rem] uppercase tracking-code text-paper-raised/50">
-          {w.days} day{w.days === 1 ? '' : 's'} · {w.datedWindow ? 'trip dates' : 'next 7'}
+        <span className="ml-auto font-mono text-[0.625rem] uppercase tracking-code text-paper-raised/50">
+          Updated {relativeTime(w.fetchedAt)}
         </span>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 px-5 py-4 sm:grid-cols-4">
-        <Stat label="Avg high" value={`${w.highC}°`} />
-        <Stat label="Avg low" value={`${w.lowC}°`} />
-        <Stat label="Range" value={`${w.minC}–${w.maxC}°`} />
-        <Stat label="Rain" value={`${w.precipMm} mm`} />
-      </div>
-
-      <div className="flex items-center justify-between border-t border-paper-raised/15 px-5 py-2 font-mono text-[0.625rem] uppercase tracking-code text-paper-raised/50">
-        <span>Wind to {w.windMaxKmh} km/h</span>
-        <span>Updated {relativeTime(w.fetchedAt)}</span>
+      <div className="divide-y divide-paper-raised/10">
+        {w.cities.map((c) => (
+          <CityRow key={c.place} c={c} />
+        ))}
       </div>
     </section>
   );

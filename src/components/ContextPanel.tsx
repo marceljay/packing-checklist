@@ -3,7 +3,7 @@ import type { Trip, TagType } from '../types';
 import { tagKey, tripDurationDays } from '../types';
 import { uid } from '../db/db';
 import { BUILTIN_TAGS } from '../data/tags';
-import { lookupWeatherTags, placeLabel, type GeoResult } from '../engine/weather';
+import { lookupTripWeather, placeLabel, type GeoResult } from '../engine/weather';
 import DateRangeField from './DateRangeField';
 import PlaceSearch from './PlaceSearch';
 
@@ -59,21 +59,26 @@ export default function ContextPanel({ trip, update }: Props) {
   const [weatherMsg, setWeatherMsg] = useState('');
 
   const days = tripDurationDays(trip);
-  const primaryDest = trip.destinations.find((d) => d.isPrimary) ?? trip.destinations[0];
+  const hasDestinations = trip.destinations.length > 0;
 
   async function suggestWeather() {
-    if (!primaryDest) return;
+    if (!hasDestinations) return;
+    if (!trip.startDate || !trip.endDate) {
+      setWeatherStatus('error');
+      setWeatherMsg('Add trip dates to look up the forecast.');
+      return;
+    }
     setWeatherStatus('loading');
     setWeatherMsg('');
     try {
-      const res = await lookupWeatherTags(
-        { label: primaryDest.label, lat: primaryDest.lat, lon: primaryDest.lon },
+      const res = await lookupTripWeather(
+        trip.destinations.map((d) => ({ label: d.label, lat: d.lat, lon: d.lon })),
         trip.startDate,
         trip.endDate,
       );
-      if (!res) {
+      if (res.cities.length === 0) {
         setWeatherStatus('error');
-        setWeatherMsg(`Couldn't find “${primaryDest.label}”. Add weather tags manually.`);
+        setWeatherMsg('Couldn’t find weather for those places. Add weather tags manually.');
         return;
       }
       const existing = new Set(trip.tags.map((t) => tagKey(t.label)));
@@ -81,21 +86,22 @@ export default function ContextPanel({ trip, update }: Props) {
       update((d) => {
         for (const k of toAdd) d.tags.push({ id: uid(), label: k, type: 'weather' });
         d.weather = {
-          place: res.place.name,
           fetchedAt: Date.now(),
-          datedWindow: res.datedWindow,
-          ...res.summary,
+          cities: res.cities.map((c) => ({
+            place: c.place.name,
+            basis: c.basis,
+            days: c.summary.days,
+            highC: c.summary.highC,
+            lowC: c.summary.lowC,
+            maxC: c.summary.maxC,
+            minC: c.summary.minC,
+            precipMm: c.summary.precipMm,
+            windMaxKmh: c.summary.windMaxKmh,
+          })),
         };
       });
-      const note = res.datedWindow ? '' : ' (7-day forecast — set trip dates for accuracy)';
       setWeatherStatus('done');
-      setWeatherMsg(
-        toAdd.length > 0
-          ? `Added ${toAdd.join(', ')}${note}`
-          : res.tags.length > 0
-            ? `Already covered${note}`
-            : `No strong weather signal${note}`,
-      );
+      setWeatherMsg(toAdd.length > 0 ? `Added ${toAdd.join(', ')}` : 'Forecast updated');
     } catch {
       setWeatherStatus('error');
       setWeatherMsg('Forecast lookup failed (offline?). Add weather tags manually.');
@@ -273,8 +279,8 @@ export default function ContextPanel({ trip, update }: Props) {
         <button
           className="btn-secondary mt-1.5 w-full"
           onClick={() => void suggestWeather()}
-          disabled={!primaryDest || weatherStatus === 'loading'}
-          title={!primaryDest ? 'Add a destination first' : undefined}
+          disabled={!hasDestinations || weatherStatus === 'loading'}
+          title={!hasDestinations ? 'Add a destination first' : undefined}
         >
           {weatherStatus === 'loading' ? 'Checking forecast…' : '☀ Suggest weather tags'}
         </button>
@@ -287,7 +293,7 @@ export default function ContextPanel({ trip, update }: Props) {
             {weatherMsg}
           </p>
         )}
-        {!primaryDest && (
+        {!hasDestinations && (
           <p className="mt-1.5 text-xs text-ink-faint">
             Add a destination to check its forecast.
           </p>
