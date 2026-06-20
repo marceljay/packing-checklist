@@ -4,10 +4,13 @@ import { itemsByCategory } from '../types';
 import { uid } from '../db/db';
 import { rememberItem } from '../db/library';
 import ItemRow from './ItemRow';
+import type { ItemRowMode } from './ItemRow';
 
 interface Props {
   trip: Trip;
   update: (mutator: (draft: Trip) => void) => void;
+  /** plan = editable list; checklist = check-off view with progress bar. */
+  mode?: ItemRowMode;
 }
 
 type GroupBy = 'category' | 'tag';
@@ -18,7 +21,7 @@ interface Group {
   items: Item[];
 }
 
-export default function Checklist({ trip, update }: Props) {
+export default function Checklist({ trip, update, mode = 'plan' }: Props) {
   const [groupBy, setGroupBy] = useState<GroupBy>('category');
   const [newName, setNewName] = useState('');
 
@@ -66,6 +69,8 @@ export default function Checklist({ trip, update }: Props) {
   const total = trip.items.length;
   const packedCount = trip.items.filter((i) => i.packed).length;
 
+  const pct = total > 0 ? Math.round((packedCount / total) * 100) : 0;
+
   return (
     <section className="card flex flex-col">
       {/* Toolbar */}
@@ -94,27 +99,54 @@ export default function Checklist({ trip, update }: Props) {
         </div>
       </div>
 
-      {/* Add item */}
-      <div className="flex gap-2 border-b border-line p-4">
-        <input
-          className="input"
-          value={newName}
-          onChange={(e) => setNewName(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && addItem()}
-          placeholder="Add an item…"
-        />
-        <button className="btn-primary" onClick={addItem}>
-          Add
-        </button>
-      </div>
+      {/* Checklist mode: prominent progress bar */}
+      {mode === 'checklist' && total > 0 && (
+        <div className="flex items-center gap-3 border-b border-line px-4 py-3">
+          <div className="h-3 flex-1 overflow-hidden rounded-full bg-paper-sunk">
+            <div
+              className="h-full rounded-full bg-vermilion transition-[width]"
+              style={{ width: `${pct}%` }}
+              role="progressbar"
+              aria-valuenow={packedCount}
+              aria-valuemin={0}
+              aria-valuemax={total}
+              aria-label="Packing progress"
+            />
+          </div>
+          <span className="shrink-0 font-mono text-sm tabular-nums text-ink">
+            {packedCount}/{total}
+          </span>
+          <span className="shrink-0 font-mono text-xs tabular-nums text-ink-faint">
+            {pct}%
+          </span>
+        </div>
+      )}
+
+      {/* Add item — plan mode only */}
+      {mode === 'plan' && (
+        <div className="flex gap-2 border-b border-line p-4">
+          <input
+            className="input"
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && addItem()}
+            placeholder="Add an item…"
+          />
+          <button className="btn-primary" onClick={addItem}>
+            Add
+          </button>
+        </div>
+      )}
 
       {/* Groups */}
       {trip.items.length === 0 ? (
         <div className="px-4 py-12 text-center">
           <p className="text-sm text-ink-soft">Your packing list is empty.</p>
-          <p className="mt-1 font-mono text-xs text-ink-faint">
-            Add items above or pull from suggestions.
-          </p>
+          {mode === 'plan' && (
+            <p className="mt-1 font-mono text-xs text-ink-faint">
+              Add items above or pull from suggestions.
+            </p>
+          )}
         </div>
       ) : (
         <div className="divide-y divide-line">
@@ -136,6 +168,7 @@ export default function Checklist({ trip, update }: Props) {
                     trip={trip}
                     update={update}
                     showCategory={groupBy !== 'category'}
+                    mode={mode}
                   />
                 ))}
               </div>

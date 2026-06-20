@@ -1,15 +1,25 @@
 import type { Item, Trip } from '../types';
 import { CATEGORIES } from '../types';
 
+export type ItemRowMode = 'plan' | 'checklist';
+
 interface Props {
   item: Item;
   trip: Trip;
   update: (mutator: (draft: Trip) => void) => void;
   /** Show the per-row category control (hidden when the list is grouped by it). */
   showCategory?: boolean;
+  /** plan = editable (no packed checkbox); checklist = read-only check-off view. */
+  mode?: ItemRowMode;
 }
 
-export default function ItemRow({ item, trip, update, showCategory = false }: Props) {
+export default function ItemRow({
+  item,
+  trip,
+  update,
+  showCategory = false,
+  mode = 'plan',
+}: Props) {
   function patch(fn: (it: Item) => void) {
     update((d) => {
       const target = d.items.find((x) => x.id === item.id);
@@ -19,6 +29,57 @@ export default function ItemRow({ item, trip, update, showCategory = false }: Pr
 
   const itemTags = trip.tags.filter((t) => item.tagIds.includes(t.id));
   const availableTags = trip.tags.filter((t) => !item.tagIds.includes(t.id));
+
+  if (mode === 'checklist') {
+    const hasTags = itemTags.length > 0;
+    return (
+      <div
+        className={`flex items-start gap-2.5 px-4 py-2.5 transition-colors ${
+          item.packed ? 'bg-paper-sunk/40' : 'hover:bg-paper-sunk/40'
+        }`}
+      >
+        {/* Packed checkbox */}
+        <input
+          type="checkbox"
+          className="mt-1 h-5 w-5 shrink-0 rounded border-line text-vermilion focus:ring-vermilion"
+          checked={item.packed}
+          aria-label={`Mark ${item.name} packed`}
+          onChange={(e) => patch((it) => void (it.packed = e.target.checked))}
+        />
+
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          {/* Line 1: quantity × name */}
+          <div className="flex items-baseline gap-2">
+            {item.quantityTaken > 1 && (
+              <span className="shrink-0 font-mono text-xs tabular-nums text-ink-faint">
+                {item.quantityTaken}&times;
+              </span>
+            )}
+            <span
+              className={`text-sm ${
+                item.packed ? 'text-ink-faint line-through' : 'text-ink'
+              }`}
+            >
+              {item.name}
+            </span>
+          </div>
+
+          {/* Line 2: tag chips read-only */}
+          {hasTags && (
+            <div className="flex flex-wrap gap-1">
+              {itemTags.map((t) => (
+                <span key={t.id} className="chip bg-paper-sunk text-ink-faint">
+                  {t.label}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // plan mode
   const hasMeta = showCategory || itemTags.length > 0 || availableTags.length > 0;
 
   return (
@@ -27,20 +88,11 @@ export default function ItemRow({ item, trip, update, showCategory = false }: Pr
         item.packed ? 'bg-paper-sunk/40' : 'hover:bg-paper-sunk/40'
       }`}
     >
-      {/* Packed checkbox */}
-      <input
-        type="checkbox"
-        className="mt-1.5 h-5 w-5 shrink-0 rounded border-line text-vermilion focus:ring-vermilion"
-        checked={item.packed}
-        aria-label={`Mark ${item.name} packed`}
-        onChange={(e) => patch((it) => void (it.packed = e.target.checked))}
-      />
-
       <div className="flex min-w-0 flex-1 flex-col gap-1.5">
         {/* Line 1: name + quantity */}
         <div className="flex items-center gap-2">
           <input
-            className={`input min-w-0 flex-1 ${item.packed ? 'text-ink-faint line-through' : ''}`}
+            className="input min-w-0 flex-1"
             value={item.name}
             aria-label="Item name"
             onChange={(e) => patch((it) => void (it.name = e.target.value))}

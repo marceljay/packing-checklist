@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useTripEditor } from './useTripEditor';
 import ContextPanel from '../components/ContextPanel';
@@ -10,6 +11,8 @@ import { tripDurationDays, destinationCode } from '../types';
 import type { Trip } from '../types';
 import { serializeTrip } from '../db/transfer';
 import { downloadText, slugify } from '../lib/file';
+
+type EditorMode = 'plan' | 'checklist';
 
 function formatDate(d?: string): string {
   if (!d) return '— — —';
@@ -90,6 +93,7 @@ function Field({ label, value }: { label: string; value: string }) {
 export default function TripEditorPage() {
   const { tripId } = useParams();
   const { trip, status, update } = useTripEditor(tripId);
+  const [mode, setMode] = useState<EditorMode>('plan');
 
   if (status === 'loading') {
     return <p className="font-mono text-sm text-ink-faint">Loading…</p>;
@@ -109,10 +113,35 @@ export default function TripEditorPage() {
   return (
     <>
       <div className="flex flex-col gap-5 print:hidden">
+        {/* Top bar: back link + tab switcher + actions */}
         <div className="flex items-center justify-between gap-2">
           <Link to="/" className="btn-ghost -ml-3 px-3 py-1.5 text-xs">
             ← All trips
           </Link>
+
+          {/* Segmented tab control */}
+          <div
+            className="flex items-center gap-1 rounded bg-paper-sunk p-0.5"
+            role="tablist"
+            aria-label="Editor mode"
+          >
+            {(['plan', 'checklist'] as EditorMode[]).map((m) => (
+              <button
+                key={m}
+                role="tab"
+                aria-selected={mode === m}
+                className={`rounded px-3 py-1 font-mono text-[0.6875rem] uppercase tracking-wide transition-colors ${
+                  mode === m
+                    ? 'bg-ink text-paper-raised'
+                    : 'text-ink-faint hover:bg-paper-sunk hover:text-ink'
+                }`}
+                onClick={() => setMode(m)}
+              >
+                {m}
+              </button>
+            ))}
+          </div>
+
           <div className="flex gap-2">
             <button
               className="btn-secondary text-xs"
@@ -133,15 +162,19 @@ export default function TripEditorPage() {
 
         <PassHeader trip={trip} />
 
-        <div className="grid gap-5 lg:grid-cols-[20rem_1fr]">
-          <ContextPanel trip={trip} update={update} />
-          <div className="flex flex-col gap-5">
-            {trip.weather && <WeatherCard weather={trip.weather} />}
-            <SuggestionsTray trip={trip} update={update} />
-            <LibraryTray trip={trip} update={update} />
-            <Checklist trip={trip} update={update} />
+        {mode === 'plan' ? (
+          <div className="grid gap-5 lg:grid-cols-[20rem_1fr]">
+            <ContextPanel trip={trip} update={update} />
+            <div className="flex flex-col gap-5">
+              {trip.weather && <WeatherCard weather={trip.weather} />}
+              <SuggestionsTray trip={trip} update={update} />
+              <LibraryTray trip={trip} update={update} />
+              <Checklist trip={trip} update={update} mode="plan" />
+            </div>
           </div>
-        </div>
+        ) : (
+          <Checklist trip={trip} update={update} mode="checklist" />
+        )}
       </div>
 
       <PrintSheet trip={trip} />
