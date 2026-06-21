@@ -9,7 +9,13 @@ import {
   type Category,
   type LibraryItem,
 } from '../types';
-import { listLibrary, rememberItem, updateItem, forgetItem } from '../db/library';
+import {
+  listLibrary,
+  rememberItem,
+  updateItem,
+  renameLibraryItem,
+  forgetItem,
+} from '../db/library';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -40,12 +46,9 @@ function LibraryItemRow({ item }: ItemRowProps) {
   const [newTag, setNewTag] = useState('');
 
   /**
-   * Renaming an item only changes the display `name`; the `nameKey` (primary
-   * key) stays stable. This keeps the DB key fixed while letting the user
-   * correct typos or capitalization on the shown name. Caveat: because the key
-   * doesn't change, renaming one item to exactly match another's name does NOT
-   * merge them — they remain two rows with distinct keys (no data loss, but two
-   * entries share a display name until one is edited/removed).
+   * Renaming re-keys the row (see `renameLibraryItem`) so `nameKey` always equals
+   * `tagKey(name)` — the tray exclusion and de-duping rely on that invariant.
+   * Renaming onto an existing item's name merges the two.
    */
   function handleNameBlur() {
     const trimmed = editName.trim();
@@ -54,7 +57,7 @@ function LibraryItemRow({ item }: ItemRowProps) {
       return;
     }
     if (trimmed !== item.name) {
-      void updateItem(item.nameKey, { name: trimmed });
+      void renameLibraryItem(item.nameKey, trimmed);
     }
   }
 

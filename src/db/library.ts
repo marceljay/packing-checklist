@@ -52,6 +52,40 @@ export async function updateItem(
   });
 }
 
+/**
+ * Rename a saved item. Because `nameKey` is derived from the name, a rename
+ * re-keys the row so the invariant `nameKey === tagKey(name)` always holds
+ * (the tray's "already on trip" check and de-duping depend on it). If the new
+ * name collides with an existing item, the two are merged (counts summed, tags
+ * unioned) rather than forking into duplicate rows.
+ */
+export async function renameLibraryItem(oldKey: string, newName: string): Promise<void> {
+  const clean = newName.trim();
+  if (!clean) return;
+  const newKey = tagKey(clean);
+  await db.transaction('rw', db.library, async () => {
+    const existing = await db.library.get(oldKey);
+    if (!existing) return;
+    if (newKey === oldKey) {
+      await db.library.put({ ...existing, name: clean });
+      return;
+    }
+    const collision = await db.library.get(newKey);
+    if (collision) {
+      await db.library.put({
+        ...collision,
+        name: clean,
+        count: collision.count + existing.count,
+        lastUsed: Math.max(collision.lastUsed, existing.lastUsed),
+        tagKeys: [...new Set([...(collision.tagKeys ?? []), ...(existing.tagKeys ?? [])])],
+      });
+    } else {
+      await db.library.put({ ...existing, nameKey: newKey, name: clean });
+    }
+    await db.library.delete(oldKey);
+  });
+}
+
 /** Remove an item from the library (does not touch any trip). */
 export function forgetItem(nameKey: string): Promise<void> {
   return db.library.delete(nameKey);
