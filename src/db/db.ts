@@ -23,6 +23,8 @@ class PackingDB extends Dexie {
       trips: 'id, updatedAt',
     });
     // v2: personal custom-item library, keyed by normalized name.
+    // `tagKeys` is a non-indexed column on LibraryItem — Dexie stores it without
+    // a schema change, so no version bump is needed for it.
     this.version(2).stores({
       trips: 'id, updatedAt',
       library: 'nameKey, count, lastUsed',

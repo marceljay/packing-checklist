@@ -247,8 +247,18 @@ describe('ensureTripTags', () => {
 
   it('reuses existing and creates new tags in a single call', () => {
     const result = ensureTripTags([tag('beach', 't1')], ['beach', 'hiking'], () => 'gen-1');
-    expect(result.tags).toHaveLength(2);
+    expect(result.tags).toEqual([
+      tag('beach', 't1'),
+      { id: 'gen-1', label: 'hiking', type: 'custom' },
+    ]);
     expect(result.tagIds).toEqual(['t1', 'gen-1']);
+  });
+
+  it('de-duplicates repeated keys (no duplicate tags or ids)', () => {
+    let counter = 0;
+    const result = ensureTripTags([], ['hiking', 'hiking'], () => `id-${++counter}`);
+    expect(result.tags).toEqual([{ id: 'id-1', label: 'hiking', type: 'custom' }]);
+    expect(result.tagIds).toEqual(['id-1']);
   });
 
   it('matches existing tags case-insensitively via tagKey normalization', () => {

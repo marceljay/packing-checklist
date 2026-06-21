@@ -39,7 +39,8 @@ export async function rememberItem(
   });
 }
 
-/** Edit a saved library item (name, category, and/or tagKeys). */
+/** Edit a saved library item. A provided `tagKeys` REPLACES the stored set
+ *  (not merged) — for explicit edits on the manage page. */
 export async function updateItem(
   nameKey: string,
   patch: { name?: string; category?: Category; tagKeys?: string[] },

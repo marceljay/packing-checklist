@@ -194,7 +194,7 @@ export function ensureTripTags(
   const tags = [...existingTags];
   const tagIds: string[] = [];
 
-  for (const key of keys) {
+  for (const key of [...new Set(keys)]) {
     const existing = tags.find((t) => tagKey(t.label) === key);
     if (existing) {
       tagIds.push(existing.id);
