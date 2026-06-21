@@ -5,6 +5,13 @@ All notable changes to this project are documented here.
 ## [Unreleased]
 
 ### Added
+- **Plan / Checklist tabs.** The trip page splits into a **Plan** tab (build/edit
+  the list — no checkboxes) and a **Checklist** tab (check items off with a
+  progress bar). Same trip, two focused views.
+- **Personal item library.** Saved custom items now carry tags; saving while
+  planning is **opt-in** (a default-on "Save to my items" checkbox); pulling a
+  library item into a trip recreates its tags. A dedicated **"Your items" page**
+  (`/items`) manages saved items and renames/removes tags across the library.
 - **Destination autocomplete.** Type a place and pick from geocoded matches
   (Open-Meteo) with region/country; selecting stores lat/lon + country code
   (sharpens the IATA code and weather lookup). Free-text add still works offline.
