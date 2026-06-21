@@ -5,6 +5,7 @@ import './index.css';
 import App from './App';
 import TripsListPage from './pages/TripsListPage';
 import TripEditorPage from './pages/TripEditorPage';
+import ItemsPage from './pages/ItemsPage';
 
 // Hash router keeps the app deployable on any static host (GitHub Pages etc.)
 // without server-side rewrite rules.
@@ -15,6 +16,7 @@ const router = createHashRouter([
     children: [
       { index: true, element: <TripsListPage /> },
       { path: 'trip/:tripId', element: <TripEditorPage /> },
+      { path: 'items', element: <ItemsPage /> },
     ],
   },
 ]);

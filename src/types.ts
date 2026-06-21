@@ -117,6 +117,34 @@ export interface LibraryItem {
   tagKeys: string[];
 }
 
+/**
+ * Return a new library array where every item that carries `from` has it
+ * replaced by `to`. Both keys are normalized via `tagKey`. If an item already
+ * has `to`, the result is de-duplicated so no key appears twice. Input items
+ * are never mutated.
+ */
+export function renameLibraryTag(items: LibraryItem[], from: string, to: string): LibraryItem[] {
+  const fromKey = tagKey(from);
+  const toKey = tagKey(to);
+  return items.map((item) => {
+    if (!item.tagKeys.includes(fromKey)) return item;
+    const newKeys = [...new Set(item.tagKeys.map((k) => (k === fromKey ? toKey : k)))];
+    return { ...item, tagKeys: newKeys };
+  });
+}
+
+/**
+ * Return a new library array where `key` (normalized via `tagKey`) has been
+ * removed from every item's `tagKeys`. Input items are never mutated.
+ */
+export function removeLibraryTag(items: LibraryItem[], key: string): LibraryItem[] {
+  const normalized = tagKey(key);
+  return items.map((item) => {
+    if (!item.tagKeys.includes(normalized)) return item;
+    return { ...item, tagKeys: item.tagKeys.filter((k) => k !== normalized) };
+  });
+}
+
 /** Rank library items for the "Your items" tray: most-used first, then most
  *  recent, then alphabetical. Items already on the trip (by name key) drop out. */
 export function rankLibrary(items: LibraryItem[], excludeKeys: string[]): LibraryItem[] {

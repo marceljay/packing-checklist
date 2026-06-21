@@ -29,9 +29,17 @@ export default function App() {
               </span>
             </span>
           </Link>
-          <span className="ml-auto hidden font-mono text-[0.625rem] uppercase tracking-code text-ink-faint sm:inline">
-            private · offline · no account
-          </span>
+          <nav className="ml-auto flex items-center gap-4">
+            <Link
+              to="/items"
+              className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint hover:text-ink transition-colors"
+            >
+              Your items
+            </Link>
+            <span className="hidden font-mono text-[0.625rem] uppercase tracking-code text-ink-faint sm:inline">
+              private · offline · no account
+            </span>
+          </nav>
         </div>
         <div aria-hidden className="airmail h-1 w-full opacity-90" />
       </header>

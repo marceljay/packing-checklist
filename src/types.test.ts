@@ -7,6 +7,8 @@ import {
   itemsByCategory,
   rankLibrary,
   ensureTripTags,
+  renameLibraryTag,
+  removeLibraryTag,
   type Item,
   type Tag,
   type Category,
@@ -273,5 +275,83 @@ describe('ensureTripTags', () => {
     const result = ensureTripTags([], ['hiking', 'surfing'], genId);
     expect(result.tags.map((t) => t.id)).toEqual(['id-1', 'id-2']);
     expect(result.tagIds).toEqual(['id-1', 'id-2']);
+  });
+});
+
+describe('renameLibraryTag', () => {
+  function lib(name: string, tagKeys: string[]): LibraryItem {
+    return { nameKey: tagKey(name), name, category: 'Comfort & Misc', count: 1, lastUsed: 0, tagKeys };
+  }
+
+  it('replaces the old key with the new key on items that have it', () => {
+    const items = [lib('Towel', ['beach', 'hiking']), lib('Sunscreen', ['beach'])];
+    const result = renameLibraryTag(items, 'beach', 'swim');
+    expect(result[0].tagKeys).toEqual(['swim', 'hiking']);
+    expect(result[1].tagKeys).toEqual(['swim']);
+  });
+
+  it('leaves items untouched that do not have the key', () => {
+    const items = [lib('Passport', ['documents']), lib('Towel', ['beach'])];
+    const result = renameLibraryTag(items, 'beach', 'swim');
+    expect(result[0].tagKeys).toEqual(['documents']);
+    expect(result[1].tagKeys).toEqual(['swim']);
+  });
+
+  it('does not mutate the input items', () => {
+    const items = [lib('Towel', ['beach'])];
+    renameLibraryTag(items, 'beach', 'swim');
+    expect(items[0].tagKeys).toEqual(['beach']);
+  });
+
+  it('normalizes both from and to keys via tagKey', () => {
+    const items = [lib('Towel', ['beach'])];
+    const result = renameLibraryTag(items, '  Beach  ', '  Swim  ');
+    expect(result[0].tagKeys).toEqual(['swim']);
+  });
+
+  it('de-duplicates if the new key already exists on the item', () => {
+    const items = [lib('Towel', ['beach', 'swim'])];
+    const result = renameLibraryTag(items, 'beach', 'swim');
+    expect(result[0].tagKeys).toEqual(['swim']);
+  });
+
+  it('returns an empty array when given an empty array', () => {
+    expect(renameLibraryTag([], 'beach', 'swim')).toEqual([]);
+  });
+});
+
+describe('removeLibraryTag', () => {
+  function lib(name: string, tagKeys: string[]): LibraryItem {
+    return { nameKey: tagKey(name), name, category: 'Comfort & Misc', count: 1, lastUsed: 0, tagKeys };
+  }
+
+  it('removes the key from every item that has it', () => {
+    const items = [lib('Towel', ['beach', 'hiking']), lib('Sunscreen', ['beach'])];
+    const result = removeLibraryTag(items, 'beach');
+    expect(result[0].tagKeys).toEqual(['hiking']);
+    expect(result[1].tagKeys).toEqual([]);
+  });
+
+  it('leaves items untouched that do not have the key', () => {
+    const items = [lib('Passport', ['documents']), lib('Towel', ['beach'])];
+    const result = removeLibraryTag(items, 'beach');
+    expect(result[0].tagKeys).toEqual(['documents']);
+    expect(result[1].tagKeys).toEqual([]);
+  });
+
+  it('does not mutate the input items', () => {
+    const items = [lib('Towel', ['beach'])];
+    removeLibraryTag(items, 'beach');
+    expect(items[0].tagKeys).toEqual(['beach']);
+  });
+
+  it('normalizes the key via tagKey', () => {
+    const items = [lib('Towel', ['beach'])];
+    const result = removeLibraryTag(items, '  Beach  ');
+    expect(result[0].tagKeys).toEqual([]);
+  });
+
+  it('returns an empty array when given an empty array', () => {
+    expect(removeLibraryTag([], 'beach')).toEqual([]);
   });
 });
