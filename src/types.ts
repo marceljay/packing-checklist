@@ -113,6 +113,8 @@ export interface LibraryItem {
   count: number;
   /** Epoch ms of the most recent add. */
   lastUsed: number;
+  /** Normalized tag labels (via tagKey) accumulated across all uses. */
+  tagKeys: string[];
 }
 
 /** Rank library items for the "Your items" tray: most-used first, then most
@@ -172,6 +174,38 @@ export interface CatalogItem {
 /** Normalize a tag label for matching against catalog keys. */
 export function tagKey(label: string): string {
   return label.trim().toLowerCase();
+}
+
+/**
+ * Given the trip's current tags and a list of normalized tag keys from a
+ * library item, return the (possibly extended) tag list and the ids to attach
+ * to the new item. Reuses existing tags by normalized label; creates new custom
+ * tags for keys not yet on the trip.
+ *
+ * @param existingTags - The trip's current Tag list.
+ * @param keys         - Normalized tag keys from the library item.
+ * @param genId        - Factory for generating new tag ids (deterministic in tests).
+ */
+export function ensureTripTags(
+  existingTags: Tag[],
+  keys: string[],
+  genId: () => string,
+): { tags: Tag[]; tagIds: string[] } {
+  const tags = [...existingTags];
+  const tagIds: string[] = [];
+
+  for (const key of keys) {
+    const existing = tags.find((t) => tagKey(t.label) === key);
+    if (existing) {
+      tagIds.push(existing.id);
+    } else {
+      const newTag: Tag = { id: genId(), label: key, type: 'custom' };
+      tags.push(newTag);
+      tagIds.push(newTag.id);
+    }
+  }
+
+  return { tags, tagIds };
 }
 
 /** Compute a suggested quantity from a rule, trip length and laundry setting. */

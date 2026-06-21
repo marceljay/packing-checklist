@@ -24,6 +24,7 @@ interface Group {
 export default function Checklist({ trip, update, mode = 'plan' }: Props) {
   const [groupBy, setGroupBy] = useState<GroupBy>('category');
   const [newName, setNewName] = useState('');
+  const [saveToLibrary, setSaveToLibrary] = useState(true);
 
   function addItem() {
     const name = newName.trim();
@@ -39,7 +40,9 @@ export default function Checklist({ trip, update, mode = 'plan' }: Props) {
       source: 'custom',
     };
     update((d) => void d.items.push(item));
-    void rememberItem(item.name, item.category); // resurfaces on future trips
+    if (saveToLibrary) {
+      void rememberItem(item.name, item.category); // resurfaces on future trips
+    }
     setNewName('');
   }
 
@@ -124,17 +127,28 @@ export default function Checklist({ trip, update, mode = 'plan' }: Props) {
 
       {/* Add item — plan mode only */}
       {mode === 'plan' && (
-        <div className="flex gap-2 border-b border-line p-4">
-          <input
-            className="input"
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && addItem()}
-            placeholder="Add an item…"
-          />
-          <button className="btn-primary" onClick={addItem}>
-            Add
-          </button>
+        <div className="flex flex-col gap-2 border-b border-line p-4">
+          <div className="flex gap-2">
+            <input
+              className="input"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && addItem()}
+              placeholder="Add an item…"
+            />
+            <button className="btn-primary" onClick={addItem}>
+              Add
+            </button>
+          </div>
+          <label className="flex cursor-pointer items-center gap-2 self-start">
+            <input
+              type="checkbox"
+              className="mt-0.5 h-4 w-4 shrink-0 rounded border-line text-vermilion focus:ring-vermilion"
+              checked={saveToLibrary}
+              onChange={(e) => setSaveToLibrary(e.target.checked)}
+            />
+            <span className="font-mono text-[0.6875rem] text-ink-soft">Save to my items</span>
+          </label>
         </div>
       )}
 

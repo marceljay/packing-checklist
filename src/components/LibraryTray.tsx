@@ -1,6 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks';
-import type { Item, LibraryItem, Trip } from '../types';
-import { rankLibrary, tagKey } from '../types';
+import type { LibraryItem, Trip } from '../types';
+import { rankLibrary, tagKey, ensureTripTags } from '../types';
 import { uid } from '../db/db';
 import { listLibrary, rememberItem, forgetItem } from '../db/library';
 
@@ -23,18 +23,22 @@ export default function LibraryTray({ trip, update }: Props) {
   if (!library || suggestions.length === 0) return null;
 
   function add(lib: LibraryItem) {
-    const item: Item = {
-      id: uid(),
-      name: lib.name,
-      category: lib.category,
-      tagIds: [],
-      quantitySuggested: null,
-      quantityTaken: 1,
-      packed: false,
-      source: 'custom',
-    };
-    update((d) => void d.items.push(item));
-    void rememberItem(lib.name, lib.category);
+    update((d) => {
+      // Recreate the item's saved tags on this trip (reuse matching ones).
+      const { tags, tagIds } = ensureTripTags(d.tags, lib.tagKeys, uid);
+      d.tags = tags;
+      d.items.push({
+        id: uid(),
+        name: lib.name,
+        category: lib.category,
+        tagIds,
+        quantitySuggested: null,
+        quantityTaken: 1,
+        packed: false,
+        source: 'custom',
+      });
+    });
+    void rememberItem(lib.name, lib.category, lib.tagKeys);
   }
 
   return (

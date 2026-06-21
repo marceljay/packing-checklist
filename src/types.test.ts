@@ -6,7 +6,9 @@ import {
   computeQuantity,
   itemsByCategory,
   rankLibrary,
+  ensureTripTags,
   type Item,
+  type Tag,
   type Category,
   type LibraryItem,
   type QuantityRule,
@@ -194,7 +196,7 @@ describe('itemsByCategory', () => {
 
 describe('rankLibrary', () => {
   function lib(name: string, count: number, lastUsed: number): LibraryItem {
-    return { nameKey: tagKey(name), name, category: 'Comfort & Misc', count, lastUsed };
+    return { nameKey: tagKey(name), name, category: 'Comfort & Misc', count, lastUsed, tagKeys: [] };
   }
 
   it('ranks by use count, then recency, then name', () => {
@@ -217,5 +219,49 @@ describe('rankLibrary', () => {
 
   it('returns an empty list when the library is empty', () => {
     expect(rankLibrary([], ['anything'])).toEqual([]);
+  });
+});
+
+describe('ensureTripTags', () => {
+  function tag(label: string, id: string): Tag {
+    return { id, label, type: 'custom' };
+  }
+
+  it('returns empty arrays when no keys are supplied', () => {
+    const result = ensureTripTags([tag('beach', 't1')], [], () => 'x');
+    expect(result.tags).toEqual([tag('beach', 't1')]);
+    expect(result.tagIds).toEqual([]);
+  });
+
+  it('reuses an existing tag whose label matches the key', () => {
+    const result = ensureTripTags([tag('beach', 't1')], ['beach'], () => 'new');
+    expect(result.tags).toEqual([tag('beach', 't1')]);
+    expect(result.tagIds).toEqual(['t1']);
+  });
+
+  it('creates a new custom tag for an unknown key', () => {
+    const result = ensureTripTags([], ['hiking'], () => 'gen-1');
+    expect(result.tags).toEqual([{ id: 'gen-1', label: 'hiking', type: 'custom' }]);
+    expect(result.tagIds).toEqual(['gen-1']);
+  });
+
+  it('reuses existing and creates new tags in a single call', () => {
+    const result = ensureTripTags([tag('beach', 't1')], ['beach', 'hiking'], () => 'gen-1');
+    expect(result.tags).toHaveLength(2);
+    expect(result.tagIds).toEqual(['t1', 'gen-1']);
+  });
+
+  it('matches existing tags case-insensitively via tagKey normalization', () => {
+    const result = ensureTripTags([tag('Beach', 't1')], ['beach'], () => 'x');
+    expect(result.tags).toEqual([tag('Beach', 't1')]);
+    expect(result.tagIds).toEqual(['t1']);
+  });
+
+  it('generates unique ids per new tag using the genId callback', () => {
+    let counter = 0;
+    const genId = () => `id-${++counter}`;
+    const result = ensureTripTags([], ['hiking', 'surfing'], genId);
+    expect(result.tags.map((t) => t.id)).toEqual(['id-1', 'id-2']);
+    expect(result.tagIds).toEqual(['id-1', 'id-2']);
   });
 });
