@@ -1,4 +1,4 @@
-import { Link, NavLink, Outlet } from 'react-router-dom';
+import { Link, Outlet } from 'react-router-dom';
 
 /** Luggage-tag mark — crisp ink shape with a punched eyelet. */
 function TagMark() {
@@ -29,21 +29,9 @@ export default function App() {
               </span>
             </span>
           </Link>
-          <nav className="ml-auto flex items-center gap-4">
-            <NavLink
-              to="/items"
-              className={({ isActive }) =>
-                `font-mono text-[0.625rem] uppercase tracking-code transition-colors hover:text-ink ${
-                  isActive ? 'text-ink' : 'text-ink-faint'
-                }`
-              }
-            >
-              Your items
-            </NavLink>
-            <span className="hidden font-mono text-[0.625rem] uppercase tracking-code text-ink-faint sm:inline">
-              private · offline · no account
-            </span>
-          </nav>
+          <span className="ml-auto hidden font-mono text-[0.625rem] uppercase tracking-code text-ink-faint sm:inline">
+            private · offline · no account
+          </span>
         </div>
         <div aria-hidden className="airmail h-1 w-full opacity-90" />
       </header>

@@ -146,8 +146,9 @@ export default function TripEditorPage() {
             <button
               className="btn-secondary text-xs"
               onClick={() => downloadText(`${slugify(trip.name)}.json`, serializeTrip(trip))}
+              title="Download this trip as a .json file (re-importable)"
             >
-              Export
+              Export trip
             </button>
             <button
               className="btn-secondary text-xs"
