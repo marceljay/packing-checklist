@@ -20,6 +20,11 @@ function allTagKeys(items: LibraryItem[]): string[] {
   return [...new Set(items.flatMap((i) => i.tagKeys))].sort();
 }
 
+/** Order-sensitive key-list equality (the transforms preserve order). */
+function sameKeys(a: string[], b: string[]): boolean {
+  return a.length === b.length && a.every((v, i) => v === b[i]);
+}
+
 // ---------------------------------------------------------------------------
 // Sub-components
 // ---------------------------------------------------------------------------
@@ -37,7 +42,10 @@ function LibraryItemRow({ item }: ItemRowProps) {
   /**
    * Renaming an item only changes the display `name`; the `nameKey` (primary
    * key) stays stable. This keeps the DB key fixed while letting the user
-   * correct typos or capitalization on the shown name.
+   * correct typos or capitalization on the shown name. Caveat: because the key
+   * doesn't change, renaming one item to exactly match another's name does NOT
+   * merge them — they remain two rows with distinct keys (no data loss, but two
+   * entries share a display name until one is edited/removed).
    */
   function handleNameBlur() {
     const trimmed = editName.trim();
@@ -161,18 +169,17 @@ function TagsManager({ items }: TagsManagerProps) {
 
   if (tags.length === 0) return null;
 
-  async function handleRename(fromKey: string) {
+  function handleRename(fromKey: string) {
     const toKey = tagKey(renameValue);
     if (!toKey || toKey === fromKey) {
       setEditingKey(null);
       return;
     }
-    // Compute next state for each affected item then persist.
+    // Compute next state for each affected item then persist the changed ones.
     const updated = renameLibraryTag(items, fromKey, toKey);
     for (const next of updated) {
       const orig = items.find((i) => i.nameKey === next.nameKey);
-      // Only write items whose tagKeys actually changed.
-      if (orig && orig.tagKeys.join(',') !== next.tagKeys.join(',')) {
+      if (orig && !sameKeys(orig.tagKeys, next.tagKeys)) {
         void updateItem(next.nameKey, { tagKeys: next.tagKeys });
       }
     }
@@ -184,7 +191,7 @@ function TagsManager({ items }: TagsManagerProps) {
     const updated = removeLibraryTag(items, key);
     for (const next of updated) {
       const orig = items.find((i) => i.nameKey === next.nameKey);
-      if (orig && orig.tagKeys.join(',') !== next.tagKeys.join(',')) {
+      if (orig && !sameKeys(orig.tagKeys, next.tagKeys)) {
         void updateItem(next.nameKey, { tagKeys: next.tagKeys });
       }
     }
@@ -205,7 +212,7 @@ function TagsManager({ items }: TagsManagerProps) {
                 className="flex flex-1 gap-2"
                 onSubmit={(e) => {
                   e.preventDefault();
-                  void handleRename(key);
+                  handleRename(key);
                 }}
               >
                 <input
@@ -231,6 +238,7 @@ function TagsManager({ items }: TagsManagerProps) {
                 <span className="chip bg-airblue-soft text-airblue">{key}</span>
                 <button
                   className="btn-ghost ml-auto text-xs"
+                  aria-label={`Rename tag ${key}`}
                   onClick={() => {
                     setEditingKey(key);
                     setRenameValue(key);
@@ -240,6 +248,7 @@ function TagsManager({ items }: TagsManagerProps) {
                 </button>
                 <button
                   className="btn-danger text-xs"
+                  aria-label={`Remove tag ${key}`}
                   onClick={() => handleRemove(key)}
                 >
                   Remove
@@ -284,8 +293,11 @@ function AddItemForm() {
       </div>
       <form onSubmit={handleSubmit} className="flex flex-col gap-3 border-t border-line p-4">
         <div>
-          <label className="label mb-1">Name</label>
+          <label className="label mb-1" htmlFor="add-item-name">
+            Name
+          </label>
           <input
+            id="add-item-name"
             className="input"
             placeholder="e.g. Packing cubes"
             value={name}
@@ -294,8 +306,11 @@ function AddItemForm() {
           />
         </div>
         <div>
-          <label className="label mb-1">Category</label>
+          <label className="label mb-1" htmlFor="add-item-category">
+            Category
+          </label>
           <select
+            id="add-item-category"
             className="input"
             value={category}
             onChange={(e) => setCategory(e.target.value as Category)}
@@ -308,8 +323,11 @@ function AddItemForm() {
           </select>
         </div>
         <div>
-          <label className="label mb-1">Tags (comma-separated, optional)</label>
+          <label className="label mb-1" htmlFor="add-item-tags">
+            Tags (comma-separated, optional)
+          </label>
           <input
+            id="add-item-tags"
             className="input"
             placeholder="e.g. hiking, camping"
             value={tagInput}
@@ -333,13 +351,15 @@ export default function ItemsPage() {
 
   if (library === undefined) {
     return (
-      <div className="py-16 text-center font-mono text-sm text-ink-faint">Loading…</div>
+      <div className="py-16 text-center font-mono text-sm text-ink-faint print:hidden">
+        Loading…
+      </div>
     );
   }
 
   if (library.length === 0) {
     return (
-      <div className="mx-auto max-w-lg py-16 text-center">
+      <div className="mx-auto max-w-lg py-16 text-center print:hidden">
         <p className="label mb-3">Your items</p>
         <h1 className="mb-4 font-display text-2xl font-bold">Nothing saved yet</h1>
         <p className="mb-6 text-sm text-ink-soft">
