@@ -67,7 +67,11 @@ class PackingDB extends Dexie {
             taken.add(row.id);
           });
       });
-    // v5: snapshot library rows so v6 can change the primary key without data loss.
+    // Make the stable short `id` the primary key (so two items may share a name —
+    // identity is the id, not the name). Dexie can't change a primary key in place
+    // ("Not yet support for changing primary key"), so we snapshot the rows, drop
+    // and recreate the store, then restore — across three versions, no data loss.
+    // v5: snapshot library rows into a scratch table.
     this.version(5)
       .stores({
         trips: 'id, updatedAt',
@@ -76,11 +80,16 @@ class PackingDB extends Dexie {
       })
       .upgrade(async (tx) => {
         const rows = await tx.table('library').toArray();
-        await tx.table('libraryBackup').bulkPut(rows);
+        if (rows.length > 0) await tx.table('libraryBackup').bulkPut(rows);
       });
-    // v6: the stable short `id` becomes the primary key (so two items may share a
-    // name — identity is the id, not the name). Restore rows from the snapshot.
-    this.version(6)
+    // v6: drop the old (nameKey-keyed) library store.
+    this.version(6).stores({
+      trips: 'id, updatedAt',
+      library: null,
+      libraryBackup: 'nameKey',
+    });
+    // v7: recreate library keyed by id and restore from the snapshot.
+    this.version(7)
       .stores({
         trips: 'id, updatedAt',
         library: 'id, nameKey, count, lastUsed',
