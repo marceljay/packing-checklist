@@ -9,6 +9,7 @@ import {
   ensureTripTags,
   renameLibraryTag,
   removeLibraryTag,
+  libraryByTag,
   type Item,
   type Tag,
   type Category,
@@ -377,5 +378,64 @@ describe('removeLibraryTag', () => {
 
   it('returns an empty array when given an empty array', () => {
     expect(removeLibraryTag([], 'beach')).toEqual([]);
+  });
+});
+
+describe('libraryByTag', () => {
+  function lib(name: string, tags: string[]): LibraryItem {
+    return {
+      nameKey: tagKey(name),
+      name,
+      category: 'Comfort & Misc',
+      count: 1,
+      lastUsed: 0,
+      tagKeys: tags,
+      custom: true,
+    };
+  }
+
+  it('groups items under their tag keys in sorted order', () => {
+    const items = [lib('Towel', ['beach', 'hiking']), lib('Sunscreen', ['beach'])];
+    const groups = libraryByTag(items);
+    expect(groups.map((g) => g.tag)).toEqual(['beach', 'hiking']);
+  });
+
+  it('includes an item under each of its tags', () => {
+    const towel = lib('Towel', ['beach', 'hiking']);
+    const groups = libraryByTag([towel]);
+    expect(groups).toHaveLength(2);
+    expect(groups[0].tag).toBe('beach');
+    expect(groups[0].items).toContain(towel);
+    expect(groups[1].tag).toBe('hiking');
+    expect(groups[1].items).toContain(towel);
+  });
+
+  it('appends an untagged group when any item has no tags', () => {
+    const items = [lib('Towel', ['beach']), lib('Passport', [])];
+    const groups = libraryByTag(items);
+    const last = groups[groups.length - 1];
+    expect(last.tag).toBe('');
+    expect(last.items.map((i) => i.name)).toEqual(['Passport']);
+  });
+
+  it('does not emit an untagged group when all items have at least one tag', () => {
+    const items = [lib('Towel', ['beach']), lib('Sunscreen', ['beach'])];
+    const groups = libraryByTag(items);
+    expect(groups.every((g) => g.tag !== '')).toBe(true);
+  });
+
+  it('returns an empty array for an empty input', () => {
+    expect(libraryByTag([])).toEqual([]);
+  });
+
+  it('places the untagged section after all named-tag sections', () => {
+    const items = [
+      lib('Passport', []),
+      lib('Towel', ['beach']),
+      lib('Sunscreen', ['alpha']),
+    ];
+    const groups = libraryByTag(items);
+    expect(groups[groups.length - 1].tag).toBe('');
+    expect(groups.map((g) => g.tag).filter((t) => t !== '')).toEqual(['alpha', 'beach']);
   });
 });

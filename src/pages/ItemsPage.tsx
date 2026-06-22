@@ -4,6 +4,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import {
   CATEGORIES,
   tagKey,
+  libraryByTag,
   renameLibraryTag,
   removeLibraryTag,
   type Category,
@@ -17,48 +18,32 @@ import {
   forgetItem,
 } from '../db/library';
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
+type View = 'category' | 'tag' | 'all';
 
-/** Collect every distinct tag key that appears across all library items. */
-function allTagKeys(items: LibraryItem[]): string[] {
-  return [...new Set(items.flatMap((i) => i.tagKeys))].sort();
-}
-
-/** Order-sensitive key-list equality (the transforms preserve order). */
+/** Order-sensitive key-list equality (the tag transforms preserve order). */
 function sameKeys(a: string[], b: string[]): boolean {
   return a.length === b.length && a.every((v, i) => v === b[i]);
 }
 
+const byName = (a: LibraryItem, b: LibraryItem) => a.name.localeCompare(b.name);
+
 // ---------------------------------------------------------------------------
-// Sub-components
+// Item row
 // ---------------------------------------------------------------------------
 
-interface ItemRowProps {
-  item: LibraryItem;
-}
-
-function LibraryItemRow({ item }: ItemRowProps) {
-  // Inline edit state — starts from the live item so edits survive re-renders.
+function LibraryItemRow({ item }: { item: LibraryItem }) {
   const [editName, setEditName] = useState(item.name);
   const [editCategory, setEditCategory] = useState<Category>(item.category);
   const [newTag, setNewTag] = useState('');
 
-  /**
-   * Renaming re-keys the row (see `renameLibraryItem`) so `nameKey` always equals
-   * `tagKey(name)` — the tray exclusion and de-duping rely on that invariant.
-   * Renaming onto an existing item's name merges the two.
-   */
   function handleNameBlur() {
     const trimmed = editName.trim();
     if (!trimmed) {
-      setEditName(item.name); // revert if cleared
+      setEditName(item.name);
       return;
     }
-    if (trimmed !== item.name) {
-      void renameLibraryItem(item.nameKey, trimmed);
-    }
+    // Re-keys the row (renameLibraryItem) so nameKey === tagKey(name) holds.
+    if (trimmed !== item.name) void renameLibraryItem(item.nameKey, trimmed);
   }
 
   function handleCategoryChange(cat: Category) {
@@ -67,8 +52,7 @@ function LibraryItemRow({ item }: ItemRowProps) {
   }
 
   function handleRemoveTag(key: string) {
-    const next = item.tagKeys.filter((k) => k !== key);
-    void updateItem(item.nameKey, { tagKeys: next });
+    void updateItem(item.nameKey, { tagKeys: item.tagKeys.filter((k) => k !== key) });
   }
 
   function handleAddTag(e: React.FormEvent) {
@@ -84,15 +68,19 @@ function LibraryItemRow({ item }: ItemRowProps) {
 
   return (
     <li className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-start sm:gap-4">
-      {/* Name + category */}
       <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-        <input
-          className="input"
-          value={editName}
-          onChange={(e) => setEditName(e.target.value)}
-          onBlur={handleNameBlur}
-          aria-label="Item name"
-        />
+        <div className="flex items-center gap-2">
+          <input
+            className="input"
+            value={editName}
+            onChange={(e) => setEditName(e.target.value)}
+            onBlur={handleNameBlur}
+            aria-label="Item name"
+          />
+          {!item.custom && (
+            <span className="chip shrink-0 bg-paper-sunk text-ink-faint">default</span>
+          )}
+        </div>
         <select
           className="input"
           value={editCategory}
@@ -107,14 +95,10 @@ function LibraryItemRow({ item }: ItemRowProps) {
         </select>
       </div>
 
-      {/* Tags */}
       <div className="flex min-w-0 flex-1 flex-col gap-1.5">
         <div className="flex flex-wrap gap-1">
           {item.tagKeys.map((k) => (
-            <span
-              key={k}
-              className="chip bg-airblue-soft text-airblue"
-            >
+            <span key={k} className="chip bg-airblue-soft text-airblue">
               {k}
               <button
                 onClick={() => handleRemoveTag(k)}
@@ -132,7 +116,7 @@ function LibraryItemRow({ item }: ItemRowProps) {
             placeholder="Add tag…"
             value={newTag}
             onChange={(e) => setNewTag(e.target.value)}
-            aria-label="New tag"
+            aria-label={`Add a tag to ${item.name}`}
           />
           <button type="submit" className="btn-secondary shrink-0">
             Add
@@ -140,14 +124,11 @@ function LibraryItemRow({ item }: ItemRowProps) {
         </form>
       </div>
 
-      {/* Count + remove */}
       <div className="flex shrink-0 items-center gap-3 sm:flex-col sm:items-end">
-        <span className="font-mono text-[0.6875rem] text-ink-faint">
-          used {item.count}×
-        </span>
+        <span className="font-mono text-[0.6875rem] text-ink-faint">used {item.count}×</span>
         <button
           className="btn-danger text-xs"
-          aria-label={`Remove ${item.name} from your items`}
+          aria-label={`Remove ${item.name} from your library`}
           onClick={() => void forgetItem(item.nameKey)}
         >
           Remove
@@ -158,115 +139,133 @@ function LibraryItemRow({ item }: ItemRowProps) {
 }
 
 // ---------------------------------------------------------------------------
-// Tags management section
+// Collapsible section
 // ---------------------------------------------------------------------------
 
-interface TagsManagerProps {
-  items: LibraryItem[];
-}
-
-function TagsManager({ items }: TagsManagerProps) {
-  const tags = allTagKeys(items);
-  const [editingKey, setEditingKey] = useState<string | null>(null);
-  const [renameValue, setRenameValue] = useState('');
-
-  if (tags.length === 0) return null;
-
-  function handleRename(fromKey: string) {
-    const toKey = tagKey(renameValue);
-    if (!toKey || toKey === fromKey) {
-      setEditingKey(null);
-      return;
-    }
-    // Compute next state for each affected item then persist the changed ones.
-    const updated = renameLibraryTag(items, fromKey, toKey);
-    for (const next of updated) {
-      const orig = items.find((i) => i.nameKey === next.nameKey);
-      if (orig && !sameKeys(orig.tagKeys, next.tagKeys)) {
-        void updateItem(next.nameKey, { tagKeys: next.tagKeys });
-      }
-    }
-    setEditingKey(null);
-    setRenameValue('');
-  }
-
-  function handleRemove(key: string) {
-    const updated = removeLibraryTag(items, key);
-    for (const next of updated) {
-      const orig = items.find((i) => i.nameKey === next.nameKey);
-      if (orig && !sameKeys(orig.tagKeys, next.tagKeys)) {
-        void updateItem(next.nameKey, { tagKeys: next.tagKeys });
-      }
-    }
-  }
-
+function Section({
+  title,
+  count,
+  headerExtra,
+  children,
+}: {
+  title: React.ReactNode;
+  count: number;
+  headerExtra?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(true);
   return (
-    <section className="card flex flex-col overflow-hidden">
-      <div className="flex items-center gap-2.5 p-4">
-        <span aria-hidden className="h-4 w-1 rounded-full bg-airblue" />
-        <h2 className="font-display text-base font-bold">Tags</h2>
-        <span className="chip bg-airblue-soft text-airblue tabular-nums">{tags.length}</span>
+    <section className="card overflow-hidden">
+      <div className="flex items-center gap-2 p-3">
+        <button
+          className="flex min-w-0 flex-1 items-center gap-2 text-left"
+          aria-expanded={open}
+          onClick={() => setOpen((o) => !o)}
+        >
+          <span aria-hidden className="font-mono text-ink-faint">
+            {open ? '▾' : '▸'}
+          </span>
+          <span className="truncate font-display text-base font-bold">{title}</span>
+          <span className="chip bg-paper-sunk text-ink-faint tabular-nums">{count}</span>
+        </button>
+        {headerExtra}
       </div>
-      <ul className="divide-y divide-line/60 border-t border-line">
-        {tags.map((key) => (
-          <li key={key} className="flex items-center gap-3 px-4 py-2">
-            {editingKey === key ? (
-              <form
-                className="flex flex-1 gap-2"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  handleRename(key);
-                }}
-              >
-                <input
-                  autoFocus
-                  className="input"
-                  value={renameValue}
-                  onChange={(e) => setRenameValue(e.target.value)}
-                  aria-label={`Rename tag ${key}`}
-                />
-                <button type="submit" className="btn-secondary shrink-0">
-                  Save
-                </button>
-                <button
-                  type="button"
-                  className="btn-ghost shrink-0"
-                  onClick={() => setEditingKey(null)}
-                >
-                  Cancel
-                </button>
-              </form>
-            ) : (
-              <>
-                <span className="chip bg-airblue-soft text-airblue">{key}</span>
-                <button
-                  className="btn-ghost ml-auto text-xs"
-                  aria-label={`Rename tag ${key}`}
-                  onClick={() => {
-                    setEditingKey(key);
-                    setRenameValue(key);
-                  }}
-                >
-                  Rename
-                </button>
-                <button
-                  className="btn-danger text-xs"
-                  aria-label={`Remove tag ${key}`}
-                  onClick={() => handleRemove(key)}
-                >
-                  Remove
-                </button>
-              </>
-            )}
-          </li>
-        ))}
-      </ul>
+      {open && <ul className="divide-y divide-line/60 border-t border-line">{children}</ul>}
     </section>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Add item form
+// Tag section (by-tag view) — header carries rename/remove for the whole library
+// ---------------------------------------------------------------------------
+
+function TagSection({
+  tag,
+  items,
+  allItems,
+}: {
+  tag: string;
+  items: LibraryItem[];
+  allItems: LibraryItem[];
+}) {
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(tag);
+
+  function persist(updated: LibraryItem[]) {
+    for (const next of updated) {
+      const orig = allItems.find((i) => i.nameKey === next.nameKey);
+      if (orig && !sameKeys(orig.tagKeys, next.tagKeys)) {
+        void updateItem(next.nameKey, { tagKeys: next.tagKeys });
+      }
+    }
+  }
+
+  function handleRename() {
+    const toKey = tagKey(value);
+    if (!toKey || toKey === tag) {
+      setEditing(false);
+      return;
+    }
+    persist(renameLibraryTag(allItems, tag, toKey));
+    setEditing(false);
+  }
+
+  const untagged = tag === '';
+  const headerExtra = untagged ? undefined : editing ? (
+    <form
+      className="flex shrink-0 gap-1.5"
+      onSubmit={(e) => {
+        e.preventDefault();
+        handleRename();
+      }}
+    >
+      <input
+        autoFocus
+        className="input w-28"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        aria-label={`Rename tag ${tag}`}
+      />
+      <button type="submit" className="btn-secondary shrink-0 text-xs">
+        Save
+      </button>
+      <button type="button" className="btn-ghost shrink-0 text-xs" onClick={() => setEditing(false)}>
+        Cancel
+      </button>
+    </form>
+  ) : (
+    <div className="flex shrink-0 gap-1">
+      <button
+        className="btn-ghost text-xs"
+        aria-label={`Rename tag ${tag}`}
+        onClick={() => {
+          setValue(tag);
+          setEditing(true);
+        }}
+      >
+        Rename
+      </button>
+      <button
+        className="btn-danger text-xs"
+        aria-label={`Remove tag ${tag}`}
+        onClick={() => persist(removeLibraryTag(allItems, tag))}
+      >
+        Remove
+      </button>
+    </div>
+  );
+
+  return (
+    <Section title={untagged ? 'Untagged' : tag} count={items.length} headerExtra={headerExtra}>
+      {[...items].sort(byName).map((item) => (
+        <LibraryItemRow key={item.nameKey} item={item} />
+      ))}
+    </Section>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Add custom item
 // ---------------------------------------------------------------------------
 
 function AddItemForm() {
@@ -289,12 +288,15 @@ function AddItemForm() {
   }
 
   return (
-    <section className="card flex flex-col overflow-hidden">
+    <section className="card overflow-hidden">
       <div className="flex items-center gap-2.5 p-4">
         <span aria-hidden className="h-4 w-1 rounded-full bg-vermilion" />
-        <h2 className="font-display text-base font-bold">Add an item</h2>
+        <h2 className="font-display text-base font-bold">Add custom item</h2>
       </div>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-3 border-t border-line p-4">
+      <form
+        onSubmit={handleSubmit}
+        className="grid gap-3 border-t border-line p-4 sm:grid-cols-[1fr_12rem_1fr_auto] sm:items-end"
+      >
         <div>
           <label className="label mb-1" htmlFor="add-item-name">
             Name
@@ -327,7 +329,7 @@ function AddItemForm() {
         </div>
         <div>
           <label className="label mb-1" htmlFor="add-item-tags">
-            Tags (comma-separated, optional)
+            Tags (comma-separated)
           </label>
           <input
             id="add-item-tags"
@@ -337,8 +339,8 @@ function AddItemForm() {
             onChange={(e) => setTagInput(e.target.value)}
           />
         </div>
-        <button type="submit" className="btn-primary self-start">
-          Save item
+        <button type="submit" className="btn-primary">
+          Add
         </button>
       </form>
     </section>
@@ -349,57 +351,89 @@ function AddItemForm() {
 // Page
 // ---------------------------------------------------------------------------
 
+const VIEWS: { key: View; label: string }[] = [
+  { key: 'category', label: 'By category' },
+  { key: 'tag', label: 'By tag' },
+  { key: 'all', label: 'All items' },
+];
+
 export default function ItemsPage() {
   const library = useLiveQuery(listLibrary, [], undefined);
+  const [view, setView] = useState<View>('category');
 
   if (library === undefined) {
     return (
-      <div className="py-16 text-center font-mono text-sm text-ink-faint print:hidden">
-        Loading…
-      </div>
+      <div className="py-16 text-center font-mono text-sm text-ink-faint print:hidden">Loading…</div>
     );
   }
 
-  if (library.length === 0) {
-    return (
-      <div className="mx-auto max-w-lg py-16 text-center print:hidden">
-        <p className="label mb-3">Your items</p>
-        <h1 className="mb-4 font-display text-2xl font-bold">Nothing saved yet</h1>
-        <p className="mb-6 text-sm text-ink-soft">
-          Items you add on a trip are remembered here so they resurface next time.
-          Head to a trip and use the checklist to start building your library.
-        </p>
-        <Link to="/" className="btn-primary">
-          Go to your trips
-        </Link>
-      </div>
-    );
-  }
+  const categoryGroups = CATEGORIES.map((category) => ({
+    category,
+    items: library.filter((i) => i.category === category),
+  })).filter((g) => g.items.length > 0);
 
   return (
-    <div className="flex flex-col gap-6 print:hidden">
-      <div>
-        <p className="label">Library</p>
-        <h1 className="mt-1 font-display text-3xl font-bold tracking-tight">Your items</h1>
+    <div className="flex flex-col gap-5 print:hidden">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="label">Library</p>
+          <h1 className="mt-1 font-display text-3xl font-bold tracking-tight">Item library</h1>
+        </div>
+        <Link to="/" className="btn-ghost text-xs">
+          ← All trips
+        </Link>
       </div>
 
-      {/* Items list */}
-      <section className="card flex flex-col overflow-hidden">
-        <div className="flex items-center gap-2.5 p-4">
-          <span aria-hidden className="h-4 w-1 rounded-full bg-airblue" />
-          <h2 className="font-display text-base font-bold">Saved items</h2>
-          <span className="chip bg-airblue-soft text-airblue tabular-nums">{library.length}</span>
+      <AddItemForm />
+
+      {/* View switcher */}
+      <div
+        className="flex w-fit items-center gap-1 rounded bg-paper-sunk p-0.5"
+        role="tablist"
+        aria-label="Library view"
+      >
+        {VIEWS.map((v) => (
+          <button
+            key={v.key}
+            role="tab"
+            aria-selected={view === v.key}
+            className={`rounded px-3 py-1 font-mono text-[0.6875rem] uppercase tracking-wide transition-colors ${
+              view === v.key
+                ? 'bg-ink text-paper-raised'
+                : 'text-ink-faint hover:bg-paper-sunk hover:text-ink'
+            }`}
+            onClick={() => setView(v.key)}
+          >
+            {v.label}
+          </button>
+        ))}
+      </div>
+
+      {library.length === 0 ? (
+        <p className="text-sm text-ink-soft">No items yet — add one above.</p>
+      ) : view === 'category' ? (
+        <div className="flex flex-col gap-3">
+          {categoryGroups.map((g) => (
+            <Section key={g.category} title={g.category} count={g.items.length}>
+              {[...g.items].sort(byName).map((item) => (
+                <LibraryItemRow key={item.nameKey} item={item} />
+              ))}
+            </Section>
+          ))}
         </div>
-        <ul className="divide-y divide-line/60 border-t border-line">
-          {library.map((item) => (
+      ) : view === 'tag' ? (
+        <div className="flex flex-col gap-3">
+          {libraryByTag(library).map((g) => (
+            <TagSection key={g.tag || '__untagged'} tag={g.tag} items={g.items} allItems={library} />
+          ))}
+        </div>
+      ) : (
+        <Section title="All items" count={library.length}>
+          {[...library].sort(byName).map((item) => (
             <LibraryItemRow key={item.nameKey} item={item} />
           ))}
-        </ul>
-      </section>
-
-      <TagsManager items={library} />
-
-      <AddItemForm />
+        </Section>
+      )}
     </div>
   );
 }

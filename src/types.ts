@@ -163,6 +163,28 @@ export function rankLibrary(items: LibraryItem[], excludeKeys: string[]): Librar
     );
 }
 
+/** Group library items by tag key (each item appears under every tag it carries),
+ *  named tags sorted; a trailing `{ tag: '' }` untagged group when any item has
+ *  no tags. Used by the Item Library "by tag" view. */
+export function libraryByTag(items: LibraryItem[]): { tag: string; items: LibraryItem[] }[] {
+  const byTag = new Map<string, LibraryItem[]>();
+  const untagged: LibraryItem[] = [];
+  for (const item of items) {
+    if (item.tagKeys.length === 0) {
+      untagged.push(item);
+      continue;
+    }
+    for (const key of item.tagKeys) {
+      const list = byTag.get(key) ?? [];
+      list.push(item);
+      byTag.set(key, list);
+    }
+  }
+  const groups = [...byTag.keys()].sort().map((tag) => ({ tag, items: byTag.get(tag)! }));
+  if (untagged.length > 0) groups.push({ tag: '', items: untagged });
+  return groups;
+}
+
 /** Group items under their category in canonical {@link CATEGORIES} order,
  *  dropping empty categories. Used by the checklist and the print sheet. */
 export function itemsByCategory(items: Item[]): { category: Category; items: Item[] }[] {
