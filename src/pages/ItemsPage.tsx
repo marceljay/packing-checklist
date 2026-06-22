@@ -5,6 +5,7 @@ import {
   CATEGORIES,
   tagKey,
   libraryByTag,
+  searchLibrary,
   renameLibraryTag,
   removeLibraryTag,
   type Category,
@@ -360,6 +361,7 @@ const VIEWS: { key: View; label: string }[] = [
 export default function ItemsPage() {
   const library = useLiveQuery(listLibrary, [], undefined);
   const [view, setView] = useState<View>('category');
+  const [query, setQuery] = useState('');
 
   if (library === undefined) {
     return (
@@ -367,9 +369,12 @@ export default function ItemsPage() {
     );
   }
 
+  const results = searchLibrary(library, query);
+  const searching = query.trim() !== '';
+
   const categoryGroups = CATEGORIES.map((category) => ({
     category,
-    items: library.filter((i) => i.category === category),
+    items: results.filter((i) => i.category === category),
   })).filter((g) => g.items.length > 0);
 
   return (
@@ -386,31 +391,54 @@ export default function ItemsPage() {
 
       <AddItemForm />
 
-      {/* View switcher */}
-      <div
-        className="flex w-fit items-center gap-1 rounded bg-paper-sunk p-0.5"
-        role="tablist"
-        aria-label="Library view"
-      >
-        {VIEWS.map((v) => (
-          <button
-            key={v.key}
-            role="tab"
-            aria-selected={view === v.key}
-            className={`rounded px-3 py-1 font-mono text-[0.6875rem] uppercase tracking-wide transition-colors ${
-              view === v.key
-                ? 'bg-ink text-paper-raised'
-                : 'text-ink-faint hover:bg-paper-sunk hover:text-ink'
-            }`}
-            onClick={() => setView(v.key)}
+      {/* View switcher + search */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div
+          className="flex w-fit items-center gap-1 rounded bg-paper-sunk p-0.5"
+          role="tablist"
+          aria-label="Library view"
+        >
+          {VIEWS.map((v) => (
+            <button
+              key={v.key}
+              role="tab"
+              aria-selected={view === v.key}
+              className={`rounded px-3 py-1 font-mono text-[0.6875rem] uppercase tracking-wide transition-colors ${
+                view === v.key
+                  ? 'bg-ink text-paper-raised'
+                  : 'text-ink-faint hover:bg-paper-sunk hover:text-ink'
+              }`}
+              onClick={() => setView(v.key)}
+            >
+              {v.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="relative w-full sm:w-64">
+          <input
+            type="search"
+            className="input pl-8"
+            placeholder="Search items, tags…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            aria-label="Search items"
+          />
+          <span
+            aria-hidden
+            className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 font-mono text-sm text-ink-faint"
           >
-            {v.label}
-          </button>
-        ))}
+            ⌕
+          </span>
+        </div>
       </div>
 
       {library.length === 0 ? (
         <p className="text-sm text-ink-soft">No items yet — add one above.</p>
+      ) : searching && results.length === 0 ? (
+        <p className="text-sm text-ink-soft">
+          No items match “{query.trim()}”.
+        </p>
       ) : view === 'category' ? (
         <div className="flex flex-col gap-3">
           {categoryGroups.map((g) => (
@@ -423,13 +451,13 @@ export default function ItemsPage() {
         </div>
       ) : view === 'tag' ? (
         <div className="flex flex-col gap-3">
-          {libraryByTag(library).map((g) => (
+          {libraryByTag(results).map((g) => (
             <TagSection key={g.tag || '__untagged'} tag={g.tag} items={g.items} allItems={library} />
           ))}
         </div>
       ) : (
-        <Section title="All items" count={library.length}>
-          {[...library].sort(byName).map((item) => (
+        <Section title={searching ? 'Results' : 'All items'} count={results.length}>
+          {[...results].sort(byName).map((item) => (
             <LibraryItemRow key={item.nameKey} item={item} />
           ))}
         </Section>

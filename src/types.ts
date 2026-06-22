@@ -185,6 +185,20 @@ export function libraryByTag(items: LibraryItem[]): { tag: string; items: Librar
   return groups;
 }
 
+/** Filter library items by a free-text query, matching (case-insensitively) the
+ *  item name, any of its tag keys, or its category. A blank query returns every
+ *  item; input order is preserved. Used by the Item Library search box. */
+export function searchLibrary(items: LibraryItem[], query: string): LibraryItem[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return items;
+  return items.filter(
+    (i) =>
+      i.name.toLowerCase().includes(q) ||
+      i.category.toLowerCase().includes(q) ||
+      i.tagKeys.some((k) => k.includes(q)),
+  );
+}
+
 /** Group items under their category in canonical {@link CATEGORIES} order,
  *  dropping empty categories. Used by the checklist and the print sheet. */
 export function itemsByCategory(items: Item[]): { category: Category; items: Item[] }[] {

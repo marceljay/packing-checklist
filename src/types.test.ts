@@ -10,6 +10,7 @@ import {
   renameLibraryTag,
   removeLibraryTag,
   libraryByTag,
+  searchLibrary,
   type Item,
   type Tag,
   type Category,
@@ -437,5 +438,55 @@ describe('libraryByTag', () => {
     const groups = libraryByTag(items);
     expect(groups[groups.length - 1].tag).toBe('');
     expect(groups.map((g) => g.tag).filter((t) => t !== '')).toEqual(['alpha', 'beach']);
+  });
+});
+
+describe('searchLibrary', () => {
+  function lib(name: string, over: Partial<LibraryItem> = {}): LibraryItem {
+    return {
+      nameKey: tagKey(name),
+      name,
+      category: 'Comfort & Misc',
+      count: 1,
+      lastUsed: 0,
+      tagKeys: [],
+      custom: true,
+      ...over,
+    };
+  }
+
+  it('returns all items unchanged for a blank query', () => {
+    const items = [lib('Towel'), lib('Passport')];
+    expect(searchLibrary(items, '')).toEqual(items);
+    expect(searchLibrary(items, '   ')).toEqual(items);
+  });
+
+  it('matches by name, case-insensitively', () => {
+    const items = [lib('Sunscreen'), lib('Passport')];
+    expect(searchLibrary(items, 'SUN').map((i) => i.name)).toEqual(['Sunscreen']);
+  });
+
+  it('matches a substring anywhere in the name', () => {
+    const items = [lib('Toothbrush'), lib('Passport')];
+    expect(searchLibrary(items, 'brush').map((i) => i.name)).toEqual(['Toothbrush']);
+  });
+
+  it('matches by tag key', () => {
+    const items = [lib('Towel', { tagKeys: ['beach'] }), lib('Passport')];
+    expect(searchLibrary(items, 'beach').map((i) => i.name)).toEqual(['Towel']);
+  });
+
+  it('matches by category', () => {
+    const items = [lib('Charger', { category: 'Electronics' }), lib('Towel')];
+    expect(searchLibrary(items, 'electron').map((i) => i.name)).toEqual(['Charger']);
+  });
+
+  it('returns an empty array when nothing matches', () => {
+    expect(searchLibrary([lib('Towel')], 'xyz')).toEqual([]);
+  });
+
+  it('preserves the input order of matches', () => {
+    const items = [lib('Sun hat'), lib('Sunscreen'), lib('Passport')];
+    expect(searchLibrary(items, 'sun').map((i) => i.name)).toEqual(['Sun hat', 'Sunscreen']);
   });
 });
