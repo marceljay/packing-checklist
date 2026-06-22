@@ -6,6 +6,7 @@ import Checklist from '../components/Checklist';
 import SuggestionsTray from '../components/SuggestionsTray';
 import LibraryTray from '../components/LibraryTray';
 import WeatherCard from '../components/WeatherCard';
+import AddItemCard from '../components/AddItemCard';
 import PrintSheet from '../components/PrintSheet';
 import { tripDurationDays, destinationCode } from '../types';
 import type { Trip } from '../types';
@@ -168,6 +169,7 @@ export default function TripEditorPage() {
             <ContextPanel trip={trip} update={update} />
             <div className="flex flex-col gap-5">
               {trip.weather && <WeatherCard weather={trip.weather} />}
+              <AddItemCard update={update} />
               <SuggestionsTray trip={trip} update={update} />
               <LibraryTray trip={trip} update={update} />
               <Checklist trip={trip} update={update} mode="plan" />
