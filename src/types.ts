@@ -35,17 +35,31 @@ export interface Destination {
   isPrimary: boolean;
 }
 
+/**
+ * A trip's packing-list line. The item itself (name, category, tags) lives in the
+ * canonical {@link LibraryItem} store; the trip only holds a reference plus the
+ * per-trip state (quantity, packed). Display fields are joined in via
+ * {@link resolveItems}. At most one reference per `libraryId` on a trip.
+ */
 export interface Item {
-  id: ID;
-  name: string;
-  category: Category;
-  tagIds: ID[];
+  /** -> {@link LibraryItem.id}. */
+  libraryId: ID;
   quantitySuggested: number | null;
   quantityTaken: number;
   packed: boolean;
-  source: 'suggested' | 'custom';
-  catalogId?: string; // origin in the built-in catalog, so we can de-dupe suggestions
-  notes?: string;
+}
+
+/** A trip {@link Item} joined with its {@link LibraryItem} for rendering/grouping. */
+export interface ResolvedItem {
+  libraryId: ID;
+  name: string;
+  category: Category;
+  tagKeys: string[];
+  quantitySuggested: number | null;
+  quantityTaken: number;
+  packed: boolean;
+  /** true when the referenced library row no longer exists. */
+  missing: boolean;
 }
 
 export interface TripSettings {
@@ -105,7 +119,10 @@ export function tripDurationDays(trip: Pick<Trip, 'startDate' | 'endDate'>): num
  * owns the per-trip instance (quantity, packed); the library owns the memory.
  */
 export interface LibraryItem {
-  /** Normalized name, used as the primary key and for de-duping. */
+  /** Stable short id (letters + digits, e.g. `shi417`). Trips reference this; it
+   *  survives renames (unlike `nameKey`). See {@link shortId}. */
+  id: ID;
+  /** Normalized name, the Dexie primary key and the de-dupe handle. */
   nameKey: string;
   name: string;
   category: Category;
@@ -187,13 +204,99 @@ export function searchLibrary(items: LibraryItem[], query: string): LibraryItem[
   );
 }
 
-/** Group items under their category in canonical {@link CATEGORIES} order,
- *  dropping empty categories. Used by the checklist and the print sheet. */
-export function itemsByCategory(items: Item[]): { category: Category; items: Item[] }[] {
+/**
+ * Generate a short, readable id: up to 3 leading alpha characters of `name`
+ * (lowercased, non-letters stripped; `itm` when none) followed by a 2–3 digit
+ * number, widening the number until it doesn't collide with `taken`. `rng` is
+ * injectable for deterministic tests.
+ */
+export function shortId(name: string, taken: Set<string>, rng: () => number = Math.random): string {
+  const base = name.toLowerCase().replace(/[^a-z]/g, '').slice(0, 3) || 'itm';
+  for (let digits = 2; digits <= 6; digits++) {
+    const min = 10 ** (digits - 1);
+    const span = 9 * min; // digits=2 -> 10..99, digits=3 -> 100..999, …
+    for (let tries = 0; tries < 50; tries++) {
+      const id = `${base}${min + Math.floor(rng() * span)}`;
+      if (!taken.has(id)) return id;
+    }
+  }
+  // Pathological fallback: count up until unique.
+  let n = 0;
+  while (taken.has(`${base}${n}`)) n++;
+  return `${base}${n}`;
+}
+
+/** Join trip item references with their library rows for rendering. A reference
+ *  whose row is gone resolves to a `missing` placeholder rather than dropping. */
+export function resolveItems(items: Item[], libById: Map<ID, LibraryItem>): ResolvedItem[] {
+  return items.map((it) => {
+    const lib = libById.get(it.libraryId);
+    return {
+      libraryId: it.libraryId,
+      name: lib?.name ?? '(removed item)',
+      category: lib?.category ?? 'Comfort & Misc',
+      tagKeys: lib?.tagKeys ?? [],
+      quantitySuggested: it.quantitySuggested,
+      quantityTaken: it.quantityTaken,
+      packed: it.packed,
+      missing: lib === undefined,
+    };
+  });
+}
+
+/** Group resolved items under their category in canonical {@link CATEGORIES}
+ *  order, dropping empty categories. Used by the checklist and the print sheet. */
+export function resolvedByCategory(
+  items: ResolvedItem[],
+): { category: Category; items: ResolvedItem[] }[] {
   return CATEGORIES.map((category) => ({
     category,
     items: items.filter((i) => i.category === category),
   })).filter((g) => g.items.length > 0);
+}
+
+/** Group resolved items by tag key (each item under every tag it carries), named
+ *  tags sorted, with a trailing untagged `{ tag: '' }` group when needed. */
+export function resolvedByTag(items: ResolvedItem[]): { tag: string; items: ResolvedItem[] }[] {
+  const byTag = new Map<string, ResolvedItem[]>();
+  const untagged: ResolvedItem[] = [];
+  for (const item of items) {
+    if (item.tagKeys.length === 0) {
+      untagged.push(item);
+      continue;
+    }
+    for (const key of item.tagKeys) {
+      const list = byTag.get(key) ?? [];
+      list.push(item);
+      byTag.set(key, list);
+    }
+  }
+  const groups = [...byTag.keys()].sort().map((tag) => ({ tag, items: byTag.get(tag)! }));
+  if (untagged.length > 0) groups.push({ tag: '', items: untagged });
+  return groups;
+}
+
+/** Convert an old-shape trip item (denormalized name/category/tagIds, plus the
+ *  trip's tags) into the fields needed to resolve-or-create a {@link LibraryItem}.
+ *  Pure, so the legacy-trip migration is unit-testable without Dexie. */
+export function legacyItemToRef(
+  item: { name?: string; category?: string; tagIds?: string[] },
+  tags: Tag[],
+): { nameKey: string; name: string; category: Category; tagKeys: string[] } {
+  const name = (item.name ?? '').trim();
+  const category = CATEGORIES.includes(item.category as Category)
+    ? (item.category as Category)
+    : 'Comfort & Misc';
+  const labelById = new Map(tags.map((t) => [t.id, t.label]));
+  const tagKeys = [
+    ...new Set(
+      (item.tagIds ?? [])
+        .map((id) => labelById.get(id))
+        .filter((l): l is string => Boolean(l))
+        .map((l) => tagKey(l)),
+    ),
+  ];
+  return { nameKey: tagKey(name), name, category, tagKeys };
 }
 
 /**

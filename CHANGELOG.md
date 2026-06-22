@@ -5,6 +5,14 @@ All notable changes to this project are documented here.
 ## [Unreleased]
 
 ### Added
+- **One item, everywhere — the library is now the single source of truth.** A
+  trip's packing line is a *reference* to a library item plus its per-trip quantity
+  and packed state; the item's name, category, and tags live once in the library.
+  Editing an item while planning a trip (via the new **pencil**) edits the library
+  entry, so the change shows on every trip that uses it. Library items now have a
+  short, readable id (e.g. `shi417`) that survives renames. Existing trips migrate
+  automatically on first load; trip export bundles the items it needs so files stay
+  portable (older exports still import).
 - **Search the item library.** A search box on the Item Library page filters by
   name, tag, or category (case-insensitive) across all three views, with a clear
   no-match state. Backed by a unit-tested `searchLibrary` helper.
@@ -13,15 +21,15 @@ All notable changes to this project are documented here.
   Library** page (`/items`, reachable from the trips page) has three expandable
   views — by category, by tag, all — with tag rename/remove and an **Add custom
   item** form on top.
-- **Add custom item card** on the trip Plan tab — a dedicated card above the list
-  where you set name, **category and tags** (and opt to save to your library).
+- **Add item card** on the trip Plan tab — a dedicated card above the list where
+  you set name, **category and tags**; the item is saved to your library and
+  reusable on future trips.
 - **Plan / Checklist tabs.** The trip page splits into a **Plan** tab (build/edit
   the list — no checkboxes) and a **Checklist** tab (check items off with a
   progress bar). Same trip, two focused views.
-- **Personal item library.** Saved custom items now carry tags; saving while
-  planning is **opt-in** (a default-on "Save to my items" checkbox); pulling a
-  library item into a trip recreates its tags. A dedicated **"Your items" page**
-  (`/items`) manages saved items and renames/removes tags across the library.
+- **Item Library page** (`/items`) — manage every item (defaults + your own) in
+  three views (by category / tag / all), edit each via a pencil, search, and
+  rename/remove tags across the whole library.
 - **Destination autocomplete.** Type a place and pick from geocoded matches
   (Open-Meteo) with region/country; selecting stores lat/lon + country code
   (sharpens the IATA code and weather lookup). Free-text add still works offline.

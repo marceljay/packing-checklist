@@ -1,12 +1,14 @@
 import { useMemo, useState } from 'react';
-import type { Item, Trip } from '../types';
-import { itemsByCategory } from '../types';
+import type { ResolvedItem, Trip, LibraryItem } from '../types';
+import { resolveItems, resolvedByCategory, resolvedByTag } from '../types';
 import ItemRow from './ItemRow';
 import type { ItemRowMode } from './ItemRow';
 
 interface Props {
   trip: Trip;
   update: (mutator: (draft: Trip) => void) => void;
+  /** Library rows by id, for joining each trip reference to its display fields. */
+  library: Map<string, LibraryItem>;
   /** plan = editable list; checklist = check-off view with progress bar. */
   mode?: ItemRowMode;
 }
@@ -16,38 +18,31 @@ type GroupBy = 'category' | 'tag';
 interface Group {
   key: string;
   label: string;
-  items: Item[];
+  items: ResolvedItem[];
 }
 
-export default function Checklist({ trip, update, mode = 'plan' }: Props) {
+export default function Checklist({ trip, update, library, mode = 'plan' }: Props) {
   const [groupBy, setGroupBy] = useState<GroupBy>('category');
 
+  const resolved = useMemo(() => resolveItems(trip.items, library), [trip.items, library]);
+
   const groups = useMemo<Group[]>(() => {
-    const items = trip.items;
     if (groupBy === 'category') {
-      return itemsByCategory(items).map((g) => ({
+      return resolvedByCategory(resolved).map((g) => ({
         key: g.category,
         label: g.category,
         items: g.items,
       }));
     }
-    // group by tag
-    const out: Group[] = trip.tags.map((t) => ({
-      key: t.id,
-      label: t.label,
-      items: items.filter((i) => i.tagIds.includes(t.id)),
+    return resolvedByTag(resolved).map((g) => ({
+      key: g.tag || '__untagged',
+      label: g.tag || 'Untagged',
+      items: g.items,
     }));
-    out.push({
-      key: '__untagged',
-      label: 'Untagged',
-      items: items.filter((i) => i.tagIds.length === 0),
-    });
-    return out.filter((g) => g.items.length > 0);
-  }, [trip.items, trip.tags, groupBy]);
+  }, [resolved, groupBy]);
 
   const total = trip.items.length;
   const packedCount = trip.items.filter((i) => i.packed).length;
-
   const pct = total > 0 ? Math.round((packedCount / total) * 100) : 0;
 
   return (
@@ -95,14 +90,12 @@ export default function Checklist({ trip, update, mode = 'plan' }: Props) {
           <span className="shrink-0 font-mono text-sm tabular-nums text-ink">
             {packedCount}/{total}
           </span>
-          <span className="shrink-0 font-mono text-xs tabular-nums text-ink-faint">
-            {pct}%
-          </span>
+          <span className="shrink-0 font-mono text-xs tabular-nums text-ink-faint">{pct}%</span>
         </div>
       )}
 
       {/* Groups */}
-      {trip.items.length === 0 ? (
+      {total === 0 ? (
         <div className="px-4 py-12 text-center">
           <p className="text-sm text-ink-soft">Your packing list is empty.</p>
           {mode === 'plan' && (
@@ -126,9 +119,8 @@ export default function Checklist({ trip, update, mode = 'plan' }: Props) {
               <div className="divide-y divide-line/60">
                 {group.items.map((item) => (
                   <ItemRow
-                    key={item.id}
+                    key={item.libraryId}
                     item={item}
-                    trip={trip}
                     update={update}
                     showCategory={groupBy !== 'category'}
                     mode={mode}

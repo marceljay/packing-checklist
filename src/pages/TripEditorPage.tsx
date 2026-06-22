@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { useTripEditor } from './useTripEditor';
+import { listLibrary } from '../db/library';
 import ContextPanel from '../components/ContextPanel';
 import Checklist from '../components/Checklist';
 import SuggestionsTray from '../components/SuggestionsTray';
@@ -95,6 +97,14 @@ export default function TripEditorPage() {
   const { trip, status, update } = useTripEditor(tripId);
   const [mode, setMode] = useState<EditorMode>('plan');
 
+  // Library is the source of truth for item display fields; join live so edits
+  // (here or on the Item Library page) reflect immediately.
+  const libraryRows = useLiveQuery(listLibrary, [], undefined);
+  const library = useMemo(
+    () => new Map((libraryRows ?? []).map((i) => [i.id, i])),
+    [libraryRows],
+  );
+
   if (status === 'loading') {
     return <p className="font-mono text-sm text-ink-faint">Loading…</p>;
   }
@@ -145,7 +155,9 @@ export default function TripEditorPage() {
           <div className="flex gap-2">
             <button
               className="btn-secondary text-xs"
-              onClick={() => downloadText(`${slugify(trip.name)}.json`, serializeTrip(trip))}
+              onClick={() =>
+                downloadText(`${slugify(trip.name)}.json`, serializeTrip(trip, [...library.values()]))
+              }
               title="Download this trip as a .json file (re-importable)"
             >
               Export trip
@@ -169,16 +181,16 @@ export default function TripEditorPage() {
             <div className="flex flex-col gap-5">
               {trip.weather && <WeatherCard weather={trip.weather} />}
               <AddItemCard update={update} />
-              <SuggestionsTray trip={trip} update={update} />
-              <Checklist trip={trip} update={update} mode="plan" />
+              <SuggestionsTray trip={trip} update={update} library={library} />
+              <Checklist trip={trip} update={update} library={library} mode="plan" />
             </div>
           </div>
         ) : (
-          <Checklist trip={trip} update={update} mode="checklist" />
+          <Checklist trip={trip} update={update} library={library} mode="checklist" />
         )}
       </div>
 
-      <PrintSheet trip={trip} />
+      <PrintSheet trip={trip} library={library} />
     </>
   );
 }

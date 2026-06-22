@@ -1,6 +1,7 @@
 import { db, uid, CURRENT_SCHEMA_VERSION, type StoredTrip } from './db';
 import type { Trip } from '../types';
-import { parseTrip } from './transfer';
+import { parseImport } from './transfer';
+import { ensureLibraryItem } from './library';
 
 function now() {
   return Date.now();
@@ -44,11 +45,28 @@ export async function deleteTrip(id: string): Promise<void> {
   await db.trips.delete(id);
 }
 
-/** Import a trip from exported JSON text as a new, independent trip. Throws on
- *  invalid input (see `parseTrip`). Returns the new trip id. */
+/**
+ * Import a trip from exported JSON text as a new, independent trip. Resolves the
+ * bundled library items into the local library (dedupe by name; mints fresh local
+ * ids) and rewires the trip's item references to those ids. Throws on invalid
+ * input (see `parseImport`). Returns the new trip id.
+ */
 export async function importTripFromText(text: string): Promise<string> {
-  const trip = parseTrip(text, uid, now());
-  await db.trips.add({ ...trip, schemaVersion: CURRENT_SCHEMA_VERSION });
+  const { trip, libraryItems } = parseImport(text, uid, now());
+
+  // Resolve each bundled library item into the store: nameKey -> local id.
+  const keyToId = new Map<string, string>();
+  for (const li of libraryItems) {
+    const row = await ensureLibraryItem(li.name, li.category, li.tagKeys);
+    keyToId.set(li.nameKey, row.id);
+  }
+
+  const items = trip.items
+    .map((it) => ({ ...it, libraryId: keyToId.get(it.libraryId) ?? '' }))
+    .filter((it) => it.libraryId);
+
+  const stored: StoredTrip = { ...trip, items, schemaVersion: CURRENT_SCHEMA_VERSION };
+  await db.trips.add(stored);
   return trip.id;
 }
 
@@ -57,20 +75,10 @@ export async function cloneTrip(id: string): Promise<string | undefined> {
   const src = await db.trips.get(id);
   if (!src) return undefined;
 
-  // Remap tag ids so item.tagIds references stay consistent.
-  const tagIdMap = new Map<string, string>();
-  const tags = src.tags.map((t) => {
-    const newId = uid();
-    tagIdMap.set(t.id, newId);
-    return { ...t, id: newId };
-  });
-
-  const items = src.items.map((it) => ({
-    ...it,
-    id: uid(),
-    packed: false,
-    tagIds: it.tagIds.map((t) => tagIdMap.get(t) ?? t).filter(Boolean),
-  }));
+  // Fresh ids for the trip's context tags; items are library references and reset
+  // their packed state for the new copy.
+  const tags = src.tags.map((t) => ({ ...t, id: uid() }));
+  const items = src.items.map((it) => ({ ...it, packed: false }));
 
   const ts = now();
   const copy: StoredTrip = {

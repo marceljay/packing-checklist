@@ -5,7 +5,7 @@ import { tagKey, type CatalogItem, type LibraryItem } from '../types';
  * are dropped (suggestions rank by match count); `always` becomes `essential`
  * and the quantity rule is carried so smart quantities survive. Pure.
  */
-export function catalogToLibraryItems(catalog: CatalogItem[]): LibraryItem[] {
+export function catalogToLibraryItems(catalog: CatalogItem[]): Omit<LibraryItem, 'id'>[] {
   return catalog.map((c) => ({
     nameKey: tagKey(c.name),
     name: c.name,

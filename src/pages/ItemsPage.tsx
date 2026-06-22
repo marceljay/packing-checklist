@@ -14,9 +14,9 @@ import {
 import {
   listLibrary,
   rememberItem,
-  updateItem,
-  renameLibraryItem,
-  forgetItem,
+  updateItemById,
+  renameLibraryItemById,
+  forgetItemById,
 } from '../db/library';
 
 type View = 'category' | 'tag' | 'all';
@@ -33,59 +33,98 @@ const byName = (a: LibraryItem, b: LibraryItem) => a.name.localeCompare(b.name);
 // ---------------------------------------------------------------------------
 
 function LibraryItemRow({ item }: { item: LibraryItem }) {
-  const [editName, setEditName] = useState(item.name);
-  const [editCategory, setEditCategory] = useState<Category>(item.category);
-  const [newTag, setNewTag] = useState('');
+  const [editing, setEditing] = useState(false);
 
-  function handleNameBlur() {
-    const trimmed = editName.trim();
-    if (!trimmed) {
-      setEditName(item.name);
-      return;
-    }
-    // Re-keys the row (renameLibraryItem) so nameKey === tagKey(name) holds.
-    if (trimmed !== item.name) void renameLibraryItem(item.nameKey, trimmed);
-  }
-
-  function handleCategoryChange(cat: Category) {
-    setEditCategory(cat);
-    void updateItem(item.nameKey, { category: cat });
-  }
-
-  function handleRemoveTag(key: string) {
-    void updateItem(item.nameKey, { tagKeys: item.tagKeys.filter((k) => k !== key) });
-  }
-
-  function handleAddTag(e: React.FormEvent) {
-    e.preventDefault();
-    const k = tagKey(newTag);
-    if (!k || item.tagKeys.includes(k)) {
-      setNewTag('');
-      return;
-    }
-    void updateItem(item.nameKey, { tagKeys: [...item.tagKeys, k] });
-    setNewTag('');
+  if (editing) {
+    return (
+      <li>
+        <LibraryItemEdit item={item} onDone={() => setEditing(false)} />
+      </li>
+    );
   }
 
   return (
-    <li className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-start sm:gap-4">
+    <li className="flex items-start gap-3 px-4 py-3">
       <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-        <div className="flex items-center gap-2">
-          <input
-            className="input"
-            value={editName}
-            onChange={(e) => setEditName(e.target.value)}
-            onBlur={handleNameBlur}
-            aria-label="Item name"
-          />
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="font-display text-sm font-medium text-ink">{item.name}</span>
           {!item.custom && (
             <span className="chip shrink-0 bg-paper-sunk text-ink-faint">default</span>
           )}
+          <span className="chip bg-paper-sunk font-mono text-[0.625rem] uppercase tracking-wide text-ink-faint">
+            {item.category}
+          </span>
         </div>
+        {item.tagKeys.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {item.tagKeys.map((k) => (
+              <span key={k} className="chip bg-airblue-soft text-airblue">
+                {k}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="flex shrink-0 items-center gap-2">
+        {item.count > 0 && (
+          <span className="font-mono text-[0.625rem] text-ink-faint">used {item.count}×</span>
+        )}
+        <button
+          className="btn-ghost px-1.5 py-1"
+          aria-label={`Edit ${item.name}`}
+          onClick={() => setEditing(true)}
+        >
+          ✎
+        </button>
+        <button
+          className="btn-danger px-1.5 py-1"
+          aria-label={`Remove ${item.name} from your library`}
+          onClick={() => void forgetItemById(item.id)}
+        >
+          ✕
+        </button>
+      </div>
+    </li>
+  );
+}
+
+/** Inline edit form for a library row: name, category, comma-separated tags. */
+function LibraryItemEdit({ item, onDone }: { item: LibraryItem; onDone: () => void }) {
+  const [name, setName] = useState(item.name);
+  const [category, setCategory] = useState<Category>(item.category);
+  const [tagInput, setTagInput] = useState(item.tagKeys.join(', '));
+  const [error, setError] = useState('');
+
+  async function save() {
+    const clean = name.trim();
+    if (!clean) return;
+    const tagKeys = [...new Set(tagInput.split(',').map((t) => tagKey(t)).filter(Boolean))];
+    if (clean !== item.name) {
+      const ok = await renameLibraryItemById(item.id, clean);
+      if (!ok) {
+        setError('Another item already has that name.');
+        return;
+      }
+    }
+    await updateItemById(item.id, { category, tagKeys });
+    onDone();
+  }
+
+  return (
+    <div className="flex flex-col gap-2 bg-paper-sunk/40 px-4 py-3">
+      <div className="grid gap-2 sm:grid-cols-[1fr_12rem]">
+        <input
+          className="input min-w-0"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          aria-label="Item name"
+          autoFocus
+        />
         <select
-          className="input"
-          value={editCategory}
-          onChange={(e) => handleCategoryChange(e.target.value as Category)}
+          className="input min-w-0"
+          value={category}
+          onChange={(e) => setCategory(e.target.value as Category)}
           aria-label="Category"
         >
           {CATEGORIES.map((cat) => (
@@ -95,47 +134,23 @@ function LibraryItemRow({ item }: { item: LibraryItem }) {
           ))}
         </select>
       </div>
-
-      <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-        <div className="flex flex-wrap gap-1">
-          {item.tagKeys.map((k) => (
-            <span key={k} className="chip bg-airblue-soft text-airblue">
-              {k}
-              <button
-                onClick={() => handleRemoveTag(k)}
-                aria-label={`Remove tag ${k}`}
-                className="ml-0.5 rounded-full text-airblue/70 hover:text-airblue"
-              >
-                ✕
-              </button>
-            </span>
-          ))}
-        </div>
-        <form onSubmit={handleAddTag} className="flex gap-1.5">
-          <input
-            className="input"
-            placeholder="Add tag…"
-            value={newTag}
-            onChange={(e) => setNewTag(e.target.value)}
-            aria-label={`Add a tag to ${item.name}`}
-          />
-          <button type="submit" className="btn-secondary shrink-0">
-            Add
-          </button>
-        </form>
-      </div>
-
-      <div className="flex shrink-0 items-center gap-3 sm:flex-col sm:items-end">
-        <span className="font-mono text-[0.6875rem] text-ink-faint">used {item.count}×</span>
-        <button
-          className="btn-danger text-xs"
-          aria-label={`Remove ${item.name} from your library`}
-          onClick={() => void forgetItem(item.nameKey)}
-        >
-          Remove
+      <input
+        className="input"
+        value={tagInput}
+        onChange={(e) => setTagInput(e.target.value)}
+        placeholder="Tags (comma-separated)"
+        aria-label={`Tags for ${item.name}`}
+      />
+      {error && <p className="font-mono text-xs text-vermilion">{error}</p>}
+      <div className="flex items-center justify-end gap-2">
+        <button className="btn-ghost text-xs" onClick={onDone}>
+          Cancel
+        </button>
+        <button className="btn-primary text-xs" onClick={() => void save()} disabled={!name.trim()}>
+          Save
         </button>
       </div>
-    </li>
+    </div>
   );
 }
 
@@ -194,9 +209,9 @@ function TagSection({
 
   function persist(updated: LibraryItem[]) {
     for (const next of updated) {
-      const orig = allItems.find((i) => i.nameKey === next.nameKey);
+      const orig = allItems.find((i) => i.id === next.id);
       if (orig && !sameKeys(orig.tagKeys, next.tagKeys)) {
-        void updateItem(next.nameKey, { tagKeys: next.tagKeys });
+        void updateItemById(next.id, { tagKeys: next.tagKeys });
       }
     }
   }

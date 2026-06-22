@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { serializeTrip, parseTrip } from './transfer';
-import type { Trip } from '../types';
+import { serializeTrip, parseImport } from './transfer';
+import type { LibraryItem, Trip } from '../types';
 
 function sampleTrip(): Trip {
   return {
@@ -10,23 +10,37 @@ function sampleTrip(): Trip {
     endDate: '2026-09-08',
     destinations: [{ id: 'd1', label: 'Lisbon, Portugal', isPrimary: true }],
     tags: [{ id: 'tag-surf', label: 'surfing', type: 'activity' }],
-    items: [
-      {
-        id: 'i1',
-        name: 'Boardshorts',
-        category: 'Clothing',
-        tagIds: ['tag-surf'],
-        quantitySuggested: 2,
-        quantityTaken: 2,
-        packed: false,
-        source: 'suggested',
-        catalogId: 'boardshorts',
-      },
-    ],
+    items: [{ libraryId: 'boa42', quantitySuggested: 2, quantityTaken: 2, packed: false }],
     settings: { laundryAvailable: true },
     createdAt: 1,
     updatedAt: 2,
   };
+}
+
+function sampleLibrary(): LibraryItem[] {
+  return [
+    {
+      id: 'boa42',
+      nameKey: 'boardshorts',
+      name: 'Boardshorts',
+      category: 'Clothing',
+      tagKeys: ['surfing'],
+      custom: true,
+      count: 1,
+      lastUsed: 0,
+    },
+    // an extra, unreferenced row that must NOT be bundled
+    {
+      id: 'soc11',
+      nameKey: 'socks',
+      name: 'Socks',
+      category: 'Clothing',
+      tagKeys: [],
+      custom: true,
+      count: 0,
+      lastUsed: 0,
+    },
+  ];
 }
 
 let counter = 0;
@@ -37,48 +51,83 @@ beforeEach(() => {
   counter = 0;
 });
 
-describe('serializeTrip / parseTrip', () => {
-  it('round-trips the trip content', () => {
-    const parsed = parseTrip(serializeTrip(sampleTrip()), genId, NOW);
-    expect(parsed.name).toBe('Portugal surf');
-    expect(parsed.startDate).toBe('2026-09-01');
-    expect(parsed.items.map((i) => i.name)).toEqual(['Boardshorts']);
-    expect(parsed.tags.map((t) => t.label)).toEqual(['surfing']);
-    expect(parsed.settings.laundryAvailable).toBe(true);
+describe('serializeTrip / parseImport (v2 bundle)', () => {
+  it('round-trips the trip content and the referenced library item', () => {
+    const { trip, libraryItems } = parseImport(
+      serializeTrip(sampleTrip(), sampleLibrary()),
+      genId,
+      NOW,
+    );
+    expect(trip.name).toBe('Portugal surf');
+    expect(trip.startDate).toBe('2026-09-01');
+    expect(trip.settings.laundryAvailable).toBe(true);
+    expect(trip.tags.map((t) => t.label)).toEqual(['surfing']);
+    expect(libraryItems.map((l) => l.name)).toEqual(['Boardshorts']);
+    expect(libraryItems[0].tagKeys).toEqual(['surfing']);
   });
 
-  it('assigns fresh ids and rewires item→tag references', () => {
-    const parsed = parseTrip(serializeTrip(sampleTrip()), genId, NOW);
-    expect(parsed.id).not.toBe('orig-trip');
-    expect(parsed.tags[0].id).not.toBe('tag-surf');
-    // the item should still point at the (remapped) surfing tag
-    expect(parsed.items[0].tagIds).toEqual([parsed.tags[0].id]);
+  it('only bundles library rows the trip references', () => {
+    const text = serializeTrip(sampleTrip(), sampleLibrary());
+    const envelope = JSON.parse(text) as { library: LibraryItem[] };
+    expect(envelope.library.map((l) => l.name)).toEqual(['Boardshorts']);
   });
 
-  it('drops references to tags that no longer exist', () => {
+  it('keys item references by nameKey for the importer to resolve', () => {
+    const { trip } = parseImport(serializeTrip(sampleTrip(), sampleLibrary()), genId, NOW);
+    expect(trip.items).toHaveLength(1);
+    expect(trip.items[0].libraryId).toBe('boardshorts'); // nameKey, not the local id
+    expect(trip.items[0].quantityTaken).toBe(2);
+  });
+
+  it('assigns fresh trip / tag / destination ids and timestamps', () => {
+    const { trip } = parseImport(serializeTrip(sampleTrip(), sampleLibrary()), genId, NOW);
+    expect(trip.id).not.toBe('orig-trip');
+    expect(trip.tags[0].id).not.toBe('tag-surf');
+    expect(trip.destinations[0].id).not.toBe('d1');
+    expect(trip.createdAt).toBe(NOW);
+    expect(trip.updatedAt).toBe(NOW);
+  });
+
+  it('drops item references whose library row was not bundled', () => {
     const trip = sampleTrip();
-    trip.items[0].tagIds = ['tag-surf', 'ghost-tag'];
-    const parsed = parseTrip(serializeTrip(trip), genId, NOW);
-    expect(parsed.items[0].tagIds).toEqual([parsed.tags[0].id]);
+    trip.items.push({ libraryId: 'ghost', quantitySuggested: null, quantityTaken: 1, packed: false });
+    const { trip: parsed } = parseImport(serializeTrip(trip, sampleLibrary()), genId, NOW);
+    expect(parsed.items.map((i) => i.libraryId)).toEqual(['boardshorts']);
   });
 
-  it('stamps fresh timestamps', () => {
-    const parsed = parseTrip(serializeTrip(sampleTrip()), genId, NOW);
-    expect(parsed.createdAt).toBe(NOW);
-    expect(parsed.updatedAt).toBe(NOW);
+  it('imports a legacy v1 export (items carried name/category/tagIds)', () => {
+    const legacy = {
+      kind: 'packing-checklist/trip',
+      version: 1,
+      trip: {
+        name: 'Old trip',
+        tags: [{ id: 'tg', label: 'beach', type: 'activity' }],
+        items: [
+          {
+            id: 'i1',
+            name: 'Towel',
+            category: 'Comfort & Misc',
+            tagIds: ['tg'],
+            quantityTaken: 1,
+            packed: false,
+          },
+        ],
+        settings: { laundryAvailable: false },
+      },
+    };
+    const { trip, libraryItems } = parseImport(JSON.stringify(legacy), genId, NOW);
+    expect(trip.name).toBe('Old trip');
+    expect(libraryItems).toEqual([
+      { nameKey: 'towel', name: 'Towel', category: 'Comfort & Misc', tagKeys: ['beach'], custom: true },
+    ]);
+    expect(trip.items[0].libraryId).toBe('towel');
   });
 
   it('throws on invalid JSON', () => {
-    expect(() => parseTrip('{not json', genId, NOW)).toThrow();
+    expect(() => parseImport('{not json', genId, NOW)).toThrow();
   });
 
   it('throws on a file that is not a trip export', () => {
-    expect(() => parseTrip(JSON.stringify({ hello: 'world' }), genId, NOW)).toThrow();
-  });
-
-  it('accepts a bare trip object without the envelope', () => {
-    const bare = JSON.stringify(sampleTrip());
-    const parsed = parseTrip(bare, genId, NOW);
-    expect(parsed.name).toBe('Portugal surf');
+    expect(() => parseImport(JSON.stringify({ hello: 'world' }), genId, NOW)).toThrow();
   });
 });

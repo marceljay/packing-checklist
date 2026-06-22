@@ -6,10 +6,11 @@ import App from './App';
 import TripsListPage from './pages/TripsListPage';
 import TripEditorPage from './pages/TripEditorPage';
 import ItemsPage from './pages/ItemsPage';
-import { seedLibrary } from './db/library';
+import { seedLibrary, migrateTripsToLibraryRefs } from './db/library';
 
-// Seed the built-in defaults into the library once on startup (idempotent).
-void seedLibrary();
+// Seed built-in defaults (idempotent), then migrate any legacy trips whose items
+// predate the library-reference model. Order matters: refs resolve against seeds.
+void seedLibrary().then(() => migrateTripsToLibraryRefs());
 
 // Hash router keeps the app deployable on any static host (GitHub Pages etc.)
 // without server-side rewrite rules.

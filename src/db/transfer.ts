@@ -1,34 +1,62 @@
 import {
   CATEGORIES,
+  tagKey,
+  legacyItemToRef,
   type Category,
   type Item,
+  type LibraryItem,
   type Tag,
   type TagType,
   type Trip,
 } from '../types';
 
 /**
- * JSON import/export for trips (SPEC §1 — local-only portability/backup). Pure
- * functions: serialize a trip to text, and parse imported text back into a fresh
- * Trip with regenerated ids (so an import never collides with existing data).
+ * JSON import/export for trips (SPEC §1 — local-only portability/backup). Because
+ * items are now references into the canonical library, an export bundles the
+ * referenced library rows so the file stays self-contained. Pure functions:
+ * serialize a trip + its library rows, and parse imported text back into a fresh
+ * trip plus the library items it needs (the importer resolves them into the store).
  */
 
 const EXPORT_KIND = 'packing-checklist/trip';
-const EXPORT_VERSION = 1;
+const EXPORT_VERSION = 2;
+
+/** A library item as carried in an import, keyed by `nameKey` (the importer mints
+ *  a fresh local `id` when it resolves/creates the row). */
+export interface ImportedLibraryItem {
+  nameKey: string;
+  name: string;
+  category: Category;
+  tagKeys: string[];
+  custom: boolean;
+  essential?: boolean;
+  quantity?: LibraryItem['quantity'];
+}
+
+export interface ImportResult {
+  /** A normalized trip whose `items[].libraryId` temporarily holds the item's
+   *  `nameKey`; the importer rewrites these to real library ids. */
+  trip: Trip;
+  libraryItems: ImportedLibraryItem[];
+}
 
 interface TripEnvelope {
   kind: typeof EXPORT_KIND;
   version: number;
   exportedAt: number;
   trip: Trip;
+  library: LibraryItem[];
 }
 
-export function serializeTrip(trip: Trip): string {
+/** Serialize a trip together with the library rows its items reference. */
+export function serializeTrip(trip: Trip, library: LibraryItem[]): string {
+  const referenced = new Set(trip.items.map((i) => i.libraryId));
   const envelope: TripEnvelope = {
     kind: EXPORT_KIND,
     version: EXPORT_VERSION,
     exportedAt: Date.now(),
     trip,
+    library: library.filter((l) => referenced.has(l.id)),
   };
   return JSON.stringify(envelope, null, 2);
 }
@@ -48,11 +76,12 @@ function asCategory(v: unknown): Category {
 }
 
 /**
- * Parse exported text (envelope or a bare trip) into a fresh, fully-normalized
- * Trip: new ids throughout, item→tag references rewired to the new tag ids
- * (unknown references dropped), and new timestamps. Throws on invalid input.
+ * Parse exported text (v2 envelope, legacy v1 envelope, or a bare trip) into a
+ * fresh trip plus the library items it references. Trip/destination/context-tag
+ * ids are regenerated; item references are keyed by `nameKey` for the importer to
+ * resolve. Throws on invalid input.
  */
-export function parseTrip(text: string, genId: () => string, now: number): Trip {
+export function parseImport(text: string, genId: () => string, now: number): ImportResult {
   let data: unknown;
   try {
     data = JSON.parse(text);
@@ -60,37 +89,19 @@ export function parseTrip(text: string, genId: () => string, now: number): Trip 
     throw new Error('That file isn’t valid JSON.');
   }
 
-  const raw = (data as { trip?: unknown }).trip ?? data;
-  const t = raw as Partial<Trip>;
-  if (!t || typeof t !== 'object' || typeof t.name !== 'string' || !Array.isArray(t.items)) {
+  const envelope = data as Partial<TripEnvelope>;
+  const raw = (envelope.trip ?? data) as Partial<Trip>;
+  if (!raw || typeof raw !== 'object' || typeof raw.name !== 'string' || !Array.isArray(raw.items)) {
     throw new Error('That file isn’t a packing-checklist trip.');
   }
 
-  // Remap tag ids old -> new so item references can be rewired.
-  const tagIdMap = new Map<string, string>();
-  const tags: Tag[] = (t.tags ?? []).map((tag) => {
-    const id = genId();
-    tagIdMap.set(tag.id, id);
-    return { id, label: asString(tag.label), type: asTagType(tag.type) };
-  });
-
-  const items: Item[] = t.items.map((item) => ({
+  const tags: Tag[] = (raw.tags ?? []).map((tag) => ({
     id: genId(),
-    name: asString(item.name),
-    category: asCategory(item.category),
-    tagIds: (item.tagIds ?? [])
-      .map((old) => tagIdMap.get(old))
-      .filter((x): x is string => Boolean(x)),
-    quantitySuggested:
-      typeof item.quantitySuggested === 'number' ? item.quantitySuggested : null,
-    quantityTaken: typeof item.quantityTaken === 'number' ? item.quantityTaken : 1,
-    packed: item.packed === true,
-    source: item.source === 'suggested' ? 'suggested' : 'custom',
-    ...(item.catalogId ? { catalogId: item.catalogId } : {}),
-    ...(item.notes ? { notes: item.notes } : {}),
+    label: asString(tag.label),
+    type: asTagType(tag.type),
   }));
 
-  const destinations = (t.destinations ?? []).map((d) => ({
+  const destinations = (raw.destinations ?? []).map((d) => ({
     id: genId(),
     label: asString(d.label),
     isPrimary: d.isPrimary === true,
@@ -102,16 +113,73 @@ export function parseTrip(text: string, genId: () => string, now: number): Trip 
     destinations[0].isPrimary = true;
   }
 
-  return {
+  const libByKey = new Map<string, ImportedLibraryItem>();
+  const items: Item[] = [];
+
+  const bundledLibrary = Array.isArray(envelope.library) ? envelope.library : null;
+  if (bundledLibrary) {
+    // v2: items reference library rows by id; map id -> nameKey via the bundle.
+    const idToKey = new Map<string, string>();
+    for (const row of bundledLibrary) {
+      const nameKey = asString(row.nameKey) || tagKey(asString(row.name));
+      if (!nameKey) continue;
+      idToKey.set(asString(row.id), nameKey);
+      libByKey.set(nameKey, {
+        nameKey,
+        name: asString(row.name),
+        category: asCategory(row.category),
+        tagKeys: Array.isArray(row.tagKeys) ? row.tagKeys.map((k) => tagKey(String(k))) : [],
+        custom: row.custom !== false,
+        ...(row.essential ? { essential: true } : {}),
+        ...(row.quantity ? { quantity: row.quantity } : {}),
+      });
+    }
+    for (const it of raw.items as { libraryId?: unknown; quantitySuggested?: unknown; quantityTaken?: unknown; packed?: unknown }[]) {
+      const key = idToKey.get(asString(it.libraryId));
+      if (!key) continue;
+      items.push({
+        libraryId: key,
+        quantitySuggested: typeof it.quantitySuggested === 'number' ? it.quantitySuggested : null,
+        quantityTaken: typeof it.quantityTaken === 'number' ? it.quantityTaken : 1,
+        packed: it.packed === true,
+      });
+    }
+  } else {
+    // Legacy v1 / bare: items carried name/category/tagIds — synthesize library
+    // items from them and reference by nameKey.
+    for (const legacy of raw.items as { name?: string; quantitySuggested?: unknown; quantityTaken?: unknown; packed?: unknown }[]) {
+      const ref = legacyItemToRef(legacy as Parameters<typeof legacyItemToRef>[0], raw.tags as Tag[] ?? []);
+      if (!ref.name) continue;
+      if (!libByKey.has(ref.nameKey)) {
+        libByKey.set(ref.nameKey, {
+          nameKey: ref.nameKey,
+          name: ref.name,
+          category: ref.category,
+          tagKeys: ref.tagKeys,
+          custom: true,
+        });
+      }
+      items.push({
+        libraryId: ref.nameKey,
+        quantitySuggested: typeof legacy.quantitySuggested === 'number' ? legacy.quantitySuggested : null,
+        quantityTaken: typeof legacy.quantityTaken === 'number' ? legacy.quantityTaken : 1,
+        packed: legacy.packed === true,
+      });
+    }
+  }
+
+  const trip: Trip = {
     id: genId(),
-    name: t.name,
-    startDate: asString(t.startDate) || undefined,
-    endDate: asString(t.endDate) || undefined,
+    name: raw.name,
+    startDate: asString(raw.startDate) || undefined,
+    endDate: asString(raw.endDate) || undefined,
     destinations,
     tags,
     items,
-    settings: { laundryAvailable: t.settings?.laundryAvailable === true },
+    settings: { laundryAvailable: raw.settings?.laundryAvailable === true },
     createdAt: now,
     updatedAt: now,
   };
+
+  return { trip, libraryItems: [...libByKey.values()] };
 }

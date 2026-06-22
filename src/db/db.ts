@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie';
-import type { Trip, LibraryItem } from '../types';
+import { shortId, type Trip, type LibraryItem } from '../types';
 
 /**
  * Local-only persistence (SPEC §9). The whole Trip aggregate is stored as one
@@ -8,7 +8,10 @@ import type { Trip, LibraryItem } from '../types';
  *
  * `schemaVersion` on each Trip lets us migrate saved data as the model evolves.
  */
-export const CURRENT_SCHEMA_VERSION = 1;
+// v2: trip items became references to library rows (`libraryId`) instead of
+// carrying their own name/category/tagIds. `migrateTripsToLibraryRefs` upgrades
+// older trips at startup.
+export const CURRENT_SCHEMA_VERSION = 2;
 
 export type StoredTrip = Trip & { schemaVersion: number };
 
@@ -45,6 +48,23 @@ class PackingDB extends Dexie {
           .modify((row) => {
             row.custom = true;
             if (!Array.isArray(row.tagKeys)) row.tagKeys = [];
+          });
+      });
+    // v4: library rows gain a stable short `id` (trips reference it; it survives
+    // renames, unlike the nameKey primary key). Assign one to every existing row.
+    this.version(4)
+      .stores({
+        trips: 'id, updatedAt',
+        library: 'nameKey, id, count, lastUsed',
+      })
+      .upgrade(async (tx) => {
+        const taken = new Set<string>();
+        await tx
+          .table('library')
+          .toCollection()
+          .modify((row) => {
+            if (!row.id) row.id = shortId(row.name ?? row.nameKey ?? 'item', taken);
+            taken.add(row.id);
           });
       });
   }

@@ -1,39 +1,45 @@
 import { useMemo, useState } from 'react';
-import type { Item, Trip } from '../types';
-import { uid } from '../db/db';
+import type { Trip, LibraryItem } from '../types';
+import { resolveItems, tagKey } from '../types';
+import { rememberItem } from '../db/library';
+import { CATALOG } from '../data/catalog';
 import { suggestItems, type Suggestion } from '../engine/suggest';
 
 interface Props {
   trip: Trip;
   update: (mutator: (draft: Trip) => void) => void;
+  /** Library rows by id, to know which items are already on the trip. */
+  library: Map<string, LibraryItem>;
 }
 
-function suggestionToItem(s: Suggestion): Item {
-  return {
-    id: uid(),
-    name: s.catalog.name,
-    category: s.catalog.category,
-    tagIds: s.reasonTags.map((t) => t.id),
-    quantitySuggested: s.quantity,
-    quantityTaken: s.quantity,
-    packed: false,
-    source: 'suggested',
-    catalogId: s.catalog.id,
-  };
-}
-
-export default function SuggestionsTray({ trip, update }: Props) {
+export default function SuggestionsTray({ trip, update, library }: Props) {
   const [open, setOpen] = useState(true);
-  const suggestions = useMemo(() => suggestItems(trip), [trip]);
 
-  function add(s: Suggestion) {
-    update((d) => void d.items.push(suggestionToItem(s)));
+  const excludeNameKeys = useMemo(
+    () => new Set(resolveItems(trip.items, library).map((r) => tagKey(r.name))),
+    [trip.items, library],
+  );
+  const suggestions = useMemo(
+    () => suggestItems(trip, CATALOG, excludeNameKeys),
+    [trip, excludeNameKeys],
+  );
+
+  async function add(s: Suggestion) {
+    const row = await rememberItem(s.catalog.name, s.catalog.category);
+    update((d) => {
+      if (!d.items.some((i) => i.libraryId === row.id)) {
+        d.items.push({
+          libraryId: row.id,
+          quantitySuggested: s.quantity,
+          quantityTaken: s.quantity,
+          packed: false,
+        });
+      }
+    });
   }
 
-  function addAll() {
-    update((d) => {
-      for (const s of suggestions) d.items.push(suggestionToItem(s));
-    });
+  async function addAll() {
+    for (const s of suggestions) await add(s);
   }
 
   return (
@@ -66,7 +72,7 @@ export default function SuggestionsTray({ trip, update }: Props) {
                 <span className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">
                   Tap to add
                 </span>
-                <button className="btn-ghost px-2 py-1 text-xs" onClick={addAll}>
+                <button className="btn-ghost px-2 py-1 text-xs" onClick={() => void addAll()}>
                   Add all
                 </button>
               </div>
@@ -79,7 +85,7 @@ export default function SuggestionsTray({ trip, update }: Props) {
                     <button
                       className="btn-secondary h-7 w-7 shrink-0 p-0 text-base leading-none"
                       aria-label={`Add ${s.catalog.name}`}
-                      onClick={() => add(s)}
+                      onClick={() => void add(s)}
                     >
                       +
                     </button>

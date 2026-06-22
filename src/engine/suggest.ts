@@ -23,10 +23,14 @@ const ESSENTIAL_BASE_SCORE = 0.5;
  * Rank catalog items for a trip (SPEC §5). Union matching: an item is suggested
  * if it's essential or any of its tagKeys matches an active trip tag. Score is
  * the sum of matched weights (+ a small base for essentials), so items matching
- * more / higher-weighted active tags float to the top. Items already on the
- * trip's list are excluded.
+ * more / higher-weighted active tags float to the top. Catalog items whose
+ * normalized name is in `excludeNameKeys` (i.e. already on the trip) are skipped.
  */
-export function suggestItems(trip: Trip, catalog: CatalogItem[] = CATALOG): Suggestion[] {
+export function suggestItems(
+  trip: Trip,
+  catalog: CatalogItem[] = CATALOG,
+  excludeNameKeys: Set<string> = new Set(),
+): Suggestion[] {
   const days = trip.startDate && trip.endDate
     ? // tripDurationDays inlined to avoid a circular-ish import; cheap enough
       Math.round(
@@ -44,13 +48,9 @@ export function suggestItems(trip: Trip, catalog: CatalogItem[] = CATALOG): Sugg
     if (!tagsByKey.has(key)) tagsByKey.set(key, tag);
   }
 
-  const alreadyAdded = new Set(
-    trip.items.map((i) => i.catalogId).filter((x): x is string => Boolean(x)),
-  );
-
   const out: Suggestion[] = [];
   for (const item of catalog) {
-    if (alreadyAdded.has(item.id)) continue;
+    if (excludeNameKeys.has(tagKey(item.name))) continue;
 
     let score = 0;
     const reasonTags: Tag[] = [];
