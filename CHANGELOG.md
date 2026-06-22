@@ -73,6 +73,10 @@ All notable changes to this project are documented here.
 - Vite dev server binds `--host` on port 5000; devcontainer forwards the port.
 
 ### Changed
+- **Home is now two full-width tabs** — **Your trips** and **Item library** —
+  spanning the content width, instead of a separate page reached by a link. The
+  active tab follows the route (`/` and `/items`), so deep links and back/forward
+  still work.
 - **Date range picker.** The two date fields are replaced by a single range
   calendar in a popover (react-day-picker, themed to match) — pick start and end
   as one highlighted range. Fixes the date-field overflow in the context panel.

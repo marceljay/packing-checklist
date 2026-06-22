@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import {
   CATEGORIES,
@@ -394,16 +393,6 @@ export default function ItemsPage() {
 
   return (
     <div className="flex flex-col gap-5 print:hidden">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <p className="label">Library</p>
-          <h1 className="mt-1 font-display text-3xl font-bold tracking-tight">Item library</h1>
-        </div>
-        <Link to="/" className="btn-ghost text-xs">
-          ← All trips
-        </Link>
-      </div>
-
       <AddItemForm />
 
       {/* View switcher + search */}

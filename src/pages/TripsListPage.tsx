@@ -49,26 +49,17 @@ export default function TripsListPage() {
 
   return (
     <div>
-      <div className="mb-7 flex items-end justify-between gap-4">
-        <div>
-          <p className="label">Departures</p>
-          <h1 className="mt-1 font-display text-3xl font-bold tracking-tight">Your trips</h1>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Link to="/items" className="btn-ghost">
-            Item library
-          </Link>
-          <button
-            className="btn-secondary"
-            onClick={handleImport}
-            title="Open a trip from a .json file you exported earlier"
-          >
-            Import trip
-          </button>
-          <button className="btn-primary" onClick={handleNew}>
-            + New trip
-          </button>
-        </div>
+      <div className="mb-5 flex flex-wrap items-center justify-end gap-2">
+        <button
+          className="btn-secondary"
+          onClick={handleImport}
+          title="Open a trip from a .json file you exported earlier"
+        >
+          Import trip
+        </button>
+        <button className="btn-primary" onClick={handleNew}>
+          + New trip
+        </button>
       </div>
 
       {trips === undefined ? (

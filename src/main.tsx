@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { RouterProvider, createHashRouter } from 'react-router-dom';
 import './index.css';
 import App from './App';
+import HomeLayout from './pages/HomeLayout';
 import TripsListPage from './pages/TripsListPage';
 import TripEditorPage from './pages/TripEditorPage';
 import ItemsPage from './pages/ItemsPage';
@@ -19,9 +20,14 @@ const router = createHashRouter([
     path: '/',
     element: <App />,
     children: [
-      { index: true, element: <TripsListPage /> },
+      {
+        element: <HomeLayout />,
+        children: [
+          { index: true, element: <TripsListPage /> },
+          { path: 'items', element: <ItemsPage /> },
+        ],
+      },
       { path: 'trip/:tripId', element: <TripEditorPage /> },
-      { path: 'items', element: <ItemsPage /> },
     ],
   },
 ]);
