@@ -5,6 +5,13 @@ All notable changes to this project are documented here.
 ## [Unreleased]
 
 ### Added
+- **Unified item library.** Built-in defaults + your custom items now live in one
+  editable store (seeded on first run, each flagged default/custom). The **Item
+  Library** page (`/items`, reachable from the trips page) has three expandable
+  views — by category, by tag, all — with tag rename/remove and an **Add custom
+  item** form on top.
+- **Add custom item card** on the trip Plan tab — a dedicated card above the list
+  where you set name, **category and tags** (and opt to save to your library).
 - **Plan / Checklist tabs.** The trip page splits into a **Plan** tab (build/edit
   the list — no checkboxes) and a **Checklist** tab (check items off with a
   progress bar). Same trip, two focused views.
