@@ -103,6 +103,10 @@ export default function TripEditorPage() {
     () => new Map(appData.library.map((i) => [i.id, i])),
     [appData.library],
   );
+  const tagSuggestions = useMemo(
+    () => [...new Set(appData.library.flatMap((i) => i.tagKeys ?? []))].sort(),
+    [appData.library],
+  );
 
   if (status === 'not-found' || !trip) {
     return (
@@ -175,7 +179,7 @@ export default function TripEditorPage() {
             <ContextPanel trip={trip} update={update} />
             <div className="flex flex-col gap-5">
               {trip.weather && <WeatherCard weather={trip.weather} />}
-              <AddItemCard update={update} />
+              <AddItemCard update={update} tagSuggestions={tagSuggestions} />
               <SuggestionsTray trip={trip} update={update} library={library} />
               <Checklist trip={trip} update={update} library={library} mode="plan" />
             </div>

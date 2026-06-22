@@ -32,3 +32,24 @@ export function migrate(raw: unknown): AppData {
     library: Array.isArray(o.library) ? o.library : [],
   };
 }
+
+/**
+ * Editing a built-in default forks it into a user item: the row is re-keyed to a
+ * fresh custom id (`newId`) and flagged `custom:true`, and every trip reference to
+ * the old id is rewired to it — so the user's edit follows their trips while the
+ * `d:<catalogId>` slot is freed (restoreable). No-op if the id is missing or the
+ * item is already custom. Mutates `data` (call inside a store draft). Returns the
+ * effective id (new if forked, else unchanged).
+ */
+export function forkDefault(data: AppData, oldId: string, newId: string): string {
+  const item = data.library.find((i) => i.id === oldId);
+  if (!item || item.custom) return oldId;
+  item.id = newId;
+  item.custom = true;
+  for (const trip of data.trips) {
+    for (const ref of trip.items) {
+      if (ref.libraryId === oldId) ref.libraryId = newId;
+    }
+  }
+  return newId;
+}

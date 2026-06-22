@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { migrate, emptyData, CURRENT_SCHEMA_VERSION } from './appData';
+import { migrate, emptyData, forkDefault, CURRENT_SCHEMA_VERSION, type AppData } from './appData';
+import type { LibraryItem, Trip } from '../types';
 
 describe('migrate', () => {
   it('returns empty data for null/garbage input', () => {
@@ -19,5 +20,47 @@ describe('migrate', () => {
   it('defaults missing arrays to empty', () => {
     expect(migrate({})).toEqual(emptyData());
     expect(migrate({ trips: 'bad', library: null })).toEqual(emptyData());
+  });
+});
+
+describe('forkDefault', () => {
+  function data(): AppData {
+    const lib: LibraryItem[] = [
+      { id: 'd:passport', nameKey: 'passport', name: 'Passport', category: 'Documents', tagKeys: [], custom: false, count: 0, lastUsed: 0 },
+      { id: 'c:abc', nameKey: 'socks', name: 'Socks', category: 'Clothing', tagKeys: [], custom: true, count: 0, lastUsed: 0 },
+    ];
+    const trips: Trip[] = [
+      {
+        id: 't1', name: 'Trip', destinations: [], tags: [],
+        items: [
+          { libraryId: 'd:passport', quantitySuggested: null, quantityTaken: 1, packed: false },
+          { libraryId: 'c:abc', quantitySuggested: null, quantityTaken: 1, packed: false },
+        ],
+        settings: { laundryAvailable: false }, createdAt: 0, updatedAt: 0,
+      },
+    ];
+    return { schemaVersion: CURRENT_SCHEMA_VERSION, trips, library: lib };
+  }
+
+  it('re-keys a default to custom and rewires trip references', () => {
+    const d = data();
+    const id = forkDefault(d, 'd:passport', 'c:new');
+    expect(id).toBe('c:new');
+    const row = d.library.find((i) => i.name === 'Passport')!;
+    expect(row.id).toBe('c:new');
+    expect(row.custom).toBe(true);
+    expect(d.trips[0].items[0].libraryId).toBe('c:new');
+    expect(d.trips[0].items[1].libraryId).toBe('c:abc'); // untouched
+  });
+
+  it('is a no-op for an already-custom item', () => {
+    const d = data();
+    expect(forkDefault(d, 'c:abc', 'c:new')).toBe('c:abc');
+    expect(d.library.find((i) => i.id === 'c:abc')).toBeDefined();
+  });
+
+  it('is a no-op for a missing id', () => {
+    const d = data();
+    expect(forkDefault(d, 'nope', 'c:new')).toBe('nope');
   });
 });

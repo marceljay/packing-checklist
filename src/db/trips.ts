@@ -1,5 +1,5 @@
 import { getData, setData, uid } from './store';
-import type { Trip } from '../types';
+import { isEmptyTrip, type Trip } from '../types';
 import { parseImport } from './transfer';
 import { ensureLibraryItem, getLibraryItem, putWithId } from './library';
 import type { LibraryItem } from '../types';
@@ -43,6 +43,15 @@ export function saveTrip(trip: Trip): void {
 export function deleteTrip(id: string): void {
   setData((d) => {
     d.trips = d.trips.filter((t) => t.id !== id);
+  });
+}
+
+/** Drop trips the user created but never edited (see {@link isEmptyTrip}). Called
+ *  when returning to the trips list so abandoned "New trip" stubs don't pile up. */
+export function pruneEmptyTrips(): void {
+  if (!getData().trips.some(isEmptyTrip)) return;
+  setData((d) => {
+    d.trips = d.trips.filter((t) => !isEmptyTrip(t));
   });
 }
 

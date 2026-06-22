@@ -5,6 +5,17 @@ All notable changes to this project are documented here.
 ## [Unreleased]
 
 ### Added
+- **Item Library, reworked.** Items show their tags as chips; **category and
+  default/custom status moved into an ⓘ info panel** (with an optional notes /
+  description field) instead of inline badges. The three view tabs are gone —
+  it's always grouped by category, with a **clickable tag-filter** row up top
+  (pick one or more tags to narrow the list) plus search. Tags are edited with a
+  **chip editor** (type + Enter/comma adds, ✕ removes, known tags autocomplete).
+- **Editing a built-in default forks it into your own copy** (its id changes to a
+  custom one and your trips follow the edit), and a **Restore defaults** button
+  re-adds any built-ins you removed or edited — leaving your custom items alone.
+- **Abandoned trips don't linger.** A "New trip" you create but never edit is
+  dropped when you return to the trips list.
 - **Storage is now a single JSON document** in `localStorage` instead of
   IndexedDB/Dexie. Migrations became pure object transforms (no schema-upgrade
   failures), and the in-app state matches the export shape. Existing IndexedDB data

@@ -103,6 +103,25 @@ export interface Trip {
   updatedAt: number;
 }
 
+/**
+ * True when a trip looks freshly-created and untouched — a blank/`Untitled` name,
+ * no dates, destinations, items or tags, and default settings. Used to prune trips
+ * the user created and abandoned without editing.
+ */
+export function isEmptyTrip(trip: Trip): boolean {
+  const name = trip.name.trim();
+  return (
+    (name === '' || name === 'Untitled trip') &&
+    !trip.startDate &&
+    !trip.endDate &&
+    trip.destinations.length === 0 &&
+    trip.items.length === 0 &&
+    trip.tags.length === 0 &&
+    !trip.settings.laundryAvailable &&
+    !trip.weather
+  );
+}
+
 /** Inclusive day count between start and end; null if dates missing. */
 export function tripDurationDays(trip: Pick<Trip, 'startDate' | 'endDate'>): number | null {
   if (!trip.startDate || !trip.endDate) return null;
@@ -139,6 +158,8 @@ export interface LibraryItem {
   essential?: boolean;
   /** Smart-quantity rule (seeded from the catalog); absent → quantity 1. */
   quantity?: QuantityRule;
+  /** Optional free-text note / longer description, shown in the item's info card. */
+  notes?: string;
 }
 
 /**

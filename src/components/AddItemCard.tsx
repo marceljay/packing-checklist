@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import type { Trip, Category } from '../types';
-import { CATEGORIES, tagKey } from '../types';
+import { CATEGORIES } from '../types';
 import { rememberItem } from '../db/library';
+import TagEditor from './TagEditor';
 
 interface Props {
   update: (mutator: (draft: Trip) => void) => void;
+  /** Known tag keys for autocomplete in the tag editor. */
+  tagSuggestions?: string[];
 }
 
 /**
@@ -13,16 +16,15 @@ interface Props {
  * trip stores only a reference. Re-adding an item already on the trip bumps its
  * quantity instead of duplicating.
  */
-export default function AddItemCard({ update }: Props) {
+export default function AddItemCard({ update, tagSuggestions = [] }: Props) {
   const [name, setName] = useState('');
   const [category, setCategory] = useState<Category>('Comfort & Misc');
-  const [tagInput, setTagInput] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
 
-  async function add() {
+  function add() {
     const clean = name.trim();
     if (!clean) return;
-    const keys = [...new Set(tagInput.split(',').map((t) => tagKey(t)).filter(Boolean))];
-    const row = await rememberItem(clean, category, keys);
+    const row = rememberItem(clean, category, tags);
     update((d) => {
       const existing = d.items.find((i) => i.libraryId === row.id);
       if (existing) {
@@ -32,7 +34,7 @@ export default function AddItemCard({ update }: Props) {
       }
     });
     setName('');
-    setTagInput('');
+    setTags([]);
     // category stays sticky for the next add
   }
 
@@ -48,7 +50,7 @@ export default function AddItemCard({ update }: Props) {
             className="input min-w-0"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && void add()}
+            onKeyDown={(e) => e.key === 'Enter' && add()}
             placeholder="Item name"
             aria-label="Item name"
           />
@@ -65,16 +67,11 @@ export default function AddItemCard({ update }: Props) {
             ))}
           </select>
         </div>
-        <div className="flex items-center gap-2">
-          <input
-            className="input min-w-0 flex-1"
-            value={tagInput}
-            onChange={(e) => setTagInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && void add()}
-            placeholder="Tags (comma-separated, optional)"
-            aria-label="Tags, comma-separated"
-          />
-          <button className="btn-primary shrink-0" onClick={() => void add()} disabled={!name.trim()}>
+        <div className="flex items-start gap-2">
+          <div className="min-w-0 flex-1">
+            <TagEditor value={tags} onChange={setTags} suggestions={tagSuggestions} ariaLabel="Tags for new item" />
+          </div>
+          <button className="btn-primary shrink-0" onClick={add} disabled={!name.trim()}>
             Add item
           </button>
         </div>

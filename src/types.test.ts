@@ -4,6 +4,7 @@ import {
   tripDurationDays,
   destinationCode,
   computeQuantity,
+  isEmptyTrip,
   resolveItems,
   resolvedByCategory,
   resolvedByTag,
@@ -17,6 +18,7 @@ import {
   searchLibrary,
   type Item,
   type Tag,
+  type Trip,
   type Category,
   type LibraryItem,
   type ResolvedItem,
@@ -188,6 +190,39 @@ describe('computeQuantity', () => {
 
   it('returns 1 for none rules', () => {
     expect(computeQuantity({ kind: 'none' }, 10, false)).toBe(1);
+  });
+});
+
+describe('isEmptyTrip', () => {
+  function trip(over: Partial<Trip> = {}): Trip {
+    return {
+      id: 't1',
+      name: 'Untitled trip',
+      destinations: [],
+      tags: [],
+      items: [],
+      settings: { laundryAvailable: false },
+      createdAt: 0,
+      updatedAt: 0,
+      ...over,
+    };
+  }
+
+  it('treats a fresh untouched trip as empty', () => {
+    expect(isEmptyTrip(trip())).toBe(true);
+    expect(isEmptyTrip(trip({ name: '   ' }))).toBe(true);
+  });
+
+  it('is not empty once the user names it', () => {
+    expect(isEmptyTrip(trip({ name: 'Lisbon' }))).toBe(false);
+  });
+
+  it('is not empty with dates, destinations, items, tags, or laundry set', () => {
+    expect(isEmptyTrip(trip({ startDate: '2026-06-01' }))).toBe(false);
+    expect(isEmptyTrip(trip({ destinations: [{ id: 'd', label: 'X', isPrimary: true }] }))).toBe(false);
+    expect(isEmptyTrip(trip({ items: [{ libraryId: 'c:1', quantitySuggested: null, quantityTaken: 1, packed: false }] }))).toBe(false);
+    expect(isEmptyTrip(trip({ tags: [{ id: 'g', label: 'beach', type: 'activity' }] }))).toBe(false);
+    expect(isEmptyTrip(trip({ settings: { laundryAvailable: true } }))).toBe(false);
   });
 });
 

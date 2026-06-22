@@ -1,5 +1,6 @@
 import { getData, setData } from './store';
 import { customId, tagKey, type Category, type LibraryItem } from '../types';
+import { forkDefault } from './appData';
 import { CATALOG } from '../data/catalog';
 import { catalogToLibraryItems } from '../data/seed';
 
@@ -86,37 +87,44 @@ export function rememberItem(name: string, category: Category, tagKeys: string[]
   return bumped;
 }
 
-/** Edit a library item by id. A provided `tagKeys` REPLACES the stored set. */
-export function updateItemById(
-  id: string,
-  patch: { category?: Category; tagKeys?: string[] },
-): void {
-  setData((d) => {
-    const i = d.library.findIndex((x) => x.id === id);
-    if (i >= 0) d.library[i] = { ...d.library[i], tagKeys: d.library[i].tagKeys ?? [], ...patch };
-  });
-}
-
 /**
- * Rename a library item by id (id is stable, so this is an in-place field update).
- * Rejects (returns false) a manual rename onto a name a DIFFERENT item already uses,
- * keeping the typed-edit paths free of accidental duplicates.
+ * Edit a library item's shared fields by id. Editing a built-in **default forks it
+ * into a custom** (new id, `custom:true`, trip refs rewired — see {@link forkDefault}),
+ * so the pristine default can later be restored. A provided `tagKeys` REPLACES the
+ * stored set. Rejects (returns `{ ok:false }`) a rename onto a name a DIFFERENT item
+ * already uses. Returns the effective id (new if the default was forked).
  */
-export function renameLibraryItemById(id: string, newName: string): boolean {
-  const clean = newName.trim();
-  if (!clean) return false;
-  const newKey = tagKey(clean);
-  const lib = getData().library;
-  const existing = lib.find((i) => i.id === id);
-  if (!existing) return false;
-  if (newKey !== existing.nameKey && lib.some((i) => i.nameKey === newKey && i.id !== id)) {
-    return false;
-  }
+export function editLibraryItem(
+  id: string,
+  patch: { name?: string; category?: Category; tagKeys?: string[]; notes?: string },
+): { ok: boolean; id: string } {
+  let result = { ok: false, id };
   setData((d) => {
-    const i = d.library.findIndex((x) => x.id === id);
-    if (i >= 0) d.library[i] = { ...d.library[i], name: clean, nameKey: newKey };
+    const cur = d.library.find((i) => i.id === id);
+    if (!cur) return;
+
+    let newKey = cur.nameKey;
+    if (patch.name !== undefined) {
+      const clean = patch.name.trim();
+      if (!clean) return;
+      newKey = tagKey(clean);
+      if (newKey !== cur.nameKey && d.library.some((i) => i.nameKey === newKey && i.id !== id)) {
+        return; // name collision → abort, no changes
+      }
+    }
+
+    const realId = cur.custom ? id : forkDefault(d, id, customId());
+    const row = d.library.find((i) => i.id === realId)!;
+    if (patch.name !== undefined) {
+      row.name = patch.name.trim();
+      row.nameKey = newKey;
+    }
+    if (patch.category !== undefined) row.category = patch.category;
+    if (patch.tagKeys !== undefined) row.tagKeys = [...new Set(patch.tagKeys)];
+    if (patch.notes !== undefined) row.notes = patch.notes.trim() || undefined;
+    result = { ok: true, id: realId };
   });
-  return true;
+  return result;
 }
 
 /** Remove an item from the library by id (does not touch any trip). */
@@ -124,6 +132,12 @@ export function forgetItemById(id: string): void {
   setData((d) => {
     d.library = d.library.filter((i) => i.id !== id);
   });
+}
+
+/** Re-add any built-in defaults that are missing (deleted, or forked into customs),
+ *  without touching the user's custom items. Idempotent — same as seeding. */
+export function restoreDefaults(): void {
+  seedLibrary();
 }
 
 /**

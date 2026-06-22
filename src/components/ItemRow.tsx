@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import type { Item, ResolvedItem, Trip, Category } from '../types';
-import { CATEGORIES, tagKey } from '../types';
-import { updateItemById, renameLibraryItemById } from '../db/library';
+import { CATEGORIES } from '../types';
+import { editLibraryItem } from '../db/library';
+import TagEditor from './TagEditor';
 
 export type ItemRowMode = 'plan' | 'checklist';
 
@@ -152,21 +153,16 @@ export default function ItemRow({ item, update, showCategory = false, mode = 'pl
 function EditForm({ item, onDone }: { item: ResolvedItem; onDone: () => void }) {
   const [name, setName] = useState(item.name);
   const [category, setCategory] = useState<Category>(item.category);
-  const [tagInput, setTagInput] = useState(item.tagKeys.join(', '));
+  const [tags, setTags] = useState<string[]>(item.tagKeys);
   const [error, setError] = useState('');
 
-  async function save() {
-    const clean = name.trim();
-    if (!clean) return;
-    const tagKeys = [...new Set(tagInput.split(',').map((t) => tagKey(t)).filter(Boolean))];
-    if (clean !== item.name) {
-      const ok = await renameLibraryItemById(item.libraryId, clean);
-      if (!ok) {
-        setError('Another item already has that name.');
-        return;
-      }
+  function save() {
+    if (!name.trim()) return;
+    const res = editLibraryItem(item.libraryId, { name, category, tagKeys: tags });
+    if (!res.ok) {
+      setError('Another item already has that name.');
+      return;
     }
-    await updateItemById(item.libraryId, { category, tagKeys });
     onDone();
   }
 
@@ -193,13 +189,7 @@ function EditForm({ item, onDone }: { item: ResolvedItem; onDone: () => void }) 
           ))}
         </select>
       </div>
-      <input
-        className="input"
-        value={tagInput}
-        onChange={(e) => setTagInput(e.target.value)}
-        placeholder="Tags (comma-separated)"
-        aria-label="Tags, comma-separated"
-      />
+      <TagEditor value={tags} onChange={setTags} ariaLabel={`Tags for ${item.name}`} />
       {error && <p className="font-mono text-xs text-vermilion">{error}</p>}
       <div className="flex items-center justify-end gap-2">
         <button className="btn-ghost text-xs" onClick={onDone}>

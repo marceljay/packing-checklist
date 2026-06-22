@@ -1,8 +1,8 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { useAppData } from '../db/store';
-import { createTrip, cloneTrip, deleteTrip } from '../db/trips';
+import { createTrip, cloneTrip, deleteTrip, pruneEmptyTrips } from '../db/trips';
 import { tripDurationDays, destinationCode } from '../types';
 
 function formatDateRange(start?: string, end?: string): string {
@@ -20,6 +20,11 @@ export default function TripsListPage() {
   const navigate = useNavigate();
   const data = useAppData();
   const trips = useMemo(() => [...data.trips].sort((a, b) => b.updatedAt - a.updatedAt), [data.trips]);
+
+  // Drop "New trip" stubs the user created but never edited.
+  useEffect(() => {
+    pruneEmptyTrips();
+  }, []);
 
   function handleNew() {
     navigate(`/trip/${createTrip()}`);

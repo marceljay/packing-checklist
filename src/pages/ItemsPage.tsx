@@ -1,111 +1,117 @@
 import { useMemo, useState } from 'react';
 import { useAppData } from '../db/store';
-import {
-  CATEGORIES,
-  tagKey,
-  libraryByTag,
-  searchLibrary,
-  renameLibraryTag,
-  removeLibraryTag,
-  type Category,
-  type LibraryItem,
-} from '../types';
-import {
-  rememberItem,
-  updateItemById,
-  renameLibraryItemById,
-  forgetItemById,
-} from '../db/library';
-
-type View = 'category' | 'tag' | 'all';
-
-/** Order-sensitive key-list equality (the tag transforms preserve order). */
-function sameKeys(a: string[], b: string[]): boolean {
-  return a.length === b.length && a.every((v, i) => v === b[i]);
-}
+import { CATEGORIES, type Category, type LibraryItem } from '../types';
+import { searchLibrary } from '../types';
+import { rememberItem, editLibraryItem, forgetItemById, restoreDefaults } from '../db/library';
+import TagEditor from '../components/TagEditor';
 
 const byName = (a: LibraryItem, b: LibraryItem) => a.name.localeCompare(b.name);
 
+/** Distinct tag keys across the library, sorted — for the filter row + autocomplete. */
+function allTagKeys(library: LibraryItem[]): string[] {
+  return [...new Set(library.flatMap((i) => i.tagKeys))].sort();
+}
+
 // ---------------------------------------------------------------------------
-// Item row
+// Item row (read-only) + inline info / edit panels
 // ---------------------------------------------------------------------------
 
-function LibraryItemRow({ item }: { item: LibraryItem }) {
-  const [editing, setEditing] = useState(false);
+function LibraryItemRow({ item, suggestions }: { item: LibraryItem; suggestions: string[] }) {
+  const [panel, setPanel] = useState<'none' | 'info' | 'edit'>('none');
 
-  if (editing) {
+  if (panel === 'edit') {
     return (
       <li>
-        <LibraryItemEdit item={item} onDone={() => setEditing(false)} />
+        <LibraryItemEdit item={item} suggestions={suggestions} onDone={() => setPanel('none')} />
       </li>
     );
   }
 
   return (
-    <li className="flex items-start gap-3 px-4 py-3">
-      <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-        <div className="flex flex-wrap items-center gap-2">
+    <li className="flex flex-col">
+      <div className="flex items-start gap-3 px-4 py-3">
+        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
           <span className="font-display text-sm font-medium text-ink">{item.name}</span>
-          {!item.custom && (
-            <span className="chip shrink-0 bg-paper-sunk text-ink-faint">default</span>
+          {item.tagKeys.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {item.tagKeys.map((k) => (
+                <span key={k} className="chip bg-airblue-soft text-airblue">
+                  {k}
+                </span>
+              ))}
+            </div>
           )}
-          <span className="chip bg-paper-sunk font-mono text-[0.625rem] uppercase tracking-wide text-ink-faint">
-            {item.category}
-          </span>
         </div>
-        {item.tagKeys.length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            {item.tagKeys.map((k) => (
-              <span key={k} className="chip bg-airblue-soft text-airblue">
-                {k}
-              </span>
-            ))}
-          </div>
-        )}
+
+        <div className="flex shrink-0 items-center gap-1">
+          <button
+            className="btn-ghost px-1.5 py-1"
+            aria-label={`Info about ${item.name}`}
+            aria-expanded={panel === 'info'}
+            onClick={() => setPanel((p) => (p === 'info' ? 'none' : 'info'))}
+          >
+            ⓘ
+          </button>
+          <button
+            className="btn-ghost px-1.5 py-1"
+            aria-label={`Edit ${item.name}`}
+            onClick={() => setPanel('edit')}
+          >
+            ✎
+          </button>
+          <button
+            className="btn-danger px-1.5 py-1"
+            aria-label={`Remove ${item.name} from your library`}
+            onClick={() => void forgetItemById(item.id)}
+          >
+            ✕
+          </button>
+        </div>
       </div>
 
-      <div className="flex shrink-0 items-center gap-2">
-        {item.count > 0 && (
-          <span className="font-mono text-[0.625rem] text-ink-faint">used {item.count}×</span>
-        )}
-        <button
-          className="btn-ghost px-1.5 py-1"
-          aria-label={`Edit ${item.name}`}
-          onClick={() => setEditing(true)}
-        >
-          ✎
-        </button>
-        <button
-          className="btn-danger px-1.5 py-1"
-          aria-label={`Remove ${item.name} from your library`}
-          onClick={() => void forgetItemById(item.id)}
-        >
-          ✕
-        </button>
-      </div>
+      {panel === 'info' && (
+        <dl className="grid grid-cols-[5rem_1fr] gap-x-3 gap-y-1 border-t border-line bg-paper-sunk/40 px-4 py-3 text-sm">
+          <dt className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">Type</dt>
+          <dd className="text-ink-soft">{item.custom ? 'Custom' : 'Default'}</dd>
+          <dt className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">Category</dt>
+          <dd className="text-ink-soft">{item.category}</dd>
+          {item.count > 0 && (
+            <>
+              <dt className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">Used</dt>
+              <dd className="text-ink-soft">{item.count}×</dd>
+            </>
+          )}
+          <dt className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">Notes</dt>
+          <dd className="whitespace-pre-wrap text-ink-soft">{item.notes || '—'}</dd>
+        </dl>
+      )}
     </li>
   );
 }
 
-/** Inline edit form for a library row: name, category, comma-separated tags. */
-function LibraryItemEdit({ item, onDone }: { item: LibraryItem; onDone: () => void }) {
+/** Inline edit form for a library row: name, category, tags, notes. */
+function LibraryItemEdit({
+  item,
+  suggestions,
+  onDone,
+}: {
+  item: LibraryItem;
+  suggestions: string[];
+  onDone: () => void;
+}) {
   const [name, setName] = useState(item.name);
   const [category, setCategory] = useState<Category>(item.category);
-  const [tagInput, setTagInput] = useState(item.tagKeys.join(', '));
+  const [tags, setTags] = useState<string[]>(item.tagKeys);
+  const [notes, setNotes] = useState(item.notes ?? '');
   const [error, setError] = useState('');
 
-  async function save() {
-    const clean = name.trim();
-    if (!clean) return;
-    const tagKeys = [...new Set(tagInput.split(',').map((t) => tagKey(t)).filter(Boolean))];
-    if (clean !== item.name) {
-      const ok = await renameLibraryItemById(item.id, clean);
-      if (!ok) {
-        setError('Another item already has that name.');
-        return;
-      }
+  function save() {
+    if (!name.trim()) return;
+    const res = editLibraryItem(item.id, { name, category, tagKeys: tags, notes });
+    if (!res.ok) {
+      setError('Another item already has that name.');
+      return;
     }
-    await updateItemById(item.id, { category, tagKeys });
     onDone();
   }
 
@@ -132,19 +138,20 @@ function LibraryItemEdit({ item, onDone }: { item: LibraryItem; onDone: () => vo
           ))}
         </select>
       </div>
-      <input
-        className="input"
-        value={tagInput}
-        onChange={(e) => setTagInput(e.target.value)}
-        placeholder="Tags (comma-separated)"
-        aria-label={`Tags for ${item.name}`}
+      <TagEditor value={tags} onChange={setTags} suggestions={suggestions} ariaLabel={`Tags for ${item.name}`} />
+      <textarea
+        className="input min-h-[3rem] resize-y"
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+        placeholder="Notes / description (optional)"
+        aria-label={`Notes for ${item.name}`}
       />
       {error && <p className="font-mono text-xs text-vermilion">{error}</p>}
       <div className="flex items-center justify-end gap-2">
         <button className="btn-ghost text-xs" onClick={onDone}>
           Cancel
         </button>
-        <button className="btn-primary text-xs" onClick={() => void save()} disabled={!name.trim()}>
+        <button className="btn-primary text-xs" onClick={save} disabled={!name.trim()}>
           Save
         </button>
       </div>
@@ -153,128 +160,34 @@ function LibraryItemEdit({ item, onDone }: { item: LibraryItem; onDone: () => vo
 }
 
 // ---------------------------------------------------------------------------
-// Collapsible section
+// Collapsible category section
 // ---------------------------------------------------------------------------
 
 function Section({
   title,
   count,
-  headerExtra,
   children,
 }: {
   title: React.ReactNode;
   count: number;
-  headerExtra?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(true);
   return (
     <section className="card overflow-hidden">
-      <div className="flex items-center gap-2 p-3">
-        <button
-          className="flex min-w-0 flex-1 items-center gap-2 text-left"
-          aria-expanded={open}
-          onClick={() => setOpen((o) => !o)}
-        >
-          <span aria-hidden className="font-mono text-ink-faint">
-            {open ? '▾' : '▸'}
-          </span>
-          <span className="truncate font-display text-base font-bold">{title}</span>
-          <span className="chip bg-paper-sunk text-ink-faint tabular-nums">{count}</span>
-        </button>
-        {headerExtra}
-      </div>
+      <button
+        className="flex w-full items-center gap-2 p-3 text-left"
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+      >
+        <span aria-hidden className="font-mono text-ink-faint">
+          {open ? '▾' : '▸'}
+        </span>
+        <span className="font-display text-base font-bold">{title}</span>
+        <span className="chip bg-paper-sunk text-ink-faint tabular-nums">{count}</span>
+      </button>
       {open && <ul className="divide-y divide-line/60 border-t border-line">{children}</ul>}
     </section>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Tag section (by-tag view) — header carries rename/remove for the whole library
-// ---------------------------------------------------------------------------
-
-function TagSection({
-  tag,
-  items,
-  allItems,
-}: {
-  tag: string;
-  items: LibraryItem[];
-  allItems: LibraryItem[];
-}) {
-  const [editing, setEditing] = useState(false);
-  const [value, setValue] = useState(tag);
-
-  function persist(updated: LibraryItem[]) {
-    for (const next of updated) {
-      const orig = allItems.find((i) => i.id === next.id);
-      if (orig && !sameKeys(orig.tagKeys, next.tagKeys)) {
-        void updateItemById(next.id, { tagKeys: next.tagKeys });
-      }
-    }
-  }
-
-  function handleRename() {
-    const toKey = tagKey(value);
-    if (!toKey || toKey === tag) {
-      setEditing(false);
-      return;
-    }
-    persist(renameLibraryTag(allItems, tag, toKey));
-    setEditing(false);
-  }
-
-  const untagged = tag === '';
-  const headerExtra = untagged ? undefined : editing ? (
-    <form
-      className="flex shrink-0 gap-1.5"
-      onSubmit={(e) => {
-        e.preventDefault();
-        handleRename();
-      }}
-    >
-      <input
-        autoFocus
-        className="input w-28"
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        aria-label={`Rename tag ${tag}`}
-      />
-      <button type="submit" className="btn-secondary shrink-0 text-xs">
-        Save
-      </button>
-      <button type="button" className="btn-ghost shrink-0 text-xs" onClick={() => setEditing(false)}>
-        Cancel
-      </button>
-    </form>
-  ) : (
-    <div className="flex shrink-0 gap-1">
-      <button
-        className="btn-ghost text-xs"
-        aria-label={`Rename tag ${tag}`}
-        onClick={() => {
-          setValue(tag);
-          setEditing(true);
-        }}
-      >
-        Rename
-      </button>
-      <button
-        className="btn-danger text-xs"
-        aria-label={`Remove tag ${tag}`}
-        onClick={() => persist(removeLibraryTag(allItems, tag))}
-      >
-        Remove
-      </button>
-    </div>
-  );
-
-  return (
-    <Section title={untagged ? 'Untagged' : tag} count={items.length} headerExtra={headerExtra}>
-      {[...items].sort(byName).map((item) => (
-        <LibraryItemRow key={item.nameKey} item={item} />
-      ))}
-    </Section>
   );
 }
 
@@ -282,22 +195,18 @@ function TagSection({
 // Add custom item
 // ---------------------------------------------------------------------------
 
-function AddItemForm() {
+function AddItemForm({ suggestions }: { suggestions: string[] }) {
   const [name, setName] = useState('');
   const [category, setCategory] = useState<Category>(CATEGORIES[0]);
-  const [tagInput, setTagInput] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const trimmed = name.trim();
     if (!trimmed) return;
-    const tagKeys = tagInput
-      .split(',')
-      .map((t) => tagKey(t))
-      .filter(Boolean);
-    void rememberItem(trimmed, category, tagKeys);
+    void rememberItem(trimmed, category, tags);
     setName('');
-    setTagInput('');
+    setTags([]);
     setCategory(CATEGORIES[0]);
   }
 
@@ -309,7 +218,7 @@ function AddItemForm() {
       </div>
       <form
         onSubmit={handleSubmit}
-        className="grid gap-3 border-t border-line p-4 sm:grid-cols-[1fr_12rem_1fr_auto] sm:items-end"
+        className="grid gap-3 border-t border-line p-4 sm:grid-cols-[1fr_12rem_1fr_auto] sm:items-start"
       >
         <div>
           <label className="label mb-1" htmlFor="add-item-name">
@@ -342,18 +251,10 @@ function AddItemForm() {
           </select>
         </div>
         <div>
-          <label className="label mb-1" htmlFor="add-item-tags">
-            Tags (comma-separated)
-          </label>
-          <input
-            id="add-item-tags"
-            className="input"
-            placeholder="e.g. hiking, camping"
-            value={tagInput}
-            onChange={(e) => setTagInput(e.target.value)}
-          />
+          <span className="label mb-1 block">Tags</span>
+          <TagEditor value={tags} onChange={setTags} suggestions={suggestions} ariaLabel="Tags for new item" />
         </div>
-        <button type="submit" className="btn-primary">
+        <button type="submit" className="btn-primary sm:mt-[1.4rem]">
           Add
         </button>
       </form>
@@ -365,58 +266,41 @@ function AddItemForm() {
 // Page
 // ---------------------------------------------------------------------------
 
-const VIEWS: { key: View; label: string }[] = [
-  { key: 'category', label: 'By category' },
-  { key: 'tag', label: 'By tag' },
-  { key: 'all', label: 'All items' },
-];
-
 export default function ItemsPage() {
   const data = useAppData();
   const library = useMemo(
     () => data.library.map((r) => ({ ...r, tagKeys: r.tagKeys ?? [], custom: r.custom ?? true })),
     [data.library],
   );
-  const [view, setView] = useState<View>('category');
   const [query, setQuery] = useState('');
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
-  const results = searchLibrary(library, query);
-  const searching = query.trim() !== '';
+  const tagKeys = useMemo(() => allTagKeys(library), [library]);
+
+  const results = useMemo(() => {
+    let r = searchLibrary(library, query);
+    if (selectedTags.length > 0) r = r.filter((i) => selectedTags.some((t) => i.tagKeys.includes(t)));
+    return r;
+  }, [library, query, selectedTags]);
+
+  const filtering = query.trim() !== '' || selectedTags.length > 0;
 
   const categoryGroups = CATEGORIES.map((category) => ({
     category,
     items: results.filter((i) => i.category === category),
   })).filter((g) => g.items.length > 0);
 
+  function toggleTag(t: string) {
+    setSelectedTags((cur) => (cur.includes(t) ? cur.filter((x) => x !== t) : [...cur, t]));
+  }
+
   return (
     <div className="flex flex-col gap-5 print:hidden">
-      <AddItemForm />
+      <AddItemForm suggestions={tagKeys} />
 
-      {/* View switcher + search */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div
-          className="flex w-fit items-center gap-1 rounded bg-paper-sunk p-0.5"
-          role="tablist"
-          aria-label="Library view"
-        >
-          {VIEWS.map((v) => (
-            <button
-              key={v.key}
-              role="tab"
-              aria-selected={view === v.key}
-              className={`rounded px-3 py-1 font-mono text-[0.6875rem] uppercase tracking-wide transition-colors ${
-                view === v.key
-                  ? 'bg-ink text-paper-raised'
-                  : 'text-ink-faint hover:bg-paper-sunk hover:text-ink'
-              }`}
-              onClick={() => setView(v.key)}
-            >
-              {v.label}
-            </button>
-          ))}
-        </div>
-
-        <div className="relative w-full sm:w-64">
+      {/* Search + restore defaults */}
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative min-w-0 flex-1 sm:max-w-xs">
           <input
             type="search"
             className="input pl-8"
@@ -432,36 +316,56 @@ export default function ItemsPage() {
             ⌕
           </span>
         </div>
+        <button
+          className="btn-secondary text-xs"
+          onClick={() => void restoreDefaults()}
+          title="Re-add any built-in default items you removed or edited (your custom items are untouched)"
+        >
+          Restore defaults
+        </button>
       </div>
+
+      {/* Tag filter */}
+      {tagKeys.length > 0 && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="label mr-1">Filter</span>
+          {tagKeys.map((t) => {
+            const on = selectedTags.includes(t);
+            return (
+              <button
+                key={t}
+                aria-pressed={on}
+                onClick={() => toggleTag(t)}
+                className={`chip transition-colors ${
+                  on ? 'bg-ink text-paper-raised' : 'bg-paper-sunk text-ink-soft hover:bg-line'
+                }`}
+              >
+                {t}
+              </button>
+            );
+          })}
+          {selectedTags.length > 0 && (
+            <button className="btn-ghost px-2 py-0.5 text-xs" onClick={() => setSelectedTags([])}>
+              Clear
+            </button>
+          )}
+        </div>
+      )}
 
       {library.length === 0 ? (
         <p className="text-sm text-ink-soft">No items yet — add one above.</p>
-      ) : searching && results.length === 0 ? (
-        <p className="text-sm text-ink-soft">
-          No items match “{query.trim()}”.
-        </p>
-      ) : view === 'category' ? (
+      ) : filtering && results.length === 0 ? (
+        <p className="text-sm text-ink-soft">No items match your filter.</p>
+      ) : (
         <div className="flex flex-col gap-3">
           {categoryGroups.map((g) => (
             <Section key={g.category} title={g.category} count={g.items.length}>
               {[...g.items].sort(byName).map((item) => (
-                <LibraryItemRow key={item.nameKey} item={item} />
+                <LibraryItemRow key={item.id} item={item} suggestions={tagKeys} />
               ))}
             </Section>
           ))}
         </div>
-      ) : view === 'tag' ? (
-        <div className="flex flex-col gap-3">
-          {libraryByTag(results).map((g) => (
-            <TagSection key={g.tag || '__untagged'} tag={g.tag} items={g.items} allItems={library} />
-          ))}
-        </div>
-      ) : (
-        <Section title={searching ? 'Results' : 'All items'} count={results.length}>
-          {[...results].sort(byName).map((item) => (
-            <LibraryItemRow key={item.nameKey} item={item} />
-          ))}
-        </Section>
       )}
     </div>
   );
