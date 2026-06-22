@@ -4,7 +4,6 @@ import { useTripEditor } from './useTripEditor';
 import ContextPanel from '../components/ContextPanel';
 import Checklist from '../components/Checklist';
 import SuggestionsTray from '../components/SuggestionsTray';
-import LibraryTray from '../components/LibraryTray';
 import WeatherCard from '../components/WeatherCard';
 import AddItemCard from '../components/AddItemCard';
 import PrintSheet from '../components/PrintSheet';
@@ -171,7 +170,6 @@ export default function TripEditorPage() {
               {trip.weather && <WeatherCard weather={trip.weather} />}
               <AddItemCard update={update} />
               <SuggestionsTray trip={trip} update={update} />
-              <LibraryTray trip={trip} update={update} />
               <Checklist trip={trip} update={update} mode="plan" />
             </div>
           </div>

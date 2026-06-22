@@ -151,18 +151,6 @@ export function removeLibraryTag(items: LibraryItem[], key: string): LibraryItem
   });
 }
 
-/** Rank library items for the "Your items" tray: most-used first, then most
- *  recent, then alphabetical. Items already on the trip (by name key) drop out. */
-export function rankLibrary(items: LibraryItem[], excludeKeys: string[]): LibraryItem[] {
-  const excluded = new Set(excludeKeys.map((k) => k.toLowerCase()));
-  return items
-    .filter((i) => !excluded.has(i.nameKey))
-    .sort(
-      (a, b) =>
-        b.count - a.count || b.lastUsed - a.lastUsed || a.name.localeCompare(b.name),
-    );
-}
-
 /** Group library items by tag key (each item appears under every tag it carries),
  *  named tags sorted; a trailing `{ tag: '' }` untagged group when any item has
  *  no tags. Used by the Item Library "by tag" view. */

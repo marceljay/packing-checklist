@@ -5,7 +5,6 @@ import {
   destinationCode,
   computeQuantity,
   itemsByCategory,
-  rankLibrary,
   ensureTripTags,
   renameLibraryTag,
   removeLibraryTag,
@@ -195,42 +194,6 @@ describe('itemsByCategory', () => {
 
   it('returns nothing for an empty list', () => {
     expect(itemsByCategory([])).toEqual([]);
-  });
-});
-
-describe('rankLibrary', () => {
-  function lib(name: string, count: number, lastUsed: number): LibraryItem {
-    return {
-      nameKey: tagKey(name),
-      name,
-      category: 'Comfort & Misc',
-      count,
-      lastUsed,
-      tagKeys: [],
-      custom: true,
-    };
-  }
-
-  it('ranks by use count, then recency, then name', () => {
-    const ranked = rankLibrary(
-      [lib('Earplugs', 2, 100), lib('Eye mask', 5, 50), lib('Adapter', 2, 200)],
-      [],
-    );
-    expect(ranked.map((i) => i.name)).toEqual(['Eye mask', 'Adapter', 'Earplugs']);
-  });
-
-  it('excludes items already on the trip (by name key)', () => {
-    const ranked = rankLibrary([lib('Earplugs', 3, 100), lib('Adapter', 1, 100)], ['earplugs']);
-    expect(ranked.map((i) => i.name)).toEqual(['Adapter']);
-  });
-
-  it('matches the exclusion list case-insensitively', () => {
-    const ranked = rankLibrary([lib('Adapter', 1, 100)], ['ADAPTER']);
-    expect(ranked).toEqual([]);
-  });
-
-  it('returns an empty list when the library is empty', () => {
-    expect(rankLibrary([], ['anything'])).toEqual([]);
   });
 });
 

@@ -19,10 +19,10 @@ export async function seedLibrary(): Promise<void> {
 
 /**
  * Personal custom-item library. Lives outside any trip so a custom item the user
- * adds once resurfaces on future trips (see `rankLibrary` for ordering).
+ * adds once resurfaces on future trips, managed from the Item Library page.
  */
 
-/** All remembered items (unordered — rank with `rankLibrary` at the call site).
+/** All remembered items (unordered — sort at the call site).
  *  Normalizes old rows lacking `tagKeys` so callers always see the field. */
 export async function listLibrary(): Promise<LibraryItem[]> {
   const rows = await db.library.toArray();

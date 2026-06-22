@@ -38,9 +38,10 @@ All notable changes to this project are documented here.
   typical weather** (same dates averaged over recent years) beyond that — a trip
   spanning the boundary shows a mixed summary. Uses stored coordinates; needs
   trip dates; falls back gracefully when offline.
-- **Personal item library ("Your items").** Custom items now live in a global
-  IndexedDB store (DB v2), not inside a single trip, so they resurface on future
-  trips ranked by use count + recency. Tap to add; remove from the tray to forget.
+- **Personal item library.** Custom items live in a global IndexedDB store, not
+  inside a single trip, so they resurface on future trips. Managed from the Item
+  Library page (the per-trip "Your items" tray was removed — add items via the
+  Add custom item card or suggestions).
 - **Unit tests (Vitest).** 33 colocated tests covering the pure domain logic —
   `tagKey`, `tripDurationDays`, `destinationCode`, `computeQuantity`, and the
   suggestion engine (`suggestItems`: essentials, union matching, weighted
