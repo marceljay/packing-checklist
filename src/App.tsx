@@ -1,4 +1,5 @@
 import { Link, Outlet } from 'react-router-dom';
+import SettingsMenu from './components/SettingsMenu';
 
 /** Luggage-tag mark — crisp ink shape with a punched eyelet. */
 function TagMark() {
@@ -32,6 +33,9 @@ export default function App() {
           <span className="ml-auto hidden font-mono text-[0.625rem] uppercase tracking-code text-ink-faint sm:inline">
             private · offline · no account
           </span>
+          <div className="ml-auto sm:ml-3">
+            <SettingsMenu />
+          </div>
         </div>
         <div aria-hidden className="airmail h-1 w-full opacity-90" />
       </header>

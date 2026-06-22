@@ -160,6 +160,53 @@ export async function forgetItemById(id: string): Promise<void> {
 }
 
 /**
+ * Merge parsed library rows (from an import) into the store. De-dups by id: a row
+ * whose id already exists is left untouched (your edits win); a new id is inserted
+ * preserving it; a row without an id is resolved/created by name. Returns how many
+ * rows were added.
+ */
+export async function importLibraryItems(
+  items: {
+    id?: string;
+    nameKey: string;
+    name: string;
+    category: Category;
+    tagKeys: string[];
+    custom: boolean;
+    essential?: boolean;
+    quantity?: LibraryItem['quantity'];
+    count?: number;
+    lastUsed?: number;
+  }[],
+): Promise<number> {
+  let added = 0;
+  for (const li of items) {
+    if (li.id) {
+      const existing = await getLibraryItem(li.id);
+      if (existing) continue; // already present — keep the local copy
+      await putWithId({
+        id: li.id,
+        nameKey: li.nameKey,
+        name: li.name,
+        category: li.category,
+        tagKeys: li.tagKeys,
+        custom: li.custom,
+        count: li.count ?? 0,
+        lastUsed: li.lastUsed ?? 0,
+        ...(li.essential ? { essential: true } : {}),
+        ...(li.quantity ? { quantity: li.quantity } : {}),
+      });
+      added += 1;
+    } else {
+      const before = await db.library.where('nameKey').equals(li.nameKey).first();
+      await ensureLibraryItem(li.name, li.category, li.tagKeys);
+      if (!before) added += 1;
+    }
+  }
+  return added;
+}
+
+/**
  * Convert any pre-v2 trips (whose items carried their own name/category/tagIds)
  * into the reference shape (`libraryId` + per-trip state), resolving/creating the
  * backing library rows. Idempotent. Run once at startup, after {@link seedLibrary}.

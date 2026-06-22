@@ -5,6 +5,10 @@ All notable changes to this project are documented here.
 ## [Unreleased]
 
 ### Added
+- **Header menu + item-library backup.** A `⋯` menu in the header (hidden until
+  opened) gathers the transfer actions: **Import trip**, and **Export / Import the
+  whole item library** as JSON. Library import de-dups by id (your existing items
+  win). Trip import moved out of the trips page into this menu.
 - **One item, everywhere — the library is now the single source of truth.** A
   trip's packing line is a *reference* to a library item plus its per-trip quantity
   and packed state; the item's name, category, and tags live once in the library.
