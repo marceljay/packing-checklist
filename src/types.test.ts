@@ -198,7 +198,15 @@ describe('itemsByCategory', () => {
 
 describe('rankLibrary', () => {
   function lib(name: string, count: number, lastUsed: number): LibraryItem {
-    return { nameKey: tagKey(name), name, category: 'Comfort & Misc', count, lastUsed, tagKeys: [] };
+    return {
+      nameKey: tagKey(name),
+      name,
+      category: 'Comfort & Misc',
+      count,
+      lastUsed,
+      tagKeys: [],
+      custom: true,
+    };
   }
 
   it('ranks by use count, then recency, then name', () => {
@@ -280,7 +288,15 @@ describe('ensureTripTags', () => {
 
 describe('renameLibraryTag', () => {
   function lib(name: string, tagKeys: string[]): LibraryItem {
-    return { nameKey: tagKey(name), name, category: 'Comfort & Misc', count: 1, lastUsed: 0, tagKeys };
+    return {
+      nameKey: tagKey(name),
+      name,
+      category: 'Comfort & Misc',
+      count: 1,
+      lastUsed: 0,
+      tagKeys,
+      custom: true,
+    };
   }
 
   it('replaces the old key with the new key on items that have it', () => {
@@ -322,7 +338,15 @@ describe('renameLibraryTag', () => {
 
 describe('removeLibraryTag', () => {
   function lib(name: string, tagKeys: string[]): LibraryItem {
-    return { nameKey: tagKey(name), name, category: 'Comfort & Misc', count: 1, lastUsed: 0, tagKeys };
+    return {
+      nameKey: tagKey(name),
+      name,
+      category: 'Comfort & Misc',
+      count: 1,
+      lastUsed: 0,
+      tagKeys,
+      custom: true,
+    };
   }
 
   it('removes the key from every item that has it', () => {

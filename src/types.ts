@@ -115,6 +115,12 @@ export interface LibraryItem {
   lastUsed: number;
   /** Normalized tag labels (via tagKey) accumulated across all uses. */
   tagKeys: string[];
+  /** false = seeded built-in default; true = user-added or user-edited. */
+  custom: boolean;
+  /** Suggested on every trip regardless of tags (seeded from catalog `always`). */
+  essential?: boolean;
+  /** Smart-quantity rule (seeded from the catalog); absent → quantity 1. */
+  quantity?: QuantityRule;
 }
 
 /**

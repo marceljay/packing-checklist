@@ -29,6 +29,24 @@ class PackingDB extends Dexie {
       trips: 'id, updatedAt',
       library: 'nameKey, count, lastUsed',
     });
+    // v3: unify built-in defaults + customs in one store. Existing library rows
+    // were all user customs → mark custom:true. Built-in defaults are seeded at
+    // runtime (see seedLibrary). `custom` stays unindexed (booleans aren't valid
+    // IndexedDB keys), so the index string is unchanged.
+    this.version(3)
+      .stores({
+        trips: 'id, updatedAt',
+        library: 'nameKey, count, lastUsed',
+      })
+      .upgrade(async (tx) => {
+        await tx
+          .table('library')
+          .toCollection()
+          .modify((row) => {
+            row.custom = true;
+            if (!Array.isArray(row.tagKeys)) row.tagKeys = [];
+          });
+      });
   }
 }
 

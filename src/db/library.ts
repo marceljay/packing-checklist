@@ -1,5 +1,21 @@
 import { db } from './db';
 import { tagKey, type Category, type LibraryItem } from '../types';
+import { CATALOG } from '../data/catalog';
+import { catalogToLibraryItems } from '../data/seed';
+
+/**
+ * Seed the built-in defaults into the library (idempotent — only adds items whose
+ * nameKey isn't already present, so user edits/removals are never clobbered).
+ * Called once at app start.
+ */
+export async function seedLibrary(): Promise<void> {
+  const seeds = catalogToLibraryItems(CATALOG);
+  await db.transaction('rw', db.library, async () => {
+    const existing = new Set(await db.library.toCollection().primaryKeys());
+    const missing = seeds.filter((s) => !existing.has(s.nameKey));
+    if (missing.length > 0) await db.library.bulkAdd(missing);
+  });
+}
 
 /**
  * Personal custom-item library. Lives outside any trip so a custom item the user
@@ -10,7 +26,7 @@ import { tagKey, type Category, type LibraryItem } from '../types';
  *  Normalizes old rows lacking `tagKeys` so callers always see the field. */
 export async function listLibrary(): Promise<LibraryItem[]> {
   const rows = await db.library.toArray();
-  return rows.map((row) => ({ ...row, tagKeys: row.tagKeys ?? [] }));
+  return rows.map((row) => ({ ...row, tagKeys: row.tagKeys ?? [], custom: row.custom ?? true }));
 }
 
 /** Record that a custom item was used: upsert by normalized name, bump count,
@@ -29,12 +45,14 @@ export async function rememberItem(
       ? [...new Set([...existing.tagKeys, ...tagKeys])]
       : [...new Set(tagKeys)];
     await db.library.put({
+      ...existing, // preserve essential/quantity on a seeded item being bumped
       nameKey,
       name: clean,
       category,
       count: (existing?.count ?? 0) + 1,
       lastUsed: Date.now(),
       tagKeys: mergedKeys,
+      custom: existing?.custom ?? true,
     });
   });
 }
