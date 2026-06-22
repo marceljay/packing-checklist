@@ -5,6 +5,9 @@ All notable changes to this project are documented here.
 ## [Unreleased]
 
 ### Added
+- **Search the item library.** A search box on the Item Library page filters by
+  name, tag, or category (case-insensitive) across all three views, with a clear
+  no-match state. Backed by a unit-tested `searchLibrary` helper.
 - **Unified item library.** Built-in defaults + your custom items now live in one
   editable store (seeded on first run, each flagged default/custom). The **Item
   Library** page (`/items`, reachable from the trips page) has three expandable
