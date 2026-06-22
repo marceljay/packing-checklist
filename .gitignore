@@ -20,3 +20,6 @@ dist/
 
 # Raw session transcripts — host-disk backup only, may contain tool output/secrets
 _planning/transcripts-backup/
+
+# subagent-driven-development scratch
+.superpowers/

@@ -35,17 +35,31 @@ export interface Destination {
   isPrimary: boolean;
 }
 
+/**
+ * A trip's packing-list line. The item itself (name, category, tags) lives in the
+ * canonical {@link LibraryItem} store; the trip only holds a reference plus the
+ * per-trip state (quantity, packed). Display fields are joined in via
+ * {@link resolveItems}. At most one reference per `libraryId` on a trip.
+ */
 export interface Item {
-  id: ID;
-  name: string;
-  category: Category;
-  tagIds: ID[];
+  /** -> {@link LibraryItem.id}. */
+  libraryId: ID;
   quantitySuggested: number | null;
   quantityTaken: number;
   packed: boolean;
-  source: 'suggested' | 'custom';
-  catalogId?: string; // origin in the built-in catalog, so we can de-dupe suggestions
-  notes?: string;
+}
+
+/** A trip {@link Item} joined with its {@link LibraryItem} for rendering/grouping. */
+export interface ResolvedItem {
+  libraryId: ID;
+  name: string;
+  category: Category;
+  tagKeys: string[];
+  quantitySuggested: number | null;
+  quantityTaken: number;
+  packed: boolean;
+  /** true when the referenced library row no longer exists. */
+  missing: boolean;
 }
 
 export interface TripSettings {
@@ -105,7 +119,11 @@ export function tripDurationDays(trip: Pick<Trip, 'startDate' | 'endDate'>): num
  * owns the per-trip instance (quantity, packed); the library owns the memory.
  */
 export interface LibraryItem {
-  /** Normalized name, used as the primary key and for de-duping. */
+  /** Stable identity. Defaults: `d:<catalogId>` (deterministic, see
+   *  {@link defaultId}); customs: `c:<random>` (see {@link customId}). Trips
+   *  reference this; it survives renames. */
+  id: ID;
+  /** Normalized name, the Dexie primary key and the de-dupe handle. */
   nameKey: string;
   name: string;
   category: Category;
@@ -113,27 +131,185 @@ export interface LibraryItem {
   count: number;
   /** Epoch ms of the most recent add. */
   lastUsed: number;
+  /** Normalized tag labels (via tagKey) accumulated across all uses. */
+  tagKeys: string[];
+  /** false = seeded built-in default; true = user-added or user-edited. */
+  custom: boolean;
+  /** Suggested on every trip regardless of tags (seeded from catalog `always`). */
+  essential?: boolean;
+  /** Smart-quantity rule (seeded from the catalog); absent → quantity 1. */
+  quantity?: QuantityRule;
 }
 
-/** Rank library items for the "Your items" tray: most-used first, then most
- *  recent, then alphabetical. Items already on the trip (by name key) drop out. */
-export function rankLibrary(items: LibraryItem[], excludeKeys: string[]): LibraryItem[] {
-  const excluded = new Set(excludeKeys.map((k) => k.toLowerCase()));
-  return items
-    .filter((i) => !excluded.has(i.nameKey))
-    .sort(
-      (a, b) =>
-        b.count - a.count || b.lastUsed - a.lastUsed || a.name.localeCompare(b.name),
-    );
+/**
+ * Return a new library array where every item that carries `from` has it
+ * replaced by `to`. Both keys are normalized via `tagKey`. If an item already
+ * has `to`, the result is de-duplicated so no key appears twice. Input items
+ * are never mutated.
+ */
+export function renameLibraryTag(items: LibraryItem[], from: string, to: string): LibraryItem[] {
+  const fromKey = tagKey(from);
+  const toKey = tagKey(to);
+  return items.map((item) => {
+    if (!item.tagKeys.includes(fromKey)) return item;
+    const newKeys = [...new Set(item.tagKeys.map((k) => (k === fromKey ? toKey : k)))];
+    return { ...item, tagKeys: newKeys };
+  });
 }
 
-/** Group items under their category in canonical {@link CATEGORIES} order,
- *  dropping empty categories. Used by the checklist and the print sheet. */
-export function itemsByCategory(items: Item[]): { category: Category; items: Item[] }[] {
+/**
+ * Return a new library array where `key` (normalized via `tagKey`) has been
+ * removed from every item's `tagKeys`. Input items are never mutated.
+ */
+export function removeLibraryTag(items: LibraryItem[], key: string): LibraryItem[] {
+  const normalized = tagKey(key);
+  return items.map((item) => {
+    if (!item.tagKeys.includes(normalized)) return item;
+    return { ...item, tagKeys: item.tagKeys.filter((k) => k !== normalized) };
+  });
+}
+
+/** Group library items by tag key (each item appears under every tag it carries),
+ *  named tags sorted; a trailing `{ tag: '' }` untagged group when any item has
+ *  no tags. Used by the Item Library "by tag" view. */
+export function libraryByTag(items: LibraryItem[]): { tag: string; items: LibraryItem[] }[] {
+  const byTag = new Map<string, LibraryItem[]>();
+  const untagged: LibraryItem[] = [];
+  for (const item of items) {
+    if (item.tagKeys.length === 0) {
+      untagged.push(item);
+      continue;
+    }
+    for (const key of item.tagKeys) {
+      const list = byTag.get(key) ?? [];
+      list.push(item);
+      byTag.set(key, list);
+    }
+  }
+  const groups = [...byTag.keys()].sort().map((tag) => ({ tag, items: byTag.get(tag)! }));
+  if (untagged.length > 0) groups.push({ tag: '', items: untagged });
+  return groups;
+}
+
+/** Filter library items by a free-text query, matching (case-insensitively) the
+ *  item name, any of its tag keys, or its category. A blank query returns every
+ *  item; input order is preserved. Used by the Item Library search box. */
+export function searchLibrary(items: LibraryItem[], query: string): LibraryItem[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return items;
+  return items.filter(
+    (i) =>
+      i.name.toLowerCase().includes(q) ||
+      i.category.toLowerCase().includes(q) ||
+      i.tagKeys.some((k) => k.includes(q)),
+  );
+}
+
+/**
+ * Deterministic id for a built-in (default) library item, derived from its catalog
+ * id (a unique slug). The same on every install, so importing a foreign library
+ * never duplicates the built-ins. Self-describing: a `d:`-prefixed id is a default.
+ */
+export function defaultId(catalogId: string): string {
+  return `d:${catalogId}`;
+}
+
+const ID62 = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+/**
+ * Collision-resistant id for a user (custom) library item: `c:` + base62 of 16
+ * random bytes (~128 bits). Not derived from the name, so two same-named items
+ * (e.g. surf gloves vs snow gloves) are distinct and merging independent libraries
+ * won't clash. `rand` is injectable for deterministic tests.
+ */
+export function customId(rand: (n: number) => Uint8Array = randomBytes): string {
+  let n = 0n;
+  for (const b of rand(16)) n = (n << 8n) | BigInt(b);
+  let s = '';
+  while (n > 0n) {
+    s = ID62[Number(n % 62n)] + s;
+    n /= 62n;
+  }
+  return `c:${s || '0'}`;
+}
+
+function randomBytes(n: number): Uint8Array {
+  const a = new Uint8Array(n);
+  crypto.getRandomValues(a);
+  return a;
+}
+
+/** Join trip item references with their library rows for rendering. A reference
+ *  whose row is gone resolves to a `missing` placeholder rather than dropping. */
+export function resolveItems(items: Item[], libById: Map<ID, LibraryItem>): ResolvedItem[] {
+  return items.map((it) => {
+    const lib = libById.get(it.libraryId);
+    return {
+      libraryId: it.libraryId,
+      name: lib?.name ?? '(removed item)',
+      category: lib?.category ?? 'Comfort & Misc',
+      tagKeys: lib?.tagKeys ?? [],
+      quantitySuggested: it.quantitySuggested,
+      quantityTaken: it.quantityTaken,
+      packed: it.packed,
+      missing: lib === undefined,
+    };
+  });
+}
+
+/** Group resolved items under their category in canonical {@link CATEGORIES}
+ *  order, dropping empty categories. Used by the checklist and the print sheet. */
+export function resolvedByCategory(
+  items: ResolvedItem[],
+): { category: Category; items: ResolvedItem[] }[] {
   return CATEGORIES.map((category) => ({
     category,
     items: items.filter((i) => i.category === category),
   })).filter((g) => g.items.length > 0);
+}
+
+/** Group resolved items by tag key (each item under every tag it carries), named
+ *  tags sorted, with a trailing untagged `{ tag: '' }` group when needed. */
+export function resolvedByTag(items: ResolvedItem[]): { tag: string; items: ResolvedItem[] }[] {
+  const byTag = new Map<string, ResolvedItem[]>();
+  const untagged: ResolvedItem[] = [];
+  for (const item of items) {
+    if (item.tagKeys.length === 0) {
+      untagged.push(item);
+      continue;
+    }
+    for (const key of item.tagKeys) {
+      const list = byTag.get(key) ?? [];
+      list.push(item);
+      byTag.set(key, list);
+    }
+  }
+  const groups = [...byTag.keys()].sort().map((tag) => ({ tag, items: byTag.get(tag)! }));
+  if (untagged.length > 0) groups.push({ tag: '', items: untagged });
+  return groups;
+}
+
+/** Convert an old-shape trip item (denormalized name/category/tagIds, plus the
+ *  trip's tags) into the fields needed to resolve-or-create a {@link LibraryItem}.
+ *  Pure, so the legacy-trip migration is unit-testable without Dexie. */
+export function legacyItemToRef(
+  item: { name?: string; category?: string; tagIds?: string[] },
+  tags: Tag[],
+): { nameKey: string; name: string; category: Category; tagKeys: string[] } {
+  const name = (item.name ?? '').trim();
+  const category = CATEGORIES.includes(item.category as Category)
+    ? (item.category as Category)
+    : 'Comfort & Misc';
+  const labelById = new Map(tags.map((t) => [t.id, t.label]));
+  const tagKeys = [
+    ...new Set(
+      (item.tagIds ?? [])
+        .map((id) => labelById.get(id))
+        .filter((l): l is string => Boolean(l))
+        .map((l) => tagKey(l)),
+    ),
+  ];
+  return { nameKey: tagKey(name), name, category, tagKeys };
 }
 
 /**
@@ -172,6 +348,38 @@ export interface CatalogItem {
 /** Normalize a tag label for matching against catalog keys. */
 export function tagKey(label: string): string {
   return label.trim().toLowerCase();
+}
+
+/**
+ * Given the trip's current tags and a list of normalized tag keys from a
+ * library item, return the (possibly extended) tag list and the ids to attach
+ * to the new item. Reuses existing tags by normalized label; creates new custom
+ * tags for keys not yet on the trip.
+ *
+ * @param existingTags - The trip's current Tag list.
+ * @param keys         - Normalized tag keys from the library item.
+ * @param genId        - Factory for generating new tag ids (deterministic in tests).
+ */
+export function ensureTripTags(
+  existingTags: Tag[],
+  keys: string[],
+  genId: () => string,
+): { tags: Tag[]; tagIds: string[] } {
+  const tags = [...existingTags];
+  const tagIds: string[] = [];
+
+  for (const key of [...new Set(keys)]) {
+    const existing = tags.find((t) => tagKey(t.label) === key);
+    if (existing) {
+      tagIds.push(existing.id);
+    } else {
+      const newTag: Tag = { id: genId(), label: key, type: 'custom' };
+      tags.push(newTag);
+      tagIds.push(newTag.id);
+    }
+  }
+
+  return { tags, tagIds };
 }
 
 /** Compute a suggested quantity from a rule, trip length and laundry setting. */

@@ -1,34 +1,172 @@
-import { db } from './db';
-import { tagKey, type Category, type LibraryItem } from '../types';
+import { getData, setData } from './store';
+import { customId, tagKey, type Category, type LibraryItem } from '../types';
+import { CATALOG } from '../data/catalog';
+import { catalogToLibraryItems } from '../data/seed';
 
 /**
- * Personal custom-item library. Lives outside any trip so a custom item the user
- * adds once resurfaces on future trips (see `rankLibrary` for ordering).
+ * The item library lives in the JSON document (`store.ts`). Built-in defaults are
+ * seeded (deterministic `d:<catalogId>` ids, `custom:false`); user items get a
+ * collision-resistant `c:` id. Identity is the `id`; `nameKey` is only a
+ * convenience for the typed-add "reuse same-named row" path and for search.
  */
 
-/** All remembered items (unordered — rank with `rankLibrary` at the call site). */
-export function listLibrary(): Promise<LibraryItem[]> {
-  return db.library.toArray();
-}
-
-/** Record that a custom item was used: upsert by normalized name, bump count. */
-export async function rememberItem(name: string, category: Category): Promise<void> {
-  const clean = name.trim();
-  if (!clean) return;
-  const nameKey = tagKey(clean);
-  await db.transaction('rw', db.library, async () => {
-    const existing = await db.library.get(nameKey);
-    await db.library.put({
-      nameKey,
-      name: clean,
-      category,
-      count: (existing?.count ?? 0) + 1,
-      lastUsed: Date.now(),
-    });
+/** Seed built-in defaults into the document (idempotent by id). */
+export function seedLibrary(): void {
+  const seeds = catalogToLibraryItems(CATALOG);
+  setData((d) => {
+    const have = new Set(d.library.map((i) => i.id));
+    for (const s of seeds) if (!have.has(s.id)) d.library.push(s);
   });
 }
 
-/** Remove an item from the library (does not touch any trip). */
-export function forgetItem(nameKey: string): Promise<void> {
-  return db.library.delete(nameKey);
+/** All library items, normalized so callers always see tagKeys/custom. */
+export function listLibrary(): LibraryItem[] {
+  return getData().library.map((r) => ({ ...r, tagKeys: r.tagKeys ?? [], custom: r.custom ?? true }));
+}
+
+/** Look up a library row by its id. */
+export function getLibraryItem(id: string): LibraryItem | undefined {
+  return getData().library.find((i) => i.id === id);
+}
+
+/**
+ * Resolve a library item by name, or create it (fresh `c:` id) if no row with that
+ * normalized name exists. Merges any new tagKeys into the resolved row. Does NOT
+ * bump usage — use {@link rememberItem}. Returns the row.
+ */
+export function ensureLibraryItem(name: string, category: Category, tagKeys: string[] = []): LibraryItem {
+  const clean = name.trim();
+  const nameKey = tagKey(clean);
+  const existing = getData().library.find((i) => i.nameKey === nameKey);
+  if (existing) {
+    const merged = [...new Set([...(existing.tagKeys ?? []), ...tagKeys])];
+    const row: LibraryItem = { ...existing, tagKeys: merged };
+    setData((d) => {
+      const i = d.library.findIndex((x) => x.id === row.id);
+      if (i >= 0) d.library[i] = row;
+    });
+    return row;
+  }
+  const row: LibraryItem = {
+    id: customId(),
+    nameKey,
+    name: clean,
+    category,
+    tagKeys: [...new Set(tagKeys)],
+    custom: true,
+    count: 0,
+    lastUsed: 0,
+  };
+  setData((d) => d.library.push(row));
+  return row;
+}
+
+/** Insert a library row preserving a given id (import). If the id is taken by a
+ *  DIFFERENT item a fresh `c:` id is minted. Returns the stored row. */
+export function putWithId(item: LibraryItem): LibraryItem {
+  const clash = getData().library.find((i) => i.id === item.id);
+  const id = clash && clash.nameKey !== item.nameKey ? customId() : item.id;
+  const row = { ...item, id };
+  setData((d) => {
+    const i = d.library.findIndex((x) => x.id === row.id);
+    if (i >= 0) d.library[i] = row;
+    else d.library.push(row);
+  });
+  return row;
+}
+
+/** Record a use of an item (resolve/create by name, bump count). Returns the row. */
+export function rememberItem(name: string, category: Category, tagKeys: string[] = []): LibraryItem {
+  const row = ensureLibraryItem(name, category, tagKeys);
+  const bumped: LibraryItem = { ...row, count: row.count + 1, lastUsed: Date.now() };
+  setData((d) => {
+    const i = d.library.findIndex((x) => x.id === bumped.id);
+    if (i >= 0) d.library[i] = bumped;
+  });
+  return bumped;
+}
+
+/** Edit a library item by id. A provided `tagKeys` REPLACES the stored set. */
+export function updateItemById(
+  id: string,
+  patch: { category?: Category; tagKeys?: string[] },
+): void {
+  setData((d) => {
+    const i = d.library.findIndex((x) => x.id === id);
+    if (i >= 0) d.library[i] = { ...d.library[i], tagKeys: d.library[i].tagKeys ?? [], ...patch };
+  });
+}
+
+/**
+ * Rename a library item by id (id is stable, so this is an in-place field update).
+ * Rejects (returns false) a manual rename onto a name a DIFFERENT item already uses,
+ * keeping the typed-edit paths free of accidental duplicates.
+ */
+export function renameLibraryItemById(id: string, newName: string): boolean {
+  const clean = newName.trim();
+  if (!clean) return false;
+  const newKey = tagKey(clean);
+  const lib = getData().library;
+  const existing = lib.find((i) => i.id === id);
+  if (!existing) return false;
+  if (newKey !== existing.nameKey && lib.some((i) => i.nameKey === newKey && i.id !== id)) {
+    return false;
+  }
+  setData((d) => {
+    const i = d.library.findIndex((x) => x.id === id);
+    if (i >= 0) d.library[i] = { ...d.library[i], name: clean, nameKey: newKey };
+  });
+  return true;
+}
+
+/** Remove an item from the library by id (does not touch any trip). */
+export function forgetItemById(id: string): void {
+  setData((d) => {
+    d.library = d.library.filter((i) => i.id !== id);
+  });
+}
+
+/**
+ * Merge parsed library rows (from an import) into the store. De-dups by id: a row
+ * whose id already exists is left untouched; a new id is inserted preserving it; a
+ * row without an id is resolved/created by name. Returns how many rows were added.
+ */
+export function importLibraryItems(
+  items: {
+    id?: string;
+    nameKey: string;
+    name: string;
+    category: Category;
+    tagKeys: string[];
+    custom: boolean;
+    essential?: boolean;
+    quantity?: LibraryItem['quantity'];
+    count?: number;
+    lastUsed?: number;
+  }[],
+): number {
+  let added = 0;
+  for (const li of items) {
+    if (li.id) {
+      if (getLibraryItem(li.id)) continue; // already present — keep local copy
+      putWithId({
+        id: li.id,
+        nameKey: li.nameKey,
+        name: li.name,
+        category: li.category,
+        tagKeys: li.tagKeys,
+        custom: li.custom,
+        count: li.count ?? 0,
+        lastUsed: li.lastUsed ?? 0,
+        ...(li.essential ? { essential: true } : {}),
+        ...(li.quantity ? { quantity: li.quantity } : {}),
+      });
+      added += 1;
+    } else {
+      const before = getData().library.find((i) => i.nameKey === li.nameKey);
+      ensureLibraryItem(li.name, li.category, li.tagKeys);
+      if (!before) added += 1;
+    }
+  }
+  return added;
 }

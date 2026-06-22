@@ -4,24 +4,56 @@ import {
   tripDurationDays,
   destinationCode,
   computeQuantity,
-  itemsByCategory,
-  rankLibrary,
+  resolveItems,
+  resolvedByCategory,
+  resolvedByTag,
+  defaultId,
+  customId,
+  legacyItemToRef,
+  ensureTripTags,
+  renameLibraryTag,
+  removeLibraryTag,
+  libraryByTag,
+  searchLibrary,
   type Item,
+  type Tag,
   type Category,
   type LibraryItem,
+  type ResolvedItem,
   type QuantityRule,
 } from './types';
 
-function item(name: string, category: Category, over: Partial<Item> = {}): Item {
+/** A trip item reference (the new thin shape). */
+function ref(libraryId: string, over: Partial<Item> = {}): Item {
+  return { libraryId, quantitySuggested: null, quantityTaken: 1, packed: false, ...over };
+}
+
+/** A library row, for building the resolve map. */
+function libRow(name: string, category: Category, over: Partial<LibraryItem> = {}): LibraryItem {
   return {
-    id: name,
+    id: tagKey(name),
+    nameKey: tagKey(name),
     name,
     category,
-    tagIds: [],
+    count: 0,
+    lastUsed: 0,
+    tagKeys: [],
+    custom: true,
+    ...over,
+  };
+}
+
+/** A resolved item, for grouping tests. */
+function resolved(name: string, category: Category, over: Partial<ResolvedItem> = {}): ResolvedItem {
+  return {
+    libraryId: tagKey(name),
+    name,
+    category,
+    tagKeys: [],
     quantitySuggested: null,
     quantityTaken: 1,
     packed: false,
-    source: 'custom',
+    missing: false,
     ...over,
   };
 }
@@ -159,12 +191,65 @@ describe('computeQuantity', () => {
   });
 });
 
-describe('itemsByCategory', () => {
-  it('groups items under their category in canonical order', () => {
-    const groups = itemsByCategory([
-      item('Sunscreen', 'Toiletries & Health'),
-      item('Passport', 'Documents'),
-      item('T-shirt', 'Clothing'),
+describe('defaultId', () => {
+  it('derives a deterministic, self-describing id from the catalog id', () => {
+    expect(defaultId('phone-charger')).toBe('d:phone-charger');
+    expect(defaultId('passport')).toBe('d:passport');
+  });
+});
+
+describe('customId', () => {
+  it('produces a c:-prefixed base62 id', () => {
+    const id = customId(() => new Uint8Array(16).fill(1));
+    expect(id).toMatch(/^c:[0-9A-Za-z]+$/);
+  });
+
+  it('depends on the random bytes (different bytes -> different id)', () => {
+    const a = customId(() => new Uint8Array(16).fill(1));
+    const b = customId(() => new Uint8Array(16).fill(2));
+    expect(a).not.toBe(b);
+  });
+
+  it('is collision-resistant across many real calls', () => {
+    const seen = new Set<string>();
+    for (let i = 0; i < 1000; i++) {
+      const id = customId();
+      expect(seen.has(id)).toBe(false);
+      seen.add(id);
+    }
+  });
+});
+
+describe('resolveItems', () => {
+  it('joins each reference to its library row', () => {
+    const lib = new Map([
+      ['a1', libRow('Passport', 'Documents', { id: 'a1', tagKeys: ['intl'] })],
+    ]);
+    const [r] = resolveItems([ref('a1', { quantityTaken: 2, packed: true })], lib);
+    expect(r).toMatchObject({
+      libraryId: 'a1',
+      name: 'Passport',
+      category: 'Documents',
+      tagKeys: ['intl'],
+      quantityTaken: 2,
+      packed: true,
+      missing: false,
+    });
+  });
+
+  it('flags a reference whose library row is gone as missing', () => {
+    const [r] = resolveItems([ref('ghost')], new Map());
+    expect(r.missing).toBe(true);
+    expect(r.name).toBe('(removed item)');
+  });
+});
+
+describe('resolvedByCategory', () => {
+  it('groups in canonical order and drops empty categories', () => {
+    const groups = resolvedByCategory([
+      resolved('Sunscreen', 'Toiletries & Health'),
+      resolved('Passport', 'Documents'),
+      resolved('T-shirt', 'Clothing'),
     ]);
     expect(groups.map((g) => g.category)).toEqual([
       'Documents',
@@ -173,49 +258,305 @@ describe('itemsByCategory', () => {
     ]);
   });
 
-  it('keeps every item with its category', () => {
-    const groups = itemsByCategory([
-      item('Passport', 'Documents'),
-      item('Visa', 'Documents'),
-    ]);
-    expect(groups).toHaveLength(1);
-    expect(groups[0].items.map((i) => i.name)).toEqual(['Passport', 'Visa']);
-  });
-
-  it('omits empty categories', () => {
-    const groups = itemsByCategory([item('Passport', 'Documents')]);
-    expect(groups.map((g) => g.category)).toEqual(['Documents']);
-  });
-
   it('returns nothing for an empty list', () => {
-    expect(itemsByCategory([])).toEqual([]);
+    expect(resolvedByCategory([])).toEqual([]);
   });
 });
 
-describe('rankLibrary', () => {
-  function lib(name: string, count: number, lastUsed: number): LibraryItem {
-    return { nameKey: tagKey(name), name, category: 'Comfort & Misc', count, lastUsed };
+describe('resolvedByTag', () => {
+  it('groups items under each tag key in sorted order, untagged last', () => {
+    const groups = resolvedByTag([
+      resolved('Towel', 'Comfort & Misc', { tagKeys: ['beach', 'hiking'] }),
+      resolved('Passport', 'Documents'),
+    ]);
+    expect(groups.map((g) => g.tag)).toEqual(['beach', 'hiking', '']);
+    expect(groups[2].items.map((i) => i.name)).toEqual(['Passport']);
+  });
+});
+
+describe('legacyItemToRef', () => {
+  const tags: Tag[] = [
+    { id: 't1', label: 'Beach', type: 'activity' },
+    { id: 't2', label: 'Hiking', type: 'activity' },
+  ];
+
+  it('normalizes name/category and maps tagIds to tag keys', () => {
+    const out = legacyItemToRef(
+      { name: '  Towel ', category: 'Comfort & Misc', tagIds: ['t1', 't2'] },
+      tags,
+    );
+    expect(out).toEqual({
+      nameKey: 'towel',
+      name: 'Towel',
+      category: 'Comfort & Misc',
+      tagKeys: ['beach', 'hiking'],
+    });
+  });
+
+  it('drops unknown tag ids and defaults a bad category', () => {
+    const out = legacyItemToRef({ name: 'X', category: 'Nope', tagIds: ['t1', 'zzz'] }, tags);
+    expect(out.category).toBe('Comfort & Misc');
+    expect(out.tagKeys).toEqual(['beach']);
+  });
+});
+
+describe('ensureTripTags', () => {
+  function tag(label: string, id: string): Tag {
+    return { id, label, type: 'custom' };
   }
 
-  it('ranks by use count, then recency, then name', () => {
-    const ranked = rankLibrary(
-      [lib('Earplugs', 2, 100), lib('Eye mask', 5, 50), lib('Adapter', 2, 200)],
-      [],
-    );
-    expect(ranked.map((i) => i.name)).toEqual(['Eye mask', 'Adapter', 'Earplugs']);
+  it('returns empty arrays when no keys are supplied', () => {
+    const result = ensureTripTags([tag('beach', 't1')], [], () => 'x');
+    expect(result.tags).toEqual([tag('beach', 't1')]);
+    expect(result.tagIds).toEqual([]);
   });
 
-  it('excludes items already on the trip (by name key)', () => {
-    const ranked = rankLibrary([lib('Earplugs', 3, 100), lib('Adapter', 1, 100)], ['earplugs']);
-    expect(ranked.map((i) => i.name)).toEqual(['Adapter']);
+  it('reuses an existing tag whose label matches the key', () => {
+    const result = ensureTripTags([tag('beach', 't1')], ['beach'], () => 'new');
+    expect(result.tags).toEqual([tag('beach', 't1')]);
+    expect(result.tagIds).toEqual(['t1']);
   });
 
-  it('matches the exclusion list case-insensitively', () => {
-    const ranked = rankLibrary([lib('Adapter', 1, 100)], ['ADAPTER']);
-    expect(ranked).toEqual([]);
+  it('creates a new custom tag for an unknown key', () => {
+    const result = ensureTripTags([], ['hiking'], () => 'gen-1');
+    expect(result.tags).toEqual([{ id: 'gen-1', label: 'hiking', type: 'custom' }]);
+    expect(result.tagIds).toEqual(['gen-1']);
   });
 
-  it('returns an empty list when the library is empty', () => {
-    expect(rankLibrary([], ['anything'])).toEqual([]);
+  it('reuses existing and creates new tags in a single call', () => {
+    const result = ensureTripTags([tag('beach', 't1')], ['beach', 'hiking'], () => 'gen-1');
+    expect(result.tags).toEqual([
+      tag('beach', 't1'),
+      { id: 'gen-1', label: 'hiking', type: 'custom' },
+    ]);
+    expect(result.tagIds).toEqual(['t1', 'gen-1']);
+  });
+
+  it('de-duplicates repeated keys (no duplicate tags or ids)', () => {
+    let counter = 0;
+    const result = ensureTripTags([], ['hiking', 'hiking'], () => `id-${++counter}`);
+    expect(result.tags).toEqual([{ id: 'id-1', label: 'hiking', type: 'custom' }]);
+    expect(result.tagIds).toEqual(['id-1']);
+  });
+
+  it('matches existing tags case-insensitively via tagKey normalization', () => {
+    const result = ensureTripTags([tag('Beach', 't1')], ['beach'], () => 'x');
+    expect(result.tags).toEqual([tag('Beach', 't1')]);
+    expect(result.tagIds).toEqual(['t1']);
+  });
+
+  it('generates unique ids per new tag using the genId callback', () => {
+    let counter = 0;
+    const genId = () => `id-${++counter}`;
+    const result = ensureTripTags([], ['hiking', 'surfing'], genId);
+    expect(result.tags.map((t) => t.id)).toEqual(['id-1', 'id-2']);
+    expect(result.tagIds).toEqual(['id-1', 'id-2']);
+  });
+});
+
+describe('renameLibraryTag', () => {
+  function lib(name: string, tagKeys: string[]): LibraryItem {
+    return {
+      id: tagKey(name),
+      nameKey: tagKey(name),
+      name,
+      category: 'Comfort & Misc',
+      count: 1,
+      lastUsed: 0,
+      tagKeys,
+      custom: true,
+    };
+  }
+
+  it('replaces the old key with the new key on items that have it', () => {
+    const items = [lib('Towel', ['beach', 'hiking']), lib('Sunscreen', ['beach'])];
+    const result = renameLibraryTag(items, 'beach', 'swim');
+    expect(result[0].tagKeys).toEqual(['swim', 'hiking']);
+    expect(result[1].tagKeys).toEqual(['swim']);
+  });
+
+  it('leaves items untouched that do not have the key', () => {
+    const items = [lib('Passport', ['documents']), lib('Towel', ['beach'])];
+    const result = renameLibraryTag(items, 'beach', 'swim');
+    expect(result[0].tagKeys).toEqual(['documents']);
+    expect(result[1].tagKeys).toEqual(['swim']);
+  });
+
+  it('does not mutate the input items', () => {
+    const items = [lib('Towel', ['beach'])];
+    renameLibraryTag(items, 'beach', 'swim');
+    expect(items[0].tagKeys).toEqual(['beach']);
+  });
+
+  it('normalizes both from and to keys via tagKey', () => {
+    const items = [lib('Towel', ['beach'])];
+    const result = renameLibraryTag(items, '  Beach  ', '  Swim  ');
+    expect(result[0].tagKeys).toEqual(['swim']);
+  });
+
+  it('de-duplicates if the new key already exists on the item', () => {
+    const items = [lib('Towel', ['beach', 'swim'])];
+    const result = renameLibraryTag(items, 'beach', 'swim');
+    expect(result[0].tagKeys).toEqual(['swim']);
+  });
+
+  it('returns an empty array when given an empty array', () => {
+    expect(renameLibraryTag([], 'beach', 'swim')).toEqual([]);
+  });
+});
+
+describe('removeLibraryTag', () => {
+  function lib(name: string, tagKeys: string[]): LibraryItem {
+    return {
+      id: tagKey(name),
+      nameKey: tagKey(name),
+      name,
+      category: 'Comfort & Misc',
+      count: 1,
+      lastUsed: 0,
+      tagKeys,
+      custom: true,
+    };
+  }
+
+  it('removes the key from every item that has it', () => {
+    const items = [lib('Towel', ['beach', 'hiking']), lib('Sunscreen', ['beach'])];
+    const result = removeLibraryTag(items, 'beach');
+    expect(result[0].tagKeys).toEqual(['hiking']);
+    expect(result[1].tagKeys).toEqual([]);
+  });
+
+  it('leaves items untouched that do not have the key', () => {
+    const items = [lib('Passport', ['documents']), lib('Towel', ['beach'])];
+    const result = removeLibraryTag(items, 'beach');
+    expect(result[0].tagKeys).toEqual(['documents']);
+    expect(result[1].tagKeys).toEqual([]);
+  });
+
+  it('does not mutate the input items', () => {
+    const items = [lib('Towel', ['beach'])];
+    removeLibraryTag(items, 'beach');
+    expect(items[0].tagKeys).toEqual(['beach']);
+  });
+
+  it('normalizes the key via tagKey', () => {
+    const items = [lib('Towel', ['beach'])];
+    const result = removeLibraryTag(items, '  Beach  ');
+    expect(result[0].tagKeys).toEqual([]);
+  });
+
+  it('returns an empty array when given an empty array', () => {
+    expect(removeLibraryTag([], 'beach')).toEqual([]);
+  });
+});
+
+describe('libraryByTag', () => {
+  function lib(name: string, tags: string[]): LibraryItem {
+    return {
+      id: tagKey(name),
+      nameKey: tagKey(name),
+      name,
+      category: 'Comfort & Misc',
+      count: 1,
+      lastUsed: 0,
+      tagKeys: tags,
+      custom: true,
+    };
+  }
+
+  it('groups items under their tag keys in sorted order', () => {
+    const items = [lib('Towel', ['beach', 'hiking']), lib('Sunscreen', ['beach'])];
+    const groups = libraryByTag(items);
+    expect(groups.map((g) => g.tag)).toEqual(['beach', 'hiking']);
+  });
+
+  it('includes an item under each of its tags', () => {
+    const towel = lib('Towel', ['beach', 'hiking']);
+    const groups = libraryByTag([towel]);
+    expect(groups).toHaveLength(2);
+    expect(groups[0].tag).toBe('beach');
+    expect(groups[0].items).toContain(towel);
+    expect(groups[1].tag).toBe('hiking');
+    expect(groups[1].items).toContain(towel);
+  });
+
+  it('appends an untagged group when any item has no tags', () => {
+    const items = [lib('Towel', ['beach']), lib('Passport', [])];
+    const groups = libraryByTag(items);
+    const last = groups[groups.length - 1];
+    expect(last.tag).toBe('');
+    expect(last.items.map((i) => i.name)).toEqual(['Passport']);
+  });
+
+  it('does not emit an untagged group when all items have at least one tag', () => {
+    const items = [lib('Towel', ['beach']), lib('Sunscreen', ['beach'])];
+    const groups = libraryByTag(items);
+    expect(groups.every((g) => g.tag !== '')).toBe(true);
+  });
+
+  it('returns an empty array for an empty input', () => {
+    expect(libraryByTag([])).toEqual([]);
+  });
+
+  it('places the untagged section after all named-tag sections', () => {
+    const items = [
+      lib('Passport', []),
+      lib('Towel', ['beach']),
+      lib('Sunscreen', ['alpha']),
+    ];
+    const groups = libraryByTag(items);
+    expect(groups[groups.length - 1].tag).toBe('');
+    expect(groups.map((g) => g.tag).filter((t) => t !== '')).toEqual(['alpha', 'beach']);
+  });
+});
+
+describe('searchLibrary', () => {
+  function lib(name: string, over: Partial<LibraryItem> = {}): LibraryItem {
+    return {
+      id: tagKey(name),
+      nameKey: tagKey(name),
+      name,
+      category: 'Comfort & Misc',
+      count: 1,
+      lastUsed: 0,
+      tagKeys: [],
+      custom: true,
+      ...over,
+    };
+  }
+
+  it('returns all items unchanged for a blank query', () => {
+    const items = [lib('Towel'), lib('Passport')];
+    expect(searchLibrary(items, '')).toEqual(items);
+    expect(searchLibrary(items, '   ')).toEqual(items);
+  });
+
+  it('matches by name, case-insensitively', () => {
+    const items = [lib('Sunscreen'), lib('Passport')];
+    expect(searchLibrary(items, 'SUN').map((i) => i.name)).toEqual(['Sunscreen']);
+  });
+
+  it('matches a substring anywhere in the name', () => {
+    const items = [lib('Toothbrush'), lib('Passport')];
+    expect(searchLibrary(items, 'brush').map((i) => i.name)).toEqual(['Toothbrush']);
+  });
+
+  it('matches by tag key', () => {
+    const items = [lib('Towel', { tagKeys: ['beach'] }), lib('Passport')];
+    expect(searchLibrary(items, 'beach').map((i) => i.name)).toEqual(['Towel']);
+  });
+
+  it('matches by category', () => {
+    const items = [lib('Charger', { category: 'Electronics' }), lib('Towel')];
+    expect(searchLibrary(items, 'electron').map((i) => i.name)).toEqual(['Charger']);
+  });
+
+  it('returns an empty array when nothing matches', () => {
+    expect(searchLibrary([lib('Towel')], 'xyz')).toEqual([]);
+  });
+
+  it('preserves the input order of matches', () => {
+    const items = [lib('Sun hat'), lib('Sunscreen'), lib('Passport')];
+    expect(searchLibrary(items, 'sun').map((i) => i.name)).toEqual(['Sun hat', 'Sunscreen']);
   });
 });

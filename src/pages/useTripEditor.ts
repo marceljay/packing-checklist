@@ -1,49 +1,32 @@
-import { useCallback, useEffect, useState } from 'react';
-import { getTrip, saveTrip } from '../db/trips';
+import { useCallback } from 'react';
+import { setData, useAppData } from '../db/store';
 import type { Trip } from '../types';
 
 type Status = 'loading' | 'ready' | 'not-found';
 
 /**
- * Loads a trip once into local state and persists every mutation immediately.
- * We deliberately don't use a live query here so in-flight edits aren't clobbered
- * by re-renders; the trips list elsewhere does use a live query.
+ * Read a trip from the JSON store and mutate it in place. The store is
+ * synchronous and reactive (useAppData), so there's no load-once/clobber concern
+ * as there was with the live query — every mutation persists immediately.
  */
 export function useTripEditor(tripId: string | undefined) {
-  const [trip, setTrip] = useState<Trip | null>(null);
-  const [status, setStatus] = useState<Status>('loading');
+  const data = useAppData();
+  const trip = tripId ? data.trips.find((t) => t.id === tripId) ?? null : null;
+  const status: Status = !tripId ? 'not-found' : trip ? 'ready' : 'not-found';
 
-  useEffect(() => {
-    let cancelled = false;
-    if (!tripId) {
-      setStatus('not-found');
-      return;
-    }
-    setStatus('loading');
-    getTrip(tripId).then((t) => {
-      if (cancelled) return;
-      if (!t) {
-        setStatus('not-found');
-        return;
-      }
-      setTrip(t);
-      setStatus('ready');
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [tripId]);
-
-  /** Apply an immutable mutation to the trip and persist it. */
-  const update = useCallback((mutator: (draft: Trip) => void) => {
-    setTrip((prev) => {
-      if (!prev) return prev;
-      const next = structuredClone(prev) as Trip;
-      mutator(next);
-      void saveTrip(next);
-      return next;
-    });
-  }, []);
+  /** Apply an immutable mutation to this trip and persist it. */
+  const update = useCallback(
+    (mutator: (draft: Trip) => void) => {
+      if (!tripId) return;
+      setData((d) => {
+        const target = d.trips.find((t) => t.id === tripId);
+        if (!target) return;
+        mutator(target);
+        target.updatedAt = Date.now();
+      });
+    },
+    [tripId],
+  );
 
   return { trip, status, update };
 }

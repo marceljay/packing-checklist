@@ -1,22 +1,22 @@
-import { db, uid, CURRENT_SCHEMA_VERSION, type StoredTrip } from './db';
+import { getData, setData, uid } from './store';
 import type { Trip } from '../types';
-import { parseTrip } from './transfer';
+import { parseImport } from './transfer';
+import { ensureLibraryItem, getLibraryItem, putWithId } from './library';
+import type { LibraryItem } from '../types';
 
-function now() {
-  return Date.now();
+/** Trips live in the JSON document (`store.ts`); these are synchronous ops over it. */
+
+export function listTrips(): Trip[] {
+  return [...getData().trips].sort((a, b) => b.updatedAt - a.updatedAt);
 }
 
-export async function listTrips(): Promise<StoredTrip[]> {
-  return db.trips.orderBy('updatedAt').reverse().toArray();
+export function getTrip(id: string): Trip | undefined {
+  return getData().trips.find((t) => t.id === id);
 }
 
-export async function getTrip(id: string): Promise<StoredTrip | undefined> {
-  return db.trips.get(id);
-}
-
-export async function createTrip(name = 'Untitled trip'): Promise<string> {
-  const ts = now();
-  const trip: StoredTrip = {
+export function createTrip(name = 'Untitled trip'): string {
+  const ts = Date.now();
+  const trip: Trip = {
     id: uid(),
     name,
     destinations: [],
@@ -25,64 +25,85 @@ export async function createTrip(name = 'Untitled trip'): Promise<string> {
     settings: { laundryAvailable: false },
     createdAt: ts,
     updatedAt: ts,
-    schemaVersion: CURRENT_SCHEMA_VERSION,
   };
-  await db.trips.add(trip);
+  setData((d) => d.trips.push(trip));
   return trip.id;
 }
 
 /** Persist a full trip aggregate, bumping updatedAt. */
-export async function saveTrip(trip: Trip): Promise<void> {
-  await db.trips.put({
-    ...trip,
-    updatedAt: now(),
-    schemaVersion: CURRENT_SCHEMA_VERSION,
+export function saveTrip(trip: Trip): void {
+  setData((d) => {
+    const next = { ...trip, updatedAt: Date.now() };
+    const i = d.trips.findIndex((t) => t.id === trip.id);
+    if (i >= 0) d.trips[i] = next;
+    else d.trips.push(next);
   });
 }
 
-export async function deleteTrip(id: string): Promise<void> {
-  await db.trips.delete(id);
-}
-
-/** Import a trip from exported JSON text as a new, independent trip. Throws on
- *  invalid input (see `parseTrip`). Returns the new trip id. */
-export async function importTripFromText(text: string): Promise<string> {
-  const trip = parseTrip(text, uid, now());
-  await db.trips.add({ ...trip, schemaVersion: CURRENT_SCHEMA_VERSION });
-  return trip.id;
+export function deleteTrip(id: string): void {
+  setData((d) => {
+    d.trips = d.trips.filter((t) => t.id !== id);
+  });
 }
 
 /** Deep-clone a trip with fresh ids so the copy is fully independent (SPEC §8). */
-export async function cloneTrip(id: string): Promise<string | undefined> {
-  const src = await db.trips.get(id);
+export function cloneTrip(id: string): string | undefined {
+  const src = getTrip(id);
   if (!src) return undefined;
-
-  // Remap tag ids so item.tagIds references stay consistent.
-  const tagIdMap = new Map<string, string>();
-  const tags = src.tags.map((t) => {
-    const newId = uid();
-    tagIdMap.set(t.id, newId);
-    return { ...t, id: newId };
-  });
-
-  const items = src.items.map((it) => ({
-    ...it,
-    id: uid(),
-    packed: false,
-    tagIds: it.tagIds.map((t) => tagIdMap.get(t) ?? t).filter(Boolean),
-  }));
-
-  const ts = now();
-  const copy: StoredTrip = {
-    ...src,
+  const ts = Date.now();
+  const copy: Trip = {
+    ...structuredClone(src),
     id: uid(),
     name: `${src.name} (copy)`,
-    tags,
-    items,
+    tags: src.tags.map((t) => ({ ...t, id: uid() })),
+    items: src.items.map((it) => ({ ...it, packed: false })),
     createdAt: ts,
     updatedAt: ts,
-    schemaVersion: CURRENT_SCHEMA_VERSION,
   };
-  await db.trips.add(copy);
+  setData((d) => d.trips.push(copy));
   return copy.id;
+}
+
+/**
+ * Import a trip from exported JSON text as a new, independent trip. Resolves the
+ * bundled library items into the library (dedup by id; mints ids for id-less
+ * legacy rows) and rewires the trip's references. Throws on invalid input.
+ * Returns the new trip id.
+ */
+export function importTripFromText(text: string): string {
+  const { trip, libraryItems } = parseImport(text, uid, Date.now());
+
+  const keyToId = new Map<string, string>();
+  for (const li of libraryItems) {
+    if (li.id) {
+      const existing = getLibraryItem(li.id);
+      if (existing) {
+        keyToId.set(li.id, existing.id);
+        continue;
+      }
+      const row: LibraryItem = {
+        id: li.id,
+        nameKey: li.nameKey,
+        name: li.name,
+        category: li.category,
+        tagKeys: li.tagKeys,
+        custom: li.custom,
+        count: 0,
+        lastUsed: 0,
+        ...(li.essential ? { essential: true } : {}),
+        ...(li.quantity ? { quantity: li.quantity } : {}),
+      };
+      keyToId.set(li.id, putWithId(row).id);
+    } else {
+      keyToId.set(li.nameKey, ensureLibraryItem(li.name, li.category, li.tagKeys).id);
+    }
+  }
+
+  const items = trip.items
+    .map((it) => ({ ...it, libraryId: keyToId.get(it.libraryId) ?? '' }))
+    .filter((it) => it.libraryId);
+
+  const stored: Trip = { ...trip, items };
+  setData((d) => d.trips.push(stored));
+  return trip.id;
 }

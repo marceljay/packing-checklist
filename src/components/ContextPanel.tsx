@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { Trip, TagType } from '../types';
 import { tagKey, tripDurationDays } from '../types';
-import { uid } from '../db/db';
+import { uid } from '../db/store';
 import { BUILTIN_TAGS } from '../data/tags';
 import { lookupTripWeather, placeLabel, type GeoResult } from '../engine/weather';
 import DateRangeField from './DateRangeField';
@@ -84,14 +84,9 @@ export default function ContextPanel({ trip, update }: Props) {
       update((d) => {
         // Regenerate weather tags from scratch so stale ones (e.g. from a
         // since-removed destination) don't linger — drop existing weather-type
-        // tags and their item references, then add the current union.
-        const staleIds = new Set(d.tags.filter((t) => t.type === 'weather').map((t) => t.id));
+        // tags, then add the current union. (Context tags drive suggestions;
+        // item tags live in the library, so items are untouched here.)
         d.tags = d.tags.filter((t) => t.type !== 'weather');
-        if (staleIds.size > 0) {
-          d.items.forEach((it) => {
-            it.tagIds = it.tagIds.filter((id) => !staleIds.has(id));
-          });
-        }
         for (const k of res.tags) d.tags.push({ id: uid(), label: k, type: 'weather' });
         d.weather = {
           fetchedAt: Date.now(),
@@ -221,11 +216,7 @@ export default function ContextPanel({ trip, update }: Props) {
                     }
                     // No destinations left → drop the now-meaningless forecast.
                     if (d.destinations.length === 0) {
-                      const wIds = new Set(d.tags.filter((t) => t.type === 'weather').map((t) => t.id));
                       d.tags = d.tags.filter((t) => t.type !== 'weather');
-                      d.items.forEach((it) => {
-                        it.tagIds = it.tagIds.filter((id) => !wIds.has(id));
-                      });
                       d.weather = undefined;
                     }
                   })
@@ -256,12 +247,7 @@ export default function ContextPanel({ trip, update }: Props) {
                 className="ml-0.5 opacity-60 hover:opacity-100"
                 aria-label={`Remove tag ${tag.label}`}
                 onClick={() =>
-                  update((d) => {
-                    d.tags = d.tags.filter((t) => t.id !== tag.id);
-                    d.items.forEach((it) => {
-                      it.tagIds = it.tagIds.filter((id) => id !== tag.id);
-                    });
-                  })
+                  update((d) => void (d.tags = d.tags.filter((t) => t.id !== tag.id)))
                 }
               >
                 ✕

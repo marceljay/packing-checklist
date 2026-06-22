@@ -5,6 +5,46 @@ All notable changes to this project are documented here.
 ## [Unreleased]
 
 ### Added
+- **Storage is now a single JSON document** in `localStorage` instead of
+  IndexedDB/Dexie. Migrations became pure object transforms (no schema-upgrade
+  failures), and the in-app state matches the export shape. Existing IndexedDB data
+  is imported once on first load. Reactivity uses `useSyncExternalStore`.
+- **Collision-safe item identity.** Built-in defaults get a deterministic id
+  (`d:<catalogId>`, identical on every install — so importing someone else's library
+  never duplicates the built-ins), and custom items get a collision-resistant random
+  id (`c:…`, so two same-named items like surf vs. snow "gloves" stay distinct and
+  merging foreign libraries doesn't clash). Identity is the id, never the name.
+- **Header menu + item-library backup.** A `⋯` menu in the header (hidden until
+  opened) gathers the transfer actions: **Import trip**, and **Export / Import the
+  whole item library** as JSON. Library import de-dups by id (your existing items
+  win). Trip import moved out of the trips page into this menu.
+- **One item, everywhere — the library is now the single source of truth.** A
+  trip's packing line is a *reference* to a library item plus its per-trip quantity
+  and packed state; the item's name, category, and tags live once in the library.
+  Editing an item while planning a trip (via the new **pencil**) edits the library
+  entry, so the change shows on every trip that uses it. Library items now have a
+  short, readable id (e.g. `shi417`) that survives renames. Existing trips migrate
+  automatically on first load; trip export bundles the items it needs so files stay
+  portable (older exports still import). An item's **id is its identity** (the
+  database key), so import de-duplicates by id — re-importing your own data never
+  forks an item, while two genuinely separate items may share a name.
+- **Search the item library.** A search box on the Item Library page filters by
+  name, tag, or category (case-insensitive) across all three views, with a clear
+  no-match state. Backed by a unit-tested `searchLibrary` helper.
+- **Unified item library.** Built-in defaults + your custom items now live in one
+  editable store (seeded on first run, each flagged default/custom). The **Item
+  Library** page (`/items`, reachable from the trips page) has three expandable
+  views — by category, by tag, all — with tag rename/remove and an **Add custom
+  item** form on top.
+- **Add item card** on the trip Plan tab — a dedicated card above the list where
+  you set name, **category and tags**; the item is saved to your library and
+  reusable on future trips.
+- **Plan / Checklist tabs.** The trip page splits into a **Plan** tab (build/edit
+  the list — no checkboxes) and a **Checklist** tab (check items off with a
+  progress bar). Same trip, two focused views.
+- **Item Library page** (`/items`) — manage every item (defaults + your own) in
+  three views (by category / tag / all), edit each via a pencil, search, and
+  rename/remove tags across the whole library.
 - **Destination autocomplete.** Type a place and pick from geocoded matches
   (Open-Meteo) with region/country; selecting stores lat/lon + country code
   (sharpens the IATA code and weather lookup). Free-text add still works offline.
@@ -21,9 +61,10 @@ All notable changes to this project are documented here.
   typical weather** (same dates averaged over recent years) beyond that — a trip
   spanning the boundary shows a mixed summary. Uses stored coordinates; needs
   trip dates; falls back gracefully when offline.
-- **Personal item library ("Your items").** Custom items now live in a global
-  IndexedDB store (DB v2), not inside a single trip, so they resurface on future
-  trips ranked by use count + recency. Tap to add; remove from the tray to forget.
+- **Personal item library.** Custom items live in a global IndexedDB store, not
+  inside a single trip, so they resurface on future trips. Managed from the Item
+  Library page (the per-trip "Your items" tray was removed — add items via the
+  Add custom item card or suggestions).
 - **Unit tests (Vitest).** 33 colocated tests covering the pure domain logic —
   `tagKey`, `tripDurationDays`, `destinationCode`, `computeQuantity`, and the
   suggestion engine (`suggestItems`: essentials, union matching, weighted
@@ -45,6 +86,10 @@ All notable changes to this project are documented here.
 - Vite dev server binds `--host` on port 5000; devcontainer forwards the port.
 
 ### Changed
+- **Home is now two full-width tabs** — **Your trips** and **Item library** —
+  spanning the content width, instead of a separate page reached by a link. The
+  active tab follows the route (`/` and `/items`), so deep links and back/forward
+  still work.
 - **Date range picker.** The two date fields are replaced by a single range
   calendar in a popover (react-day-picker, themed to match) — pick start and end
   as one highlighted range. Fixes the date-field overflow in the context panel.

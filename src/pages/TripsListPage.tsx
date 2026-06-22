@@ -1,9 +1,9 @@
-import { useLiveQuery } from 'dexie-react-hooks';
+import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
-import { listTrips, createTrip, cloneTrip, deleteTrip, importTripFromText } from '../db/trips';
+import { useAppData } from '../db/store';
+import { createTrip, cloneTrip, deleteTrip } from '../db/trips';
 import { tripDurationDays, destinationCode } from '../types';
-import { pickTextFile } from '../lib/file';
 
 function formatDateRange(start?: string, end?: string): string {
   if (!start && !end) return 'No dates set';
@@ -18,55 +18,31 @@ function formatDateRange(start?: string, end?: string): string {
 
 export default function TripsListPage() {
   const navigate = useNavigate();
-  const trips = useLiveQuery(listTrips, [], undefined);
+  const data = useAppData();
+  const trips = useMemo(() => [...data.trips].sort((a, b) => b.updatedAt - a.updatedAt), [data.trips]);
 
-  async function handleNew() {
-    const id = await createTrip();
-    navigate(`/trip/${id}`);
+  function handleNew() {
+    navigate(`/trip/${createTrip()}`);
   }
 
-  async function handleClone(id: string) {
-    const newId = await cloneTrip(id);
+  function handleClone(id: string) {
+    const newId = cloneTrip(id);
     if (newId) navigate(`/trip/${newId}`);
   }
 
-  async function handleDelete(id: string, name: string) {
-    if (confirm(`Delete "${name}"? This can't be undone.`)) {
-      await deleteTrip(id);
-    }
-  }
-
-  async function handleImport() {
-    const text = await pickTextFile();
-    if (text == null) return;
-    try {
-      const id = await importTripFromText(text);
-      navigate(`/trip/${id}`);
-    } catch (e) {
-      alert(e instanceof Error ? e.message : 'Could not import that file.');
-    }
+  function handleDelete(id: string, name: string) {
+    if (confirm(`Delete "${name}"? This can't be undone.`)) deleteTrip(id);
   }
 
   return (
     <div>
-      <div className="mb-7 flex items-end justify-between gap-4">
-        <div>
-          <p className="label">Departures</p>
-          <h1 className="mt-1 font-display text-3xl font-bold tracking-tight">Your trips</h1>
-        </div>
-        <div className="flex gap-2">
-          <button className="btn-secondary" onClick={handleImport}>
-            Import
-          </button>
-          <button className="btn-primary" onClick={handleNew}>
-            + New trip
-          </button>
-        </div>
+      <div className="mb-5 flex items-center justify-end">
+        <button className="btn-primary" onClick={handleNew}>
+          + New trip
+        </button>
       </div>
 
-      {trips === undefined ? (
-        <p className="font-mono text-sm text-ink-faint">Loading…</p>
-      ) : trips.length === 0 ? (
+      {trips.length === 0 ? (
         <div className="card flex flex-col items-center gap-4 px-6 py-16 text-center">
           <span aria-hidden className="airmail h-1 w-24 rounded-full" />
           <h2 className="font-display text-xl font-bold">No trips on the board</h2>

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { suggestItems } from './suggest';
-import type { CatalogItem, Item, Tag, Trip } from '../types';
+import type { CatalogItem, Tag, Trip } from '../types';
 
 function makeTrip(over: Partial<Trip> = {}): Trip {
   return {
@@ -110,19 +110,8 @@ describe('suggestItems', () => {
     expect(names).toEqual(['Passport', 'Toothbrush']);
   });
 
-  it('hides items already on the trip’s list', () => {
-    const existing: Item = {
-      id: 'i1',
-      name: 'Passport',
-      category: 'Documents',
-      tagIds: [],
-      quantitySuggested: 1,
-      quantityTaken: 1,
-      packed: false,
-      source: 'suggested',
-      catalogId: 'passport',
-    };
-    const ids = suggestItems(makeTrip({ items: [existing] }), catalog).map((s) => s.catalog.id);
+  it('hides items already on the trip’s list (by excluded name key)', () => {
+    const ids = suggestItems(makeTrip(), catalog, new Set(['passport'])).map((s) => s.catalog.id);
     expect(ids).not.toContain('passport');
   });
 

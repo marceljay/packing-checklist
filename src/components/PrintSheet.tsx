@@ -1,8 +1,9 @@
-import type { Trip } from '../types';
-import { itemsByCategory, tripDurationDays, destinationCode } from '../types';
+import type { Trip, LibraryItem } from '../types';
+import { resolveItems, resolvedByCategory, tripDurationDays, destinationCode } from '../types';
 
 interface Props {
   trip: Trip;
+  library: Map<string, LibraryItem>;
 }
 
 function fmt(d?: string): string {
@@ -20,8 +21,8 @@ function fmt(d?: string): string {
  * the editor is hidden in print, so `window.print()` — and "Save as PDF" in any
  * browser's print dialog — outputs just this clean, hand-checkable sheet.
  */
-export default function PrintSheet({ trip }: Props) {
-  const groups = itemsByCategory(trip.items);
+export default function PrintSheet({ trip, library }: Props) {
+  const groups = resolvedByCategory(resolveItems(trip.items, library));
   const days = tripDurationDays(trip);
   const dateLine = [fmt(trip.startDate), fmt(trip.endDate)].join(' → ');
 
@@ -59,7 +60,7 @@ export default function PrintSheet({ trip }: Props) {
               </h2>
               <ul className="space-y-1">
                 {g.items.map((i) => (
-                  <li key={i.id} className="flex items-baseline gap-2 text-sm">
+                  <li key={i.libraryId} className="flex items-baseline gap-2 text-sm">
                     <span
                       aria-hidden
                       className={`mt-0.5 inline-block h-3 w-3 shrink-0 border border-ink ${

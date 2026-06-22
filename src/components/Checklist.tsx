@@ -1,13 +1,16 @@
 import { useMemo, useState } from 'react';
-import type { Item, Trip } from '../types';
-import { itemsByCategory } from '../types';
-import { uid } from '../db/db';
-import { rememberItem } from '../db/library';
+import type { ResolvedItem, Trip, LibraryItem } from '../types';
+import { resolveItems, resolvedByCategory, resolvedByTag } from '../types';
 import ItemRow from './ItemRow';
+import type { ItemRowMode } from './ItemRow';
 
 interface Props {
   trip: Trip;
   update: (mutator: (draft: Trip) => void) => void;
+  /** Library rows by id, for joining each trip reference to its display fields. */
+  library: Map<string, LibraryItem>;
+  /** plan = editable list; checklist = check-off view with progress bar. */
+  mode?: ItemRowMode;
 }
 
 type GroupBy = 'category' | 'tag';
@@ -15,56 +18,32 @@ type GroupBy = 'category' | 'tag';
 interface Group {
   key: string;
   label: string;
-  items: Item[];
+  items: ResolvedItem[];
 }
 
-export default function Checklist({ trip, update }: Props) {
+export default function Checklist({ trip, update, library, mode = 'plan' }: Props) {
   const [groupBy, setGroupBy] = useState<GroupBy>('category');
-  const [newName, setNewName] = useState('');
 
-  function addItem() {
-    const name = newName.trim();
-    if (!name) return;
-    const item: Item = {
-      id: uid(),
-      name,
-      category: 'Comfort & Misc',
-      tagIds: [],
-      quantitySuggested: null,
-      quantityTaken: 1,
-      packed: false,
-      source: 'custom',
-    };
-    update((d) => void d.items.push(item));
-    void rememberItem(item.name, item.category); // resurfaces on future trips
-    setNewName('');
-  }
+  const resolved = useMemo(() => resolveItems(trip.items, library), [trip.items, library]);
 
   const groups = useMemo<Group[]>(() => {
-    const items = trip.items;
     if (groupBy === 'category') {
-      return itemsByCategory(items).map((g) => ({
+      return resolvedByCategory(resolved).map((g) => ({
         key: g.category,
         label: g.category,
         items: g.items,
       }));
     }
-    // group by tag
-    const out: Group[] = trip.tags.map((t) => ({
-      key: t.id,
-      label: t.label,
-      items: items.filter((i) => i.tagIds.includes(t.id)),
+    return resolvedByTag(resolved).map((g) => ({
+      key: g.tag || '__untagged',
+      label: g.tag || 'Untagged',
+      items: g.items,
     }));
-    out.push({
-      key: '__untagged',
-      label: 'Untagged',
-      items: items.filter((i) => i.tagIds.length === 0),
-    });
-    return out.filter((g) => g.items.length > 0);
-  }, [trip.items, trip.tags, groupBy]);
+  }, [resolved, groupBy]);
 
   const total = trip.items.length;
   const packedCount = trip.items.filter((i) => i.packed).length;
+  const pct = total > 0 ? Math.round((packedCount / total) * 100) : 0;
 
   return (
     <section className="card flex flex-col">
@@ -94,27 +73,36 @@ export default function Checklist({ trip, update }: Props) {
         </div>
       </div>
 
-      {/* Add item */}
-      <div className="flex gap-2 border-b border-line p-4">
-        <input
-          className="input"
-          value={newName}
-          onChange={(e) => setNewName(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && addItem()}
-          placeholder="Add an item…"
-        />
-        <button className="btn-primary" onClick={addItem}>
-          Add
-        </button>
-      </div>
+      {/* Checklist mode: prominent progress bar */}
+      {mode === 'checklist' && total > 0 && (
+        <div className="flex items-center gap-3 border-b border-line px-4 py-3">
+          <div className="h-3 flex-1 overflow-hidden rounded-full bg-paper-sunk">
+            <div
+              className="h-full rounded-full bg-vermilion transition-[width]"
+              style={{ width: `${pct}%` }}
+              role="progressbar"
+              aria-valuenow={packedCount}
+              aria-valuemin={0}
+              aria-valuemax={total}
+              aria-label="Packing progress"
+            />
+          </div>
+          <span className="shrink-0 font-mono text-sm tabular-nums text-ink">
+            {packedCount}/{total}
+          </span>
+          <span className="shrink-0 font-mono text-xs tabular-nums text-ink-faint">{pct}%</span>
+        </div>
+      )}
 
       {/* Groups */}
-      {trip.items.length === 0 ? (
+      {total === 0 ? (
         <div className="px-4 py-12 text-center">
           <p className="text-sm text-ink-soft">Your packing list is empty.</p>
-          <p className="mt-1 font-mono text-xs text-ink-faint">
-            Add items above or pull from suggestions.
-          </p>
+          {mode === 'plan' && (
+            <p className="mt-1 font-mono text-xs text-ink-faint">
+              Add items above or pull from suggestions.
+            </p>
+          )}
         </div>
       ) : (
         <div className="divide-y divide-line">
@@ -131,11 +119,11 @@ export default function Checklist({ trip, update }: Props) {
               <div className="divide-y divide-line/60">
                 {group.items.map((item) => (
                   <ItemRow
-                    key={item.id}
+                    key={item.libraryId}
                     item={item}
-                    trip={trip}
                     update={update}
                     showCategory={groupBy !== 'category'}
+                    mode={mode}
                   />
                 ))}
               </div>

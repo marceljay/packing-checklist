@@ -1,137 +1,214 @@
-import type { Item, Trip } from '../types';
-import { CATEGORIES } from '../types';
+import { useState } from 'react';
+import type { Item, ResolvedItem, Trip, Category } from '../types';
+import { CATEGORIES, tagKey } from '../types';
+import { updateItemById, renameLibraryItemById } from '../db/library';
+
+export type ItemRowMode = 'plan' | 'checklist';
 
 interface Props {
-  item: Item;
-  trip: Trip;
+  /** The trip item joined with its library row. */
+  item: ResolvedItem;
   update: (mutator: (draft: Trip) => void) => void;
-  /** Show the per-row category control (hidden when the list is grouped by it). */
+  /** Show the category chip (hidden when the list is already grouped by category). */
   showCategory?: boolean;
+  /** plan = display + pencil-edit; checklist = read-only check-off view. */
+  mode?: ItemRowMode;
 }
 
-export default function ItemRow({ item, trip, update, showCategory = false }: Props) {
-  function patch(fn: (it: Item) => void) {
+export default function ItemRow({ item, update, showCategory = false, mode = 'plan' }: Props) {
+  const [editing, setEditing] = useState(false);
+
+  /** Patch this trip's reference (per-trip state: quantity / packed). */
+  function patchRef(fn: (it: Item) => void) {
     update((d) => {
-      const target = d.items.find((x) => x.id === item.id);
+      const target = d.items.find((x) => x.libraryId === item.libraryId);
       if (target) fn(target);
     });
   }
 
-  const itemTags = trip.tags.filter((t) => item.tagIds.includes(t.id));
-  const availableTags = trip.tags.filter((t) => !item.tagIds.includes(t.id));
-  const hasMeta = showCategory || itemTags.length > 0 || availableTags.length > 0;
+  function removeFromTrip() {
+    update((d) => void (d.items = d.items.filter((x) => x.libraryId !== item.libraryId)));
+  }
+
+  if (mode === 'checklist') {
+    return (
+      <div
+        className={`flex items-start gap-2.5 px-4 py-2.5 transition-colors ${
+          item.packed ? 'bg-paper-sunk/40' : 'hover:bg-paper-sunk/40'
+        }`}
+      >
+        <input
+          type="checkbox"
+          className="mt-1 h-5 w-5 shrink-0 rounded border-line text-vermilion focus:ring-vermilion"
+          checked={item.packed}
+          aria-label={`Mark ${item.name} packed`}
+          onChange={(e) => patchRef((it) => void (it.packed = e.target.checked))}
+        />
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <div className="flex items-baseline gap-2">
+            {item.quantityTaken > 1 && (
+              <span className="shrink-0 font-mono text-xs tabular-nums text-ink-faint">
+                {item.quantityTaken}&times;
+              </span>
+            )}
+            <span className={`text-sm ${item.packed ? 'text-ink-faint line-through' : 'text-ink'}`}>
+              {item.name}
+            </span>
+          </div>
+          {item.tagKeys.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {item.tagKeys.map((k) => (
+                <span key={k} className="chip bg-paper-sunk text-ink-faint">
+                  {k}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // plan mode
+  if (editing) {
+    return <EditForm item={item} onDone={() => setEditing(false)} />;
+  }
 
   return (
-    <div
-      className={`flex items-start gap-2.5 px-4 py-2.5 transition-colors ${
-        item.packed ? 'bg-paper-sunk/40' : 'hover:bg-paper-sunk/40'
-      }`}
-    >
-      {/* Packed checkbox */}
-      <input
-        type="checkbox"
-        className="mt-1.5 h-5 w-5 shrink-0 rounded border-line text-vermilion focus:ring-vermilion"
-        checked={item.packed}
-        aria-label={`Mark ${item.name} packed`}
-        onChange={(e) => patch((it) => void (it.packed = e.target.checked))}
-      />
-
+    <div className="flex items-start gap-2.5 px-4 py-2.5 transition-colors hover:bg-paper-sunk/40">
       <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-        {/* Line 1: name + quantity */}
+        {/* Line 1: name + quantity stepper */}
         <div className="flex items-center gap-2">
-          <input
-            className={`input min-w-0 flex-1 ${item.packed ? 'text-ink-faint line-through' : ''}`}
-            value={item.name}
-            aria-label="Item name"
-            onChange={(e) => patch((it) => void (it.name = e.target.value))}
-          />
+          <span className={`min-w-0 flex-1 truncate text-sm ${item.missing ? 'text-ink-faint italic' : 'text-ink'}`}>
+            {item.name}
+          </span>
           <div className="flex shrink-0 items-center gap-1" aria-label="Quantity">
             <button
               className="btn-secondary h-7 w-7 p-0 text-base leading-none"
               aria-label="Decrease quantity"
-              onClick={() =>
-                patch((it) => void (it.quantityTaken = Math.max(1, it.quantityTaken - 1)))
-              }
+              onClick={() => patchRef((it) => void (it.quantityTaken = Math.max(1, it.quantityTaken - 1)))}
             >
               −
             </button>
-            <span className="w-5 text-center font-mono text-sm tabular-nums">
-              {item.quantityTaken}
-            </span>
+            <span className="w-5 text-center font-mono text-sm tabular-nums">{item.quantityTaken}</span>
             <button
               className="btn-secondary h-7 w-7 p-0 text-base leading-none"
               aria-label="Increase quantity"
-              onClick={() => patch((it) => void (it.quantityTaken = it.quantityTaken + 1))}
+              onClick={() => patchRef((it) => void (it.quantityTaken = it.quantityTaken + 1))}
             >
               +
             </button>
           </div>
         </div>
 
-        {/* Line 2: secondary meta — category (when shown) + tags */}
-        {hasMeta && (
+        {/* Line 2: category chip + tag chips (read-only display) */}
+        {(showCategory || item.tagKeys.length > 0) && (
           <div className="flex flex-wrap items-center gap-1.5">
             {showCategory && (
-              <select
-                className="input w-auto max-w-[11rem] py-1 font-mono text-xs"
-                aria-label="Category"
-                value={item.category}
-                onChange={(e) =>
-                  patch((it) => void (it.category = e.target.value as Item['category']))
-                }
-              >
-                {CATEGORIES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
+              <span className="chip bg-paper-sunk font-mono text-[0.625rem] uppercase tracking-wide text-ink-faint">
+                {item.category}
+              </span>
             )}
-
-            {itemTags.map((t) => (
-              <span key={t.id} className="chip bg-paper-sunk text-ink-soft">
-                {t.label}
-                <button
-                  className="ml-0.5 opacity-60 hover:opacity-100"
-                  aria-label={`Remove tag ${t.label} from ${item.name}`}
-                  onClick={() =>
-                    patch((it) => void (it.tagIds = it.tagIds.filter((id) => id !== t.id)))
-                  }
-                >
-                  ✕
-                </button>
+            {item.tagKeys.map((k) => (
+              <span key={k} className="chip bg-airblue-soft text-airblue">
+                {k}
               </span>
             ))}
-
-            {availableTags.length > 0 && (
-              <select
-                className="input w-auto py-1 font-mono text-xs"
-                aria-label="Add tag to item"
-                value=""
-                onChange={(e) => {
-                  const id = e.target.value;
-                  if (id) patch((it) => void it.tagIds.push(id));
-                }}
-              >
-                <option value="">+ tag</option>
-                {availableTags.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.label}
-                  </option>
-                ))}
-              </select>
-            )}
           </div>
         )}
       </div>
 
-      <button
-        className="btn-danger mt-0.5 shrink-0 px-1.5 py-1"
-        aria-label={`Delete ${item.name}`}
-        onClick={() => update((d) => void (d.items = d.items.filter((x) => x.id !== item.id)))}
-      >
-        ✕
-      </button>
+      {/* Actions: edit (pencil) + remove */}
+      <div className="flex shrink-0 items-center gap-1">
+        {!item.missing && (
+          <button
+            className="btn-ghost mt-0.5 px-1.5 py-1"
+            aria-label={`Edit ${item.name}`}
+            title="Edit item (updates your library)"
+            onClick={() => setEditing(true)}
+          >
+            ✎
+          </button>
+        )}
+        <button
+          className="btn-danger mt-0.5 px-1.5 py-1"
+          aria-label={`Remove ${item.name} from this trip`}
+          title="Remove from this trip"
+          onClick={removeFromTrip}
+        >
+          ✕
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Inline editor for the item's shared fields. Because the library is the single
+ * source of truth, saving here updates the library row (by id) — reflected on
+ * every trip that references it. Quantity / packed are per-trip and edited
+ * outside this form.
+ */
+function EditForm({ item, onDone }: { item: ResolvedItem; onDone: () => void }) {
+  const [name, setName] = useState(item.name);
+  const [category, setCategory] = useState<Category>(item.category);
+  const [tagInput, setTagInput] = useState(item.tagKeys.join(', '));
+  const [error, setError] = useState('');
+
+  async function save() {
+    const clean = name.trim();
+    if (!clean) return;
+    const tagKeys = [...new Set(tagInput.split(',').map((t) => tagKey(t)).filter(Boolean))];
+    if (clean !== item.name) {
+      const ok = await renameLibraryItemById(item.libraryId, clean);
+      if (!ok) {
+        setError('Another item already has that name.');
+        return;
+      }
+    }
+    await updateItemById(item.libraryId, { category, tagKeys });
+    onDone();
+  }
+
+  return (
+    <div className="flex flex-col gap-2 bg-paper-sunk/40 px-4 py-3">
+      <div className="grid gap-2 sm:grid-cols-[1fr_11rem]">
+        <input
+          className="input min-w-0"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          aria-label="Item name"
+          autoFocus
+        />
+        <select
+          className="input min-w-0"
+          value={category}
+          onChange={(e) => setCategory(e.target.value as Category)}
+          aria-label="Category"
+        >
+          {CATEGORIES.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </select>
+      </div>
+      <input
+        className="input"
+        value={tagInput}
+        onChange={(e) => setTagInput(e.target.value)}
+        placeholder="Tags (comma-separated)"
+        aria-label="Tags, comma-separated"
+      />
+      {error && <p className="font-mono text-xs text-vermilion">{error}</p>}
+      <div className="flex items-center justify-end gap-2">
+        <button className="btn-ghost text-xs" onClick={onDone}>
+          Cancel
+        </button>
+        <button className="btn-primary text-xs" onClick={save} disabled={!name.trim()}>
+          Save to library
+        </button>
+      </div>
     </div>
   );
 }

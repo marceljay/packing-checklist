@@ -1,15 +1,19 @@
+import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useTripEditor } from './useTripEditor';
+import { useAppData } from '../db/store';
 import ContextPanel from '../components/ContextPanel';
 import Checklist from '../components/Checklist';
 import SuggestionsTray from '../components/SuggestionsTray';
-import LibraryTray from '../components/LibraryTray';
 import WeatherCard from '../components/WeatherCard';
+import AddItemCard from '../components/AddItemCard';
 import PrintSheet from '../components/PrintSheet';
 import { tripDurationDays, destinationCode } from '../types';
 import type { Trip } from '../types';
 import { serializeTrip } from '../db/transfer';
 import { downloadText, slugify } from '../lib/file';
+
+type EditorMode = 'plan' | 'checklist';
 
 function formatDate(d?: string): string {
   if (!d) return '— — —';
@@ -90,10 +94,15 @@ function Field({ label, value }: { label: string; value: string }) {
 export default function TripEditorPage() {
   const { tripId } = useParams();
   const { trip, status, update } = useTripEditor(tripId);
+  const [mode, setMode] = useState<EditorMode>('plan');
 
-  if (status === 'loading') {
-    return <p className="font-mono text-sm text-ink-faint">Loading…</p>;
-  }
+  // Library is the source of truth for item display fields; join live so edits
+  // (here or on the Item Library page) reflect immediately.
+  const appData = useAppData();
+  const library = useMemo(
+    () => new Map(appData.library.map((i) => [i.id, i])),
+    [appData.library],
+  );
 
   if (status === 'not-found' || !trip) {
     return (
@@ -109,16 +118,44 @@ export default function TripEditorPage() {
   return (
     <>
       <div className="flex flex-col gap-5 print:hidden">
+        {/* Top bar: back link + tab switcher + actions */}
         <div className="flex items-center justify-between gap-2">
           <Link to="/" className="btn-ghost -ml-3 px-3 py-1.5 text-xs">
             ← All trips
           </Link>
+
+          {/* Segmented tab control */}
+          <div
+            className="flex items-center gap-1 rounded bg-paper-sunk p-0.5"
+            role="tablist"
+            aria-label="Editor mode"
+          >
+            {(['plan', 'checklist'] as EditorMode[]).map((m) => (
+              <button
+                key={m}
+                role="tab"
+                aria-selected={mode === m}
+                className={`rounded px-3 py-1 font-mono text-[0.6875rem] uppercase tracking-wide transition-colors ${
+                  mode === m
+                    ? 'bg-ink text-paper-raised'
+                    : 'text-ink-faint hover:bg-paper-sunk hover:text-ink'
+                }`}
+                onClick={() => setMode(m)}
+              >
+                {m}
+              </button>
+            ))}
+          </div>
+
           <div className="flex gap-2">
             <button
               className="btn-secondary text-xs"
-              onClick={() => downloadText(`${slugify(trip.name)}.json`, serializeTrip(trip))}
+              onClick={() =>
+                downloadText(`${slugify(trip.name)}.json`, serializeTrip(trip, [...library.values()]))
+              }
+              title="Download this trip as a .json file (re-importable)"
             >
-              Export
+              Export trip
             </button>
             <button
               className="btn-secondary text-xs"
@@ -133,18 +170,22 @@ export default function TripEditorPage() {
 
         <PassHeader trip={trip} />
 
-        <div className="grid gap-5 lg:grid-cols-[20rem_1fr]">
-          <ContextPanel trip={trip} update={update} />
-          <div className="flex flex-col gap-5">
-            {trip.weather && <WeatherCard weather={trip.weather} />}
-            <SuggestionsTray trip={trip} update={update} />
-            <LibraryTray trip={trip} update={update} />
-            <Checklist trip={trip} update={update} />
+        {mode === 'plan' ? (
+          <div className="grid gap-5 lg:grid-cols-[20rem_1fr]">
+            <ContextPanel trip={trip} update={update} />
+            <div className="flex flex-col gap-5">
+              {trip.weather && <WeatherCard weather={trip.weather} />}
+              <AddItemCard update={update} />
+              <SuggestionsTray trip={trip} update={update} library={library} />
+              <Checklist trip={trip} update={update} library={library} mode="plan" />
+            </div>
           </div>
-        </div>
+        ) : (
+          <Checklist trip={trip} update={update} library={library} mode="checklist" />
+        )}
       </div>
 
-      <PrintSheet trip={trip} />
+      <PrintSheet trip={trip} library={library} />
     </>
   );
 }
