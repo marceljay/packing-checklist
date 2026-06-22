@@ -12,29 +12,34 @@ import { catalogToLibraryItems } from '../data/seed';
 
 /**
  * The `library` store is the single source of truth for items. Built-in defaults
- * are seeded into it (flagged `custom:false`); user items are `custom:true`. Each
- * row has a stable short `id` that trips reference; the Dexie primary key is the
- * `nameKey` (a rename re-keys it but preserves `id`).
+ * are seeded (flagged `custom:false`); user items are `custom:true`. Identity is
+ * the stable short `id` (the Dexie primary key) — two items may share a name. The
+ * `nameKey` index supports name-based resolution for the typed-add path.
  */
 
-/** Read the set of every short id currently in use (for collision-free minting). */
+/** The set of every short id currently in use (for collision-free minting). */
 async function takenIds(): Promise<Set<string>> {
-  const rows = await db.library.toArray();
-  return new Set(rows.map((r) => r.id).filter(Boolean));
+  return new Set((await db.library.toArray()).map((r) => r.id).filter(Boolean));
+}
+
+/** Mint a fresh, collision-free short id for a new library row. */
+export async function mintLibraryId(name: string): Promise<string> {
+  return shortId(name, await takenIds());
 }
 
 /**
- * Seed the built-in defaults into the library (idempotent — only adds items whose
- * nameKey isn't already present, so user edits/removals are never clobbered). Each
- * new row gets a freshly minted short id. Called once at app start.
+ * Seed the built-in defaults (idempotent by `nameKey` — only adds defaults the
+ * user doesn't already have, so edits/removals are never clobbered). Each new row
+ * gets a freshly minted short id. Called once at app start.
  */
 export async function seedLibrary(): Promise<void> {
   const seeds = catalogToLibraryItems(CATALOG);
   await db.transaction('rw', db.library, async () => {
-    const existing = new Set(await db.library.toCollection().primaryKeys());
-    const taken = await takenIds();
+    const rows = await db.library.toArray();
+    const existingKeys = new Set(rows.map((r) => r.nameKey));
+    const taken = new Set(rows.map((r) => r.id).filter(Boolean));
     const missing = seeds
-      .filter((s) => !existing.has(s.nameKey))
+      .filter((s) => !existingKeys.has(s.nameKey))
       .map((s) => {
         const id = shortId(s.name, taken);
         taken.add(id);
@@ -44,22 +49,21 @@ export async function seedLibrary(): Promise<void> {
   });
 }
 
-/** All library items (unordered — sort at the call site).
- *  Normalizes old rows lacking `tagKeys`/`custom` so callers always see them. */
+/** All library items (unordered — sort at the call site). Normalizes old rows. */
 export async function listLibrary(): Promise<LibraryItem[]> {
   const rows = await db.library.toArray();
   return rows.map((row) => ({ ...row, tagKeys: row.tagKeys ?? [], custom: row.custom ?? true }));
 }
 
-/** Look up a library row by its stable short id. */
+/** Look up a library row by its primary-key id. */
 export async function getLibraryItem(id: string): Promise<LibraryItem | undefined> {
-  return db.library.where('id').equals(id).first();
+  return db.library.get(id);
 }
 
 /**
- * Resolve a library item by name, or create it (with a fresh short id) if new.
- * Merges any new `tagKeys` into an existing row. Does NOT bump usage — use
- * {@link rememberItem} for that. Returns the row so callers get its `id`.
+ * Resolve a library item by name, or create it (fresh short id) if no row with
+ * that normalized name exists. Merges any new `tagKeys` into the resolved row.
+ * Does NOT bump usage — use {@link rememberItem}. Returns the row.
  */
 export async function ensureLibraryItem(
   name: string,
@@ -69,11 +73,10 @@ export async function ensureLibraryItem(
   const clean = name.trim();
   const nameKey = tagKey(clean);
   return db.transaction('rw', db.library, async () => {
-    const existing = await db.library.get(nameKey);
+    const existing = await db.library.where('nameKey').equals(nameKey).first();
     if (existing) {
       const merged = [...new Set([...(existing.tagKeys ?? []), ...tagKeys])];
-      const id = existing.id ?? shortId(clean, await takenIds());
-      const row: LibraryItem = { ...existing, id, tagKeys: merged };
+      const row: LibraryItem = { ...existing, tagKeys: merged };
       await db.library.put(row);
       return row;
     }
@@ -92,8 +95,20 @@ export async function ensureLibraryItem(
   });
 }
 
-/** Record a use of an item (upsert by nameKey, bump count, merge tagKeys, mint an
- *  id if missing). Returns the row so callers can reference its `id`. */
+/** Insert a library row preserving a given id (used by import to keep identity
+ *  across devices). If the id is already taken by a DIFFERENT item, a fresh id is
+ *  minted. Returns the stored row. */
+export async function putWithId(item: LibraryItem): Promise<LibraryItem> {
+  return db.transaction('rw', db.library, async () => {
+    const clash = await db.library.get(item.id);
+    const id = clash && clash.nameKey !== item.nameKey ? shortId(item.name, await takenIds()) : item.id;
+    const row = { ...item, id };
+    await db.library.put(row);
+    return row;
+  });
+}
+
+/** Record a use of an item (resolve/create by name, bump count). Returns the row. */
 export async function rememberItem(
   name: string,
   category: Category,
@@ -105,56 +120,49 @@ export async function rememberItem(
   return bumped;
 }
 
-/** Edit a saved library item by id. A provided `tagKeys` REPLACES the stored set. */
+/** Edit a library item by id. A provided `tagKeys` REPLACES the stored set. */
 export async function updateItemById(
   id: string,
   patch: { category?: Category; tagKeys?: string[] },
 ): Promise<void> {
   await db.transaction('rw', db.library, async () => {
-    const existing = await db.library.where('id').equals(id).first();
+    const existing = await db.library.get(id);
     if (!existing) return;
     await db.library.put({ ...existing, tagKeys: existing.tagKeys ?? [], ...patch });
   });
 }
 
 /**
- * Rename a library item by id. The `nameKey` (Dexie primary key) is derived from
- * the name, so a rename re-keys the row — but the stable `id` is preserved, so
- * trip references survive. Rejects (returns false) a rename whose new name
- * collides with a different existing item, which would otherwise orphan refs.
+ * Rename a library item by id (id is stable, so this is an in-place update of the
+ * name + nameKey). Rejects (returns false) a manual rename onto a name a DIFFERENT
+ * item already uses, keeping the typed-edit paths free of accidental duplicates
+ * (import may still create same-named rows by design).
  */
 export async function renameLibraryItemById(id: string, newName: string): Promise<boolean> {
   const clean = newName.trim();
   if (!clean) return false;
   const newKey = tagKey(clean);
   return db.transaction('rw', db.library, async () => {
-    const existing = await db.library.where('id').equals(id).first();
+    const existing = await db.library.get(id);
     if (!existing) return false;
-    if (newKey === existing.nameKey) {
-      await db.library.put({ ...existing, name: clean });
-      return true;
+    if (newKey !== existing.nameKey) {
+      const collision = await db.library.where('nameKey').equals(newKey).first();
+      if (collision && collision.id !== id) return false;
     }
-    const collision = await db.library.get(newKey);
-    if (collision) return false; // a different item already owns this name
-    await db.library.delete(existing.nameKey);
-    await db.library.put({ ...existing, nameKey: newKey, name: clean });
+    await db.library.put({ ...existing, name: clean, nameKey: newKey });
     return true;
   });
 }
 
 /** Remove an item from the library by id (does not touch any trip). */
 export async function forgetItemById(id: string): Promise<void> {
-  await db.transaction('rw', db.library, async () => {
-    const existing = await db.library.where('id').equals(id).first();
-    if (existing) await db.library.delete(existing.nameKey);
-  });
+  await db.library.delete(id);
 }
 
 /**
  * Convert any pre-v2 trips (whose items carried their own name/category/tagIds)
- * into the reference shape (`libraryId` + per-trip state), creating/resolving the
- * backing library rows. Idempotent: trips already at the current schema version
- * are skipped. Run once at startup, after {@link seedLibrary}.
+ * into the reference shape (`libraryId` + per-trip state), resolving/creating the
+ * backing library rows. Idempotent. Run once at startup, after {@link seedLibrary}.
  */
 export async function migrateTripsToLibraryRefs(): Promise<void> {
   const trips = await db.trips.toArray();
@@ -164,7 +172,6 @@ export async function migrateTripsToLibraryRefs(): Promise<void> {
     const items: Item[] = [];
     const seen = new Set<string>();
     for (const raw of trip.items ?? []) {
-      // Already a reference? keep as-is.
       if (raw && typeof raw === 'object' && 'libraryId' in raw) {
         const it = raw as Item;
         if (!seen.has(it.libraryId)) {
@@ -173,9 +180,14 @@ export async function migrateTripsToLibraryRefs(): Promise<void> {
         }
         continue;
       }
-      const legacy = raw as { name?: string; quantitySuggested?: unknown; quantityTaken?: unknown; packed?: unknown };
+      const legacy = raw as {
+        name?: string;
+        quantitySuggested?: unknown;
+        quantityTaken?: unknown;
+        packed?: unknown;
+      };
       const ref = legacyItemToRef(legacy as Parameters<typeof legacyItemToRef>[0], trip.tags ?? []);
-      if (!ref.name) continue; // drop nameless junk
+      if (!ref.name) continue;
       const row = await ensureLibraryItem(ref.name, ref.category, ref.tagKeys);
       if (seen.has(row.id)) continue;
       seen.add(row.id);

@@ -21,9 +21,10 @@ import {
 const EXPORT_KIND = 'packing-checklist/trip';
 const EXPORT_VERSION = 2;
 
-/** A library item as carried in an import, keyed by `nameKey` (the importer mints
- *  a fresh local `id` when it resolves/creates the row). */
+/** A library item as carried in an import. v2 exports carry the original `id`
+ *  (identity is the id); legacy v1 exports have no id and are matched by name. */
 export interface ImportedLibraryItem {
+  id?: string;
   nameKey: string;
   name: string;
   category: Category;
@@ -34,8 +35,8 @@ export interface ImportedLibraryItem {
 }
 
 export interface ImportResult {
-  /** A normalized trip whose `items[].libraryId` temporarily holds the item's
-   *  `nameKey`; the importer rewrites these to real library ids. */
+  /** A normalized trip whose `items[].libraryId` holds a placeholder — the source
+   *  `id` (v2) or `nameKey` (legacy) — that the importer rewrites to a local id. */
   trip: Trip;
   libraryItems: ImportedLibraryItem[];
 }
@@ -118,14 +119,16 @@ export function parseImport(text: string, genId: () => string, now: number): Imp
 
   const bundledLibrary = Array.isArray(envelope.library) ? envelope.library : null;
   if (bundledLibrary) {
-    // v2: items reference library rows by id; map id -> nameKey via the bundle.
-    const idToKey = new Map<string, string>();
+    // v2: items reference library rows by their stable id; preserve those ids so
+    // identity carries across devices (importer dedups by id).
+    const knownIds = new Set<string>();
     for (const row of bundledLibrary) {
-      const nameKey = asString(row.nameKey) || tagKey(asString(row.name));
-      if (!nameKey) continue;
-      idToKey.set(asString(row.id), nameKey);
-      libByKey.set(nameKey, {
-        nameKey,
+      const id = asString(row.id);
+      if (!id) continue;
+      knownIds.add(id);
+      libByKey.set(id, {
+        id,
+        nameKey: asString(row.nameKey) || tagKey(asString(row.name)),
         name: asString(row.name),
         category: asCategory(row.category),
         tagKeys: Array.isArray(row.tagKeys) ? row.tagKeys.map((k) => tagKey(String(k))) : [],
@@ -135,10 +138,10 @@ export function parseImport(text: string, genId: () => string, now: number): Imp
       });
     }
     for (const it of raw.items as { libraryId?: unknown; quantitySuggested?: unknown; quantityTaken?: unknown; packed?: unknown }[]) {
-      const key = idToKey.get(asString(it.libraryId));
-      if (!key) continue;
+      const id = asString(it.libraryId);
+      if (!knownIds.has(id)) continue;
       items.push({
-        libraryId: key,
+        libraryId: id,
         quantitySuggested: typeof it.quantitySuggested === 'number' ? it.quantitySuggested : null,
         quantityTaken: typeof it.quantityTaken === 'number' ? it.quantityTaken : 1,
         packed: it.packed === true,

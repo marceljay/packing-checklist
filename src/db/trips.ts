@@ -1,7 +1,8 @@
 import { db, uid, CURRENT_SCHEMA_VERSION, type StoredTrip } from './db';
 import type { Trip } from '../types';
 import { parseImport } from './transfer';
-import { ensureLibraryItem } from './library';
+import { ensureLibraryItem, getLibraryItem, putWithId } from './library';
+import type { LibraryItem } from '../types';
 
 function now() {
   return Date.now();
@@ -54,11 +55,35 @@ export async function deleteTrip(id: string): Promise<void> {
 export async function importTripFromText(text: string): Promise<string> {
   const { trip, libraryItems } = parseImport(text, uid, now());
 
-  // Resolve each bundled library item into the store: nameKey -> local id.
+  // Resolve each bundled library item into the store. v2 items carry an id —
+  // dedup by it (reuse if present, else insert preserving the id). Legacy items
+  // have no id and fall back to name resolution. Map placeholder -> local id.
   const keyToId = new Map<string, string>();
   for (const li of libraryItems) {
-    const row = await ensureLibraryItem(li.name, li.category, li.tagKeys);
-    keyToId.set(li.nameKey, row.id);
+    if (li.id) {
+      const existing = await getLibraryItem(li.id);
+      if (existing) {
+        keyToId.set(li.id, existing.id); // same item already here
+        continue;
+      }
+      const row: LibraryItem = {
+        id: li.id,
+        nameKey: li.nameKey,
+        name: li.name,
+        category: li.category,
+        tagKeys: li.tagKeys,
+        custom: li.custom,
+        count: 0,
+        lastUsed: 0,
+        ...(li.essential ? { essential: true } : {}),
+        ...(li.quantity ? { quantity: li.quantity } : {}),
+      };
+      const stored = await putWithId(row);
+      keyToId.set(li.id, stored.id);
+    } else {
+      const row = await ensureLibraryItem(li.name, li.category, li.tagKeys);
+      keyToId.set(li.nameKey, row.id);
+    }
   }
 
   const items = trip.items

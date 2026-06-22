@@ -72,11 +72,16 @@ describe('serializeTrip / parseImport (v2 bundle)', () => {
     expect(envelope.library.map((l) => l.name)).toEqual(['Boardshorts']);
   });
 
-  it('keys item references by nameKey for the importer to resolve', () => {
-    const { trip } = parseImport(serializeTrip(sampleTrip(), sampleLibrary()), genId, NOW);
+  it('preserves the source id on item references (identity carries across devices)', () => {
+    const { trip, libraryItems } = parseImport(
+      serializeTrip(sampleTrip(), sampleLibrary()),
+      genId,
+      NOW,
+    );
     expect(trip.items).toHaveLength(1);
-    expect(trip.items[0].libraryId).toBe('boardshorts'); // nameKey, not the local id
+    expect(trip.items[0].libraryId).toBe('boa42'); // the source id, not the name
     expect(trip.items[0].quantityTaken).toBe(2);
+    expect(libraryItems[0].id).toBe('boa42');
   });
 
   it('assigns fresh trip / tag / destination ids and timestamps', () => {
@@ -92,7 +97,7 @@ describe('serializeTrip / parseImport (v2 bundle)', () => {
     const trip = sampleTrip();
     trip.items.push({ libraryId: 'ghost', quantitySuggested: null, quantityTaken: 1, packed: false });
     const { trip: parsed } = parseImport(serializeTrip(trip, sampleLibrary()), genId, NOW);
-    expect(parsed.items.map((i) => i.libraryId)).toEqual(['boardshorts']);
+    expect(parsed.items.map((i) => i.libraryId)).toEqual(['boa42']);
   });
 
   it('imports a legacy v1 export (items carried name/category/tagIds)', () => {

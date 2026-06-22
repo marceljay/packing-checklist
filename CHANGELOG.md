@@ -12,7 +12,9 @@ All notable changes to this project are documented here.
   entry, so the change shows on every trip that uses it. Library items now have a
   short, readable id (e.g. `shi417`) that survives renames. Existing trips migrate
   automatically on first load; trip export bundles the items it needs so files stay
-  portable (older exports still import).
+  portable (older exports still import). An item's **id is its identity** (the
+  database key), so import de-duplicates by id — re-importing your own data never
+  forks an item, while two genuinely separate items may share a name.
 - **Search the item library.** A search box on the Item Library page filters by
   name, tag, or category (case-insensitive) across all three views, with a clear
   no-match state. Backed by a unit-tested `searchLibrary` helper.

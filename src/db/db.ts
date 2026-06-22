@@ -67,6 +67,37 @@ class PackingDB extends Dexie {
             taken.add(row.id);
           });
       });
+    // v5: snapshot library rows so v6 can change the primary key without data loss.
+    this.version(5)
+      .stores({
+        trips: 'id, updatedAt',
+        library: 'nameKey, id, count, lastUsed',
+        libraryBackup: 'nameKey',
+      })
+      .upgrade(async (tx) => {
+        const rows = await tx.table('library').toArray();
+        await tx.table('libraryBackup').bulkPut(rows);
+      });
+    // v6: the stable short `id` becomes the primary key (so two items may share a
+    // name — identity is the id, not the name). Restore rows from the snapshot.
+    this.version(6)
+      .stores({
+        trips: 'id, updatedAt',
+        library: 'id, nameKey, count, lastUsed',
+        libraryBackup: 'nameKey',
+      })
+      .upgrade(async (tx) => {
+        const backup = await tx.table('libraryBackup').toArray();
+        const taken = new Set<string>();
+        const restored = backup.map((r) => {
+          let id: string = r.id || shortId(r.name ?? r.nameKey ?? 'item', taken);
+          while (taken.has(id)) id = shortId(r.name ?? 'item', taken);
+          taken.add(id);
+          return { ...r, id };
+        });
+        if (restored.length > 0) await tx.table('library').bulkPut(restored);
+        await tx.table('libraryBackup').clear();
+      });
   }
 }
 
