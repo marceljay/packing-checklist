@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
+import { useMemo, useState } from 'react';
+import { useAppData } from '../db/store';
 import {
   CATEGORIES,
   tagKey,
@@ -11,7 +11,6 @@ import {
   type LibraryItem,
 } from '../types';
 import {
-  listLibrary,
   rememberItem,
   updateItemById,
   renameLibraryItemById,
@@ -373,15 +372,13 @@ const VIEWS: { key: View; label: string }[] = [
 ];
 
 export default function ItemsPage() {
-  const library = useLiveQuery(listLibrary, [], undefined);
+  const data = useAppData();
+  const library = useMemo(
+    () => data.library.map((r) => ({ ...r, tagKeys: r.tagKeys ?? [], custom: r.custom ?? true })),
+    [data.library],
+  );
   const [view, setView] = useState<View>('category');
   const [query, setQuery] = useState('');
-
-  if (library === undefined) {
-    return (
-      <div className="py-16 text-center font-mono text-sm text-ink-faint print:hidden">Loading…</div>
-    );
-  }
 
   const results = searchLibrary(library, query);
   const searching = query.trim() !== '';

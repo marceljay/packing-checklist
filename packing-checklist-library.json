@@ -1,0 +1,1069 @@
+{
+  "kind": "packing-checklist/library",
+  "version": 1,
+  "exportedAt": 1782144529194,
+  "items": [
+    {
+      "nameKey": "beach towel",
+      "name": "Beach towel",
+      "category": "Gear & Equipment",
+      "tagKeys": [
+        "beach"
+      ],
+      "custom": false,
+      "essential": false,
+      "quantity": {
+        "kind": "perTrip",
+        "count": 1
+      },
+      "count": 0,
+      "lastUsed": 0,
+      "id": "bea52"
+    },
+    {
+      "nameKey": "beanie",
+      "name": "Beanie",
+      "category": "Clothing",
+      "tagKeys": [
+        "skiing",
+        "cold"
+      ],
+      "custom": false,
+      "essential": false,
+      "quantity": {
+        "kind": "perTrip",
+        "count": 1
+      },
+      "count": 0,
+      "lastUsed": 0,
+      "id": "bea91"
+    },
+    {
+      "nameKey": "blub",
+      "name": "blub",
+      "category": "Comfort & Misc",
+      "count": 1,
+      "lastUsed": 1781945652582,
+      "tagKeys": [
+        "sunny"
+      ],
+      "custom": true,
+      "id": "blu15"
+    },
+    {
+      "nameKey": "boardshorts",
+      "name": "Boardshorts",
+      "category": "Clothing",
+      "tagKeys": [
+        "surfing",
+        "hot"
+      ],
+      "custom": false,
+      "essential": false,
+      "quantity": {
+        "kind": "perTrip",
+        "count": 1
+      },
+      "count": 0,
+      "lastUsed": 0,
+      "id": "boa45"
+    },
+    {
+      "nameKey": "camera",
+      "name": "Camera",
+      "category": "Electronics",
+      "tagKeys": [
+        "photography"
+      ],
+      "custom": false,
+      "essential": false,
+      "quantity": {
+        "kind": "perTrip",
+        "count": 1
+      },
+      "count": 0,
+      "lastUsed": 0,
+      "id": "cam13"
+    },
+    {
+      "nameKey": "camera charger & cards",
+      "name": "Camera charger & cards",
+      "category": "Electronics",
+      "tagKeys": [
+        "photography"
+      ],
+      "custom": false,
+      "essential": false,
+      "quantity": {
+        "kind": "perTrip",
+        "count": 1
+      },
+      "count": 0,
+      "lastUsed": 0,
+      "id": "cam24"
+    },
+    {
+      "nameKey": "camping stove",
+      "name": "Camping stove",
+      "category": "Gear & Equipment",
+      "tagKeys": [
+        "camping"
+      ],
+      "custom": false,
+      "essential": false,
+      "quantity": {
+        "kind": "perTrip",
+        "count": 1
+      },
+      "count": 0,
+      "lastUsed": 0,
+      "id": "cam41"
+    },
+    {
+      "nameKey": "daypack",
+      "name": "Daypack",
+      "category": "Gear & Equipment",
+      "tagKeys": [
+        "hiking",
+        "photography"
+      ],
+      "custom": false,
+      "essential": false,
+      "quantity": {
+        "kind": "perTrip",
+        "count": 1
+      },
+      "count": 0,
+      "lastUsed": 0,
+      "id": "day82"
+    },
+    {
+      "nameKey": "deodorant",
+      "name": "Deodorant",
+      "category": "Toiletries & Health",
+      "tagKeys": [
+        "swimming",
+        "beach"
+      ],
+      "custom": false,
+      "essential": true,
+      "quantity": {
+        "kind": "perTrip",
+        "count": 1
+      },
+      "count": 0,
+      "lastUsed": 0,
+      "id": "deo71"
+    },
+    {
+      "nameKey": "dress shirt",
+      "name": "Dress shirt",
+      "category": "Clothing",
+      "tagKeys": [
+        "business",
+        "formal"
+      ],
+      "custom": false,
+      "essential": false,
+      "quantity": {
+        "kind": "bucket",
+        "weekend": 1,
+        "week": 3,
+        "long": 5
+      },
+      "count": 0,
+      "lastUsed": 0,
+      "id": "dre13"
+    },
+    {
+      "nameKey": "dress shoes",
+      "name": "Dress shoes",
+      "category": "Footwear",
+      "tagKeys": [
+        "formal",
+        "business"
+      ],
+      "custom": false,
+      "essential": false,
+      "quantity": {
+        "kind": "perTrip",
+        "count": 1
+      },
+      "count": 0,
+      "lastUsed": 0,
+      "id": "dre97"
+    },
+    {
+      "nameKey": "everyday shoes",
+      "name": "Everyday shoes",
+      "category": "Footwear",
+      "tagKeys": [],
+      "custom": false,
+      "essential": true,
+      "quantity": {
+        "kind": "perTrip",
+        "count": 1
+      },
+      "count": 0,
+      "lastUsed": 0,
+      "id": "eve21"
+    },
+    {
+      "nameKey": "flip-flops",
+      "name": "Flip-flops",
+      "category": "Footwear",
+      "tagKeys": [
+        "beach",
+        "hot"
+      ],
+      "custom": false,
+      "essential": false,
+      "quantity": {
+        "kind": "perTrip",
+        "count": 1
+      },
+      "count": 0,
+      "lastUsed": 0,
+      "id": "fli87"
+    },
+    {
+      "nameKey": "formal outfit",
+      "name": "Formal outfit",
+      "category": "Clothing",
+      "tagKeys": [
+        "formal"
+      ],
+      "custom": false,
+      "essential": false,
+      "quantity": {
+        "kind": "perTrip",
+        "count": 1
+      },
+      "count": 0,
+      "lastUsed": 0,
+      "id": "for19"
+    },
+    {
+      "nameKey": "gloves",
+      "name": "Gloves",
+      "category": "Clothing",
+      "tagKeys": [
+        "cold"
+      ],
+      "custom": false,
+      "essential": false,
+      "quantity": {
+        "kind": "perTrip",
+        "count": 1
+      },
+      "count": 0,
+      "lastUsed": 0,
+      "id": "glo67"
+    },
+    {
+      "nameKey": "headlamp",
+      "name": "Headlamp",
+      "category": "Gear & Equipment",
+      "tagKeys": [
+        "camping",
+        "hiking"
+      ],
+      "custom": false,
+      "essential": false,
+      "quantity": {
+        "kind": "perTrip",
+        "count": 1
+      },
+      "count": 0,
+      "lastUsed": 0,
+      "id": "hea21"
+    },
+    {
+      "nameKey": "helmet",
+      "name": "Helmet",
+      "category": "Gear & Equipment",
+      "tagKeys": [
+        "cycling"
+      ],
+      "custom": false,
+      "essential": false,
+      "quantity": {
+        "kind": "perTrip",
+        "count": 1
+      },
+      "count": 0,
+      "lastUsed": 0,
+      "id": "hel59"
+    },
+    {
+      "nameKey": "hiking socks",
+      "name": "Hiking socks",
+      "category": "Clothing",
+      "tagKeys": [
+        "hiking"
+      ],
+      "custom": false,
+      "essential": false,
+      "quantity": {
+        "kind": "perDay",
+        "factor": 0.5,
+        "max": 5,
+        "laundryCap": 3
+      },
+      "count": 0,
+      "lastUsed": 0,
+      "id": "hik43"
+    },
+    {
+      "nameKey": "hiking boots",
+      "name": "Hiking boots",
+      "category": "Footwear",
+      "tagKeys": [
+        "hiking"
+      ],
+      "custom": false,
+      "essential": false,
+      "quantity": {
+        "kind": "perTrip",
+        "count": 1
+      },
+      "count": 0,
+      "lastUsed": 0,
+      "id": "hik60"
+    },
+    {
+      "nameKey": "keys",
+      "name": "Keys",
+      "category": "Comfort & Misc",
+      "tagKeys": [
+        "rainy"
+      ],
+      "custom": false,
+      "essential": true,
+      "quantity": {
+        "kind": "none"
+      },
+      "count": 0,
+      "lastUsed": 0,
+      "id": "key59"
+    },
+    {
+      "nameKey": "laptop charger",
+      "name": "Laptop charger",
+      "category": "Electronics",
+      "tagKeys": [
+        "business"
+      ],
+      "custom": false,
+      "essential": false,
+      "quantity": {
+        "kind": "perTrip",
+        "count": 1
+      },
+      "count": 0,
+      "lastUsed": 0,
+      "id": "lap26"
+    },
+    {
+      "nameKey": "laptop",
+      "name": "Laptop",
+      "category": "Electronics",
+      "tagKeys": [
+        "business"
+      ],
+      "custom": false,
+      "essential": false,
+      "quantity": {
+        "kind": "perTrip",
+        "count": 1
+      },
+      "count": 0,
+      "lastUsed": 0,
+      "id": "lap49"
+    },
+    {
+      "nameKey": "medications",
+      "name": "Medications",
+      "category": "Toiletries & Health",
+      "tagKeys": [],
+      "custom": false,
+      "essential": true,
+      "quantity": {
+        "kind": "none"
+      },
+      "count": 0,
+      "lastUsed": 0,
+      "id": "med72"
+    },
+    {
+      "nameKey": "merino base layer",
+      "name": "Merino base layer",
+      "category": "Clothing",
+      "tagKeys": [
+        "hiking",
+        "cold"
+      ],
+      "custom": false,
+      "essential": false,
+      "quantity": {
+        "kind": "bucket",
+        "weekend": 1,
+        "week": 2,
+        "long": 3
+      },
+      "count": 0,
+      "lastUsed": 0,
+      "id": "mer70"
+    },
+    {
+      "nameKey": "passport / id",
+      "name": "Passport / ID",
+      "category": "Documents",
+      "tagKeys": [],
+      "custom": false,
+      "essential": true,
+      "quantity": {
+        "kind": "perTrip",
+        "count": 1
+      },
+      "count": 0,
+      "lastUsed": 0,
+      "id": "pas35"
+    },
+    {
+      "id": "pas56",
+      "nameKey": "passport",
+      "name": "Passport",
+      "category": "Documents",
+      "tagKeys": [],
+      "custom": true,
+      "count": 0,
+      "lastUsed": 0
+    },
+    {
+      "nameKey": "phone charger!!!",
+      "name": "Phone charger!!!",
+      "category": "Electronics",
+      "tagKeys": [],
+      "custom": false,
+      "essential": true,
+      "quantity": {
+        "kind": "perTrip",
+        "count": 1
+      },
+      "count": 0,
+      "lastUsed": 0,
+      "id": "pho44"
+    },
+    {
+      "nameKey": "phone charger",
+      "name": "Phone charger",
+      "category": "Electronics",
+      "tagKeys": [],
+      "custom": false,
+      "essential": true,
+      "quantity": {
+        "kind": "perTrip",
+        "count": 1
+      },
+      "count": 0,
+      "lastUsed": 0,
+      "id": "pho58"
+    },
+    {
+      "nameKey": "phone",
+      "name": "Phone",
+      "category": "Electronics",
+      "tagKeys": [
+        "sunny",
+        "hot",
+        "nice"
+      ],
+      "custom": false,
+      "essential": true,
+      "quantity": {
+        "kind": "perTrip",
+        "count": 1
+      },
+      "count": 0,
+      "lastUsed": 0,
+      "id": "pho63"
+    },
+    {
+      "nameKey": "rain jacket",
+      "name": "Rain jacket",
+      "category": "Clothing",
+      "tagKeys": [
+        "rainy",
+        "hiking"
+      ],
+      "custom": false,
+      "essential": false,
+      "quantity": {
+        "kind": "perTrip",
+        "count": 1
+      },
+      "count": 0,
+      "lastUsed": 0,
+      "id": "rai93"
+    },
+    {
+      "nameKey": "rash guard",
+      "name": "Rash guard",
+      "category": "Clothing",
+      "tagKeys": [
+        "surfing"
+      ],
+      "custom": false,
+      "essential": false,
+      "quantity": {
+        "kind": "perTrip",
+        "count": 1
+      },
+      "count": 0,
+      "lastUsed": 0,
+      "id": "ras25"
+    },
+    {
+      "nameKey": "running shoes",
+      "name": "Running shoes",
+      "category": "Footwear",
+      "tagKeys": [
+        "running"
+      ],
+      "custom": false,
+      "essential": false,
+      "quantity": {
+        "kind": "perTrip",
+        "count": 1
+      },
+      "count": 0,
+      "lastUsed": 0,
+      "id": "run31"
+    },
+    {
+      "nameKey": "sandals",
+      "name": "Sandals",
+      "category": "Footwear",
+      "tagKeys": [
+        "hot"
+      ],
+      "custom": false,
+      "essential": false,
+      "quantity": {
+        "kind": "perTrip",
+        "count": 1
+      },
+      "count": 0,
+      "lastUsed": 0,
+      "id": "san64"
+    },
+    {
+      "nameKey": "scarf",
+      "name": "Scarf",
+      "category": "Clothing",
+      "tagKeys": [
+        "cold"
+      ],
+      "custom": false,
+      "essential": false,
+      "quantity": {
+        "kind": "perTrip",
+        "count": 1
+      },
+      "count": 0,
+      "lastUsed": 0,
+      "id": "sca53"
+    },
+    {
+      "nameKey": "shampoo / soap",
+      "name": "Shampoo / soap",
+      "category": "Toiletries & Health",
+      "tagKeys": [],
+      "custom": false,
+      "essential": true,
+      "quantity": {
+        "kind": "perTrip",
+        "count": 1
+      },
+      "count": 0,
+      "lastUsed": 0,
+      "id": "sha61"
+    },
+    {
+      "nameKey": "ski jacket",
+      "name": "Ski jacket",
+      "category": "Clothing",
+      "tagKeys": [
+        "skiing",
+        "cold"
+      ],
+      "custom": false,
+      "essential": false,
+      "quantity": {
+        "kind": "perTrip",
+        "count": 1
+      },
+      "count": 0,
+      "lastUsed": 0,
+      "id": "ski43"
+    },
+    {
+      "nameKey": "ski goggles",
+      "name": "Ski goggles",
+      "category": "Gear & Equipment",
+      "tagKeys": [
+        "skiing"
+      ],
+      "custom": false,
+      "essential": false,
+      "quantity": {
+        "kind": "perTrip",
+        "count": 1
+      },
+      "count": 0,
+      "lastUsed": 0,
+      "id": "ski53"
+    },
+    {
+      "nameKey": "ski gloves",
+      "name": "Ski gloves",
+      "category": "Clothing",
+      "tagKeys": [
+        "skiing"
+      ],
+      "custom": false,
+      "essential": false,
+      "quantity": {
+        "kind": "perTrip",
+        "count": 1
+      },
+      "count": 0,
+      "lastUsed": 0,
+      "id": "ski63"
+    },
+    {
+      "nameKey": "sleepwear",
+      "name": "Sleepwear",
+      "category": "Clothing",
+      "tagKeys": [],
+      "custom": false,
+      "essential": true,
+      "quantity": {
+        "kind": "perTrip",
+        "count": 1
+      },
+      "count": 0,
+      "lastUsed": 0,
+      "id": "sle91"
+    },
+    {
+      "nameKey": "sleeping bag",
+      "name": "Sleeping bag",
+      "category": "Gear & Equipment",
+      "tagKeys": [
+        "camping"
+      ],
+      "custom": false,
+      "essential": false,
+      "quantity": {
+        "kind": "perTrip",
+        "count": 1
+      },
+      "count": 0,
+      "lastUsed": 0,
+      "id": "sle97"
+    },
+    {
+      "nameKey": "socks",
+      "name": "Socks",
+      "category": "Clothing",
+      "tagKeys": [],
+      "custom": false,
+      "essential": true,
+      "quantity": {
+        "kind": "perDay",
+        "factor": 1,
+        "max": 10,
+        "laundryCap": 7
+      },
+      "count": 0,
+      "lastUsed": 0,
+      "id": "soc95"
+    },
+    {
+      "nameKey": "some cash",
+      "name": "Some cash",
+      "category": "Money & Cards",
+      "tagKeys": [],
+      "custom": false,
+      "essential": true,
+      "quantity": {
+        "kind": "none"
+      },
+      "count": 0,
+      "lastUsed": 0,
+      "id": "som16"
+    },
+    {
+      "nameKey": "sportswear",
+      "name": "Sportswear",
+      "category": "Clothing",
+      "tagKeys": [
+        "running",
+        "cycling"
+      ],
+      "custom": false,
+      "essential": false,
+      "quantity": {
+        "kind": "bucket",
+        "weekend": 1,
+        "week": 2,
+        "long": 3
+      },
+      "count": 0,
+      "lastUsed": 0,
+      "id": "spo35"
+    },
+    {
+      "nameKey": "sunglasses",
+      "name": "Sunglasses",
+      "category": "Comfort & Misc",
+      "tagKeys": [
+        "sunny",
+        "hot",
+        "beach",
+        "camping"
+      ],
+      "custom": false,
+      "essential": false,
+      "quantity": {
+        "kind": "perTrip",
+        "count": 1
+      },
+      "count": 0,
+      "lastUsed": 0,
+      "id": "sun18"
+    },
+    {
+      "id": "sun19",
+      "nameKey": "sunscreensdfsdfsd",
+      "name": "Sunscreensdfsdfsd",
+      "category": "Toiletries & Health",
+      "tagKeys": [],
+      "custom": true,
+      "count": 0,
+      "lastUsed": 0
+    },
+    {
+      "nameKey": "sun hat",
+      "name": "Sun hat",
+      "category": "Clothing",
+      "tagKeys": [
+        "hot",
+        "sunny"
+      ],
+      "custom": false,
+      "essential": false,
+      "quantity": {
+        "kind": "perTrip",
+        "count": 1
+      },
+      "count": 0,
+      "lastUsed": 0,
+      "id": "sun59"
+    },
+    {
+      "nameKey": "sunscreen",
+      "name": "Sunscreen",
+      "category": "Toiletries & Health",
+      "tagKeys": [
+        "hot",
+        "sunny",
+        "beach"
+      ],
+      "custom": false,
+      "essential": false,
+      "quantity": {
+        "kind": "perTrip",
+        "count": 1
+      },
+      "count": 0,
+      "lastUsed": 0,
+      "id": "sun81"
+    },
+    {
+      "nameKey": "swimwear",
+      "name": "Swimwear",
+      "category": "Clothing",
+      "tagKeys": [
+        "beach",
+        "swimming"
+      ],
+      "custom": false,
+      "essential": false,
+      "quantity": {
+        "kind": "perTrip",
+        "count": 1
+      },
+      "count": 0,
+      "lastUsed": 0,
+      "id": "swi28"
+    },
+    {
+      "nameKey": "swim goggles",
+      "name": "Swim goggles",
+      "category": "Gear & Equipment",
+      "tagKeys": [
+        "swimming"
+      ],
+      "custom": false,
+      "essential": false,
+      "quantity": {
+        "kind": "perTrip",
+        "count": 1
+      },
+      "count": 0,
+      "lastUsed": 0,
+      "id": "swi49"
+    },
+    {
+      "nameKey": "tent",
+      "name": "Tent",
+      "category": "Gear & Equipment",
+      "tagKeys": [
+        "camping"
+      ],
+      "custom": false,
+      "essential": false,
+      "quantity": {
+        "kind": "perTrip",
+        "count": 1
+      },
+      "count": 0,
+      "lastUsed": 0,
+      "id": "ten32"
+    },
+    {
+      "nameKey": "test",
+      "name": "TEST",
+      "category": "Comfort & Misc",
+      "count": 1,
+      "lastUsed": 1781945699483,
+      "tagKeys": [],
+      "custom": true,
+      "id": "tes18"
+    },
+    {
+      "id": "tes30",
+      "nameKey": "test2",
+      "name": "TEST2",
+      "category": "Comfort & Misc",
+      "tagKeys": [],
+      "custom": true,
+      "count": 0,
+      "lastUsed": 0
+    },
+    {
+      "nameKey": "toothbrush",
+      "name": "Toothbrush",
+      "category": "Toiletries & Health",
+      "tagKeys": [],
+      "custom": false,
+      "essential": true,
+      "quantity": {
+        "kind": "perTrip",
+        "count": 1
+      },
+      "count": 0,
+      "lastUsed": 0,
+      "id": "too77"
+    },
+    {
+      "nameKey": "toothpaste",
+      "name": "Toothpaste",
+      "category": "Toiletries & Health",
+      "tagKeys": [],
+      "custom": false,
+      "essential": true,
+      "quantity": {
+        "kind": "perTrip",
+        "count": 1
+      },
+      "count": 0,
+      "lastUsed": 0,
+      "id": "too87"
+    },
+    {
+      "nameKey": "trekking poles",
+      "name": "Trekking poles",
+      "category": "Gear & Equipment",
+      "tagKeys": [
+        "hiking"
+      ],
+      "custom": false,
+      "essential": false,
+      "quantity": {
+        "kind": "perTrip",
+        "count": 1
+      },
+      "count": 0,
+      "lastUsed": 0,
+      "id": "tre61"
+    },
+    {
+      "nameKey": "trousers",
+      "name": "Trousers",
+      "category": "Clothing",
+      "tagKeys": [],
+      "custom": false,
+      "essential": true,
+      "quantity": {
+        "kind": "bucket",
+        "weekend": 1,
+        "week": 2,
+        "long": 3
+      },
+      "count": 0,
+      "lastUsed": 0,
+      "id": "tro47"
+    },
+    {
+      "nameKey": "t-shirts",
+      "name": "T-shirts",
+      "category": "Clothing",
+      "tagKeys": [],
+      "custom": false,
+      "essential": true,
+      "quantity": {
+        "kind": "perDay",
+        "factor": 1,
+        "max": 10,
+        "laundryCap": 6
+      },
+      "count": 0,
+      "lastUsed": 0,
+      "id": "tsh69"
+    },
+    {
+      "nameKey": "umbrella",
+      "name": "Umbrella",
+      "category": "Comfort & Misc",
+      "tagKeys": [
+        "rainy"
+      ],
+      "custom": false,
+      "essential": false,
+      "quantity": {
+        "kind": "perTrip",
+        "count": 1
+      },
+      "count": 0,
+      "lastUsed": 0,
+      "id": "umb27"
+    },
+    {
+      "nameKey": "underwear",
+      "name": "Underwear",
+      "category": "Clothing",
+      "tagKeys": [],
+      "custom": false,
+      "essential": true,
+      "quantity": {
+        "kind": "perDay",
+        "factor": 1,
+        "max": 10,
+        "laundryCap": 7
+      },
+      "count": 0,
+      "lastUsed": 0,
+      "id": "und51"
+    },
+    {
+      "nameKey": "wallet & cards",
+      "name": "Wallet & cards",
+      "category": "Money & Cards",
+      "tagKeys": [],
+      "custom": false,
+      "essential": true,
+      "quantity": {
+        "kind": "perTrip",
+        "count": 1
+      },
+      "count": 0,
+      "lastUsed": 0,
+      "id": "wal15"
+    },
+    {
+      "nameKey": "warm jacket",
+      "name": "Warm jacket",
+      "category": "Clothing",
+      "tagKeys": [
+        "cold"
+      ],
+      "custom": false,
+      "essential": false,
+      "quantity": {
+        "kind": "perTrip",
+        "count": 1
+      },
+      "count": 0,
+      "lastUsed": 0,
+      "id": "war29"
+    },
+    {
+      "nameKey": "water bottle",
+      "name": "Water bottle",
+      "category": "Gear & Equipment",
+      "tagKeys": [
+        "hiking",
+        "running",
+        "cycling"
+      ],
+      "custom": false,
+      "essential": false,
+      "quantity": {
+        "kind": "perTrip",
+        "count": 1
+      },
+      "count": 0,
+      "lastUsed": 0,
+      "id": "wat73"
+    },
+    {
+      "nameKey": "wetsuit",
+      "name": "Wetsuit",
+      "category": "Gear & Equipment",
+      "tagKeys": [
+        "surfing"
+      ],
+      "custom": false,
+      "essential": false,
+      "quantity": {
+        "kind": "perTrip",
+        "count": 1
+      },
+      "count": 0,
+      "lastUsed": 0,
+      "id": "wet78"
+    },
+    {
+      "nameKey": "windbreaker",
+      "name": "Windbreaker",
+      "category": "Clothing",
+      "tagKeys": [
+        "windy",
+        "cycling"
+      ],
+      "custom": false,
+      "essential": false,
+      "quantity": {
+        "kind": "perTrip",
+        "count": 1
+      },
+      "count": 0,
+      "lastUsed": 0,
+      "id": "win47"
+    }
+  ]
+}

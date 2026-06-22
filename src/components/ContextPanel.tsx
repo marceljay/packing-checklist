@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { Trip, TagType } from '../types';
 import { tagKey, tripDurationDays } from '../types';
-import { uid } from '../db/db';
+import { uid } from '../db/store';
 import { BUILTIN_TAGS } from '../data/tags';
 import { lookupTripWeather, placeLabel, type GeoResult } from '../engine/weather';
 import DateRangeField from './DateRangeField';

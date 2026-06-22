@@ -7,7 +7,8 @@ import {
   resolveItems,
   resolvedByCategory,
   resolvedByTag,
-  shortId,
+  defaultId,
+  customId,
   legacyItemToRef,
   ensureTripTags,
   renameLibraryTag,
@@ -190,36 +191,31 @@ describe('computeQuantity', () => {
   });
 });
 
-describe('shortId', () => {
-  it('uses up to 3 leading alpha chars of the name + digits', () => {
-    const id = shortId('Sunscreen', new Set(), () => 0);
-    expect(id).toMatch(/^sun\d{2,}$/);
+describe('defaultId', () => {
+  it('derives a deterministic, self-describing id from the catalog id', () => {
+    expect(defaultId('phone-charger')).toBe('d:phone-charger');
+    expect(defaultId('passport')).toBe('d:passport');
+  });
+});
+
+describe('customId', () => {
+  it('produces a c:-prefixed base62 id', () => {
+    const id = customId(() => new Uint8Array(16).fill(1));
+    expect(id).toMatch(/^c:[0-9A-Za-z]+$/);
   });
 
-  it('strips non-alpha characters when building the prefix', () => {
-    expect(shortId('T-shirt', new Set(), () => 0)).toMatch(/^tsh\d+$/);
+  it('depends on the random bytes (different bytes -> different id)', () => {
+    const a = customId(() => new Uint8Array(16).fill(1));
+    const b = customId(() => new Uint8Array(16).fill(2));
+    expect(a).not.toBe(b);
   });
 
-  it('falls back to "itm" when the name has no letters', () => {
-    expect(shortId('123', new Set(), () => 0)).toMatch(/^itm\d+$/);
-  });
-
-  it('never returns an id already in the taken set', () => {
-    // rng walks 0, then 0.5: first candidate collides, second must differ.
-    const seq = [0, 0.5];
-    let i = 0;
-    const rng = () => seq[i++ % seq.length];
-    const first = shortId('Towel', new Set(), rng);
-    const second = shortId('Towel', new Set([first]), rng);
-    expect(second).not.toBe(first);
-  });
-
-  it('produces unique ids across many names sharing a prefix', () => {
-    const taken = new Set<string>();
-    for (let i = 0; i < 200; i++) {
-      const id = shortId('Sun hat', taken);
-      expect(taken.has(id)).toBe(false);
-      taken.add(id);
+  it('is collision-resistant across many real calls', () => {
+    const seen = new Set<string>();
+    for (let i = 0; i < 1000; i++) {
+      const id = customId();
+      expect(seen.has(id)).toBe(false);
+      seen.add(id);
     }
   });
 });

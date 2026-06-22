@@ -1,8 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { useLiveQuery } from 'dexie-react-hooks';
 import { useTripEditor } from './useTripEditor';
-import { listLibrary } from '../db/library';
+import { useAppData } from '../db/store';
 import ContextPanel from '../components/ContextPanel';
 import Checklist from '../components/Checklist';
 import SuggestionsTray from '../components/SuggestionsTray';
@@ -99,15 +98,11 @@ export default function TripEditorPage() {
 
   // Library is the source of truth for item display fields; join live so edits
   // (here or on the Item Library page) reflect immediately.
-  const libraryRows = useLiveQuery(listLibrary, [], undefined);
+  const appData = useAppData();
   const library = useMemo(
-    () => new Map((libraryRows ?? []).map((i) => [i.id, i])),
-    [libraryRows],
+    () => new Map(appData.library.map((i) => [i.id, i])),
+    [appData.library],
   );
-
-  if (status === 'loading') {
-    return <p className="font-mono text-sm text-ink-faint">Loading…</p>;
-  }
 
   if (status === 'not-found' || !trip) {
     return (

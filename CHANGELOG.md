@@ -5,6 +5,15 @@ All notable changes to this project are documented here.
 ## [Unreleased]
 
 ### Added
+- **Storage is now a single JSON document** in `localStorage` instead of
+  IndexedDB/Dexie. Migrations became pure object transforms (no schema-upgrade
+  failures), and the in-app state matches the export shape. Existing IndexedDB data
+  is imported once on first load. Reactivity uses `useSyncExternalStore`.
+- **Collision-safe item identity.** Built-in defaults get a deterministic id
+  (`d:<catalogId>`, identical on every install — so importing someone else's library
+  never duplicates the built-ins), and custom items get a collision-resistant random
+  id (`c:…`, so two same-named items like surf vs. snow "gloves" stay distinct and
+  merging foreign libraries doesn't clash). Identity is the id, never the name.
 - **Header menu + item-library backup.** A `⋯` menu in the header (hidden until
   opened) gathers the transfer actions: **Import trip**, and **Export / Import the
   whole item library** as JSON. Library import de-dups by id (your existing items

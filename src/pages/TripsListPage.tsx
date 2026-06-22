@@ -1,7 +1,8 @@
-import { useLiveQuery } from 'dexie-react-hooks';
+import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
-import { listTrips, createTrip, cloneTrip, deleteTrip } from '../db/trips';
+import { useAppData } from '../db/store';
+import { createTrip, cloneTrip, deleteTrip } from '../db/trips';
 import { tripDurationDays, destinationCode } from '../types';
 
 function formatDateRange(start?: string, end?: string): string {
@@ -17,22 +18,20 @@ function formatDateRange(start?: string, end?: string): string {
 
 export default function TripsListPage() {
   const navigate = useNavigate();
-  const trips = useLiveQuery(listTrips, [], undefined);
+  const data = useAppData();
+  const trips = useMemo(() => [...data.trips].sort((a, b) => b.updatedAt - a.updatedAt), [data.trips]);
 
-  async function handleNew() {
-    const id = await createTrip();
-    navigate(`/trip/${id}`);
+  function handleNew() {
+    navigate(`/trip/${createTrip()}`);
   }
 
-  async function handleClone(id: string) {
-    const newId = await cloneTrip(id);
+  function handleClone(id: string) {
+    const newId = cloneTrip(id);
     if (newId) navigate(`/trip/${newId}`);
   }
 
-  async function handleDelete(id: string, name: string) {
-    if (confirm(`Delete "${name}"? This can't be undone.`)) {
-      await deleteTrip(id);
-    }
+  function handleDelete(id: string, name: string) {
+    if (confirm(`Delete "${name}"? This can't be undone.`)) deleteTrip(id);
   }
 
   return (
@@ -43,9 +42,7 @@ export default function TripsListPage() {
         </button>
       </div>
 
-      {trips === undefined ? (
-        <p className="font-mono text-sm text-ink-faint">Loading…</p>
-      ) : trips.length === 0 ? (
+      {trips.length === 0 ? (
         <div className="card flex flex-col items-center gap-4 px-6 py-16 text-center">
           <span aria-hidden className="airmail h-1 w-24 rounded-full" />
           <h2 className="font-display text-xl font-bold">No trips on the board</h2>

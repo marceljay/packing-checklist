@@ -119,8 +119,9 @@ export function tripDurationDays(trip: Pick<Trip, 'startDate' | 'endDate'>): num
  * owns the per-trip instance (quantity, packed); the library owns the memory.
  */
 export interface LibraryItem {
-  /** Stable short id (letters + digits, e.g. `shi417`). Trips reference this; it
-   *  survives renames (unlike `nameKey`). See {@link shortId}. */
+  /** Stable identity. Defaults: `d:<catalogId>` (deterministic, see
+   *  {@link defaultId}); customs: `c:<random>` (see {@link customId}). Trips
+   *  reference this; it survives renames. */
   id: ID;
   /** Normalized name, the Dexie primary key and the de-dupe handle. */
   nameKey: string;
@@ -205,25 +206,37 @@ export function searchLibrary(items: LibraryItem[], query: string): LibraryItem[
 }
 
 /**
- * Generate a short, readable id: up to 3 leading alpha characters of `name`
- * (lowercased, non-letters stripped; `itm` when none) followed by a 2–3 digit
- * number, widening the number until it doesn't collide with `taken`. `rng` is
- * injectable for deterministic tests.
+ * Deterministic id for a built-in (default) library item, derived from its catalog
+ * id (a unique slug). The same on every install, so importing a foreign library
+ * never duplicates the built-ins. Self-describing: a `d:`-prefixed id is a default.
  */
-export function shortId(name: string, taken: Set<string>, rng: () => number = Math.random): string {
-  const base = name.toLowerCase().replace(/[^a-z]/g, '').slice(0, 3) || 'itm';
-  for (let digits = 2; digits <= 6; digits++) {
-    const min = 10 ** (digits - 1);
-    const span = 9 * min; // digits=2 -> 10..99, digits=3 -> 100..999, …
-    for (let tries = 0; tries < 50; tries++) {
-      const id = `${base}${min + Math.floor(rng() * span)}`;
-      if (!taken.has(id)) return id;
-    }
+export function defaultId(catalogId: string): string {
+  return `d:${catalogId}`;
+}
+
+const ID62 = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+/**
+ * Collision-resistant id for a user (custom) library item: `c:` + base62 of 16
+ * random bytes (~128 bits). Not derived from the name, so two same-named items
+ * (e.g. surf gloves vs snow gloves) are distinct and merging independent libraries
+ * won't clash. `rand` is injectable for deterministic tests.
+ */
+export function customId(rand: (n: number) => Uint8Array = randomBytes): string {
+  let n = 0n;
+  for (const b of rand(16)) n = (n << 8n) | BigInt(b);
+  let s = '';
+  while (n > 0n) {
+    s = ID62[Number(n % 62n)] + s;
+    n /= 62n;
   }
-  // Pathological fallback: count up until unique.
-  let n = 0;
-  while (taken.has(`${base}${n}`)) n++;
-  return `${base}${n}`;
+  return `c:${s || '0'}`;
+}
+
+function randomBytes(n: number): Uint8Array {
+  const a = new Uint8Array(n);
+  crypto.getRandomValues(a);
+  return a;
 }
 
 /** Join trip item references with their library rows for rendering. A reference

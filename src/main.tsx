@@ -7,11 +7,9 @@ import HomeLayout from './pages/HomeLayout';
 import TripsListPage from './pages/TripsListPage';
 import TripEditorPage from './pages/TripEditorPage';
 import ItemsPage from './pages/ItemsPage';
-import { seedLibrary, migrateTripsToLibraryRefs } from './db/library';
-
-// Seed built-in defaults (idempotent), then migrate any legacy trips whose items
-// predate the library-reference model. Order matters: refs resolve against seeds.
-void seedLibrary().then(() => migrateTripsToLibraryRefs());
+import { seedLibrary } from './db/library';
+import { hasStoredDoc, setData } from './db/store';
+import { importLegacyIndexedDB } from './db/legacy';
 
 // Hash router keeps the app deployable on any static host (GitHub Pages etc.)
 // without server-side rewrite rules.
@@ -32,8 +30,20 @@ const router = createHashRouter([
   },
 ]);
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <RouterProvider router={router} />
-  </React.StrictMode>,
-);
+/** First run on the JSON-document model: best-effort import the old IndexedDB,
+ *  then seed any missing defaults, before rendering. */
+async function boot() {
+  if (!hasStoredDoc()) {
+    const legacy = await importLegacyIndexedDB();
+    if (legacy) setData((d) => void Object.assign(d, legacy));
+  }
+  seedLibrary();
+
+  ReactDOM.createRoot(document.getElementById('root')!).render(
+    <React.StrictMode>
+      <RouterProvider router={router} />
+    </React.StrictMode>,
+  );
+}
+
+void boot();

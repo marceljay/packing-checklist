@@ -50,4 +50,10 @@ describe('catalogToLibraryItems', () => {
   it('starts seeded items at zero usage', () => {
     expect(catalogToLibraryItems(sample).every((i) => i.count === 0 && i.lastUsed === 0)).toBe(true);
   });
+
+  it('assigns a deterministic d:<catalogId> id', () => {
+    const [passport, boardshorts] = catalogToLibraryItems(sample);
+    expect(passport.id).toBe('d:passport');
+    expect(boardshorts.id).toBe('d:boardshorts');
+  });
 });
