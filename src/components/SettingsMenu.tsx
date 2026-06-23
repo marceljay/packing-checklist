@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { importTripFromText } from '../db/trips';
+import { importTripFromText, exportAllTrips, importAllTripsFromText, listTrips } from '../db/trips';
 import { listLibrary, importLibraryItems } from '../db/library';
 import { serializeLibrary, parseLibrary } from '../db/libraryTransfer';
 import { downloadText, pickTextFile } from '../lib/file';
@@ -35,6 +35,28 @@ export default function SettingsMenu() {
     try {
       const id = await importTripFromText(text);
       navigate(`/trip/${id}`);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Could not import that file.');
+    }
+  }
+
+  function exportTrips() {
+    setOpen(false);
+    const trips = listTrips();
+    if (trips.length === 0) {
+      alert('No trips to export yet.');
+      return;
+    }
+    downloadText('packing-checklist-trips.json', exportAllTrips());
+  }
+
+  async function importTrips() {
+    setOpen(false);
+    const text = await pickTextFile();
+    if (text == null) return;
+    try {
+      const n = importAllTripsFromText(text);
+      alert(n > 0 ? `Imported ${n} trip${n === 1 ? '' : 's'}.` : 'No trips found in that file.');
     } catch (e) {
       alert(e instanceof Error ? e.message : 'Could not import that file.');
     }
@@ -77,6 +99,8 @@ export default function SettingsMenu() {
         >
           <MenuLabel>Trips</MenuLabel>
           <MenuItem onClick={importTrip}>Import trip…</MenuItem>
+          <MenuItem onClick={exportTrips}>Export all trips</MenuItem>
+          <MenuItem onClick={importTrips}>Import trips…</MenuItem>
 
           <div className="border-t border-line" />
           <MenuLabel>Item library</MenuLabel>

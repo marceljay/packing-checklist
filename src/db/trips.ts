@@ -1,6 +1,6 @@
 import { getData, setData, uid } from './store';
 import { isEmptyTrip, type Trip } from '../types';
-import { parseImport } from './transfer';
+import { parseImport, parseAllTrips, serializeAllTrips, type ImportResult } from './transfer';
 import { ensureLibraryItem, getLibraryItem, putWithId } from './library';
 import type { LibraryItem } from '../types';
 
@@ -80,8 +80,34 @@ export function cloneTrip(id: string): string | undefined {
  * Returns the new trip id.
  */
 export function importTripFromText(text: string): string {
-  const { trip, libraryItems } = parseImport(text, uid, Date.now());
+  const result = parseImport(text, uid, Date.now());
+  const stored = storeImported(result); // resolves library rows (its own setData calls)
+  setData((d) => d.trips.push(stored));
+  return result.trip.id;
+}
 
+/** Serialize every trip plus the library rows they reference — a full backup. */
+export function exportAllTrips(): string {
+  const { trips, library } = getData();
+  return serializeAllTrips(trips, library);
+}
+
+/** Import a full-backup file: each trip is added as a new, independent trip with
+ *  its library items resolved into the store. Returns how many trips were added. */
+export function importAllTripsFromText(text: string): number {
+  const results = parseAllTrips(text, uid, Date.now());
+  if (results.length === 0) return 0;
+  const stored = results.map(storeImported); // resolves library rows first
+  setData((d) => {
+    for (const t of stored) d.trips.push(t);
+  });
+  return results.length;
+}
+
+/** Resolve an import's library items into the store (dedup by id; mint ids for
+ *  id-less legacy rows), rewire the trip's references, and return the ready trip.
+ *  Library writes happen here; the trip itself is pushed by the caller. */
+function storeImported({ trip, libraryItems }: ImportResult): Trip {
   const keyToId = new Map<string, string>();
   for (const li of libraryItems) {
     if (li.id) {
@@ -112,7 +138,5 @@ export function importTripFromText(text: string): string {
     .map((it) => ({ ...it, libraryId: keyToId.get(it.libraryId) ?? '' }))
     .filter((it) => it.libraryId);
 
-  const stored: Trip = { ...trip, items };
-  setData((d) => d.trips.push(stored));
-  return trip.id;
+  return { ...trip, items };
 }

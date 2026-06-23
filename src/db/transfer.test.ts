@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { serializeTrip, parseImport } from './transfer';
+import { serializeTrip, parseImport, serializeAllTrips, parseAllTrips } from './transfer';
 import type { LibraryItem, Trip } from '../types';
 
 function sampleTrip(): Trip {
@@ -134,5 +134,44 @@ describe('serializeTrip / parseImport (v2 bundle)', () => {
 
   it('throws on a file that is not a trip export', () => {
     expect(() => parseImport(JSON.stringify({ hello: 'world' }), genId, NOW)).toThrow();
+  });
+});
+
+describe('serializeAllTrips / parseAllTrips (full backup)', () => {
+  function secondTrip(): Trip {
+    return {
+      ...sampleTrip(),
+      id: 'orig-trip-2',
+      name: 'City break',
+      items: [{ libraryId: 'soc11', quantitySuggested: 3, quantityTaken: 3, packed: false }],
+    };
+  }
+
+  it('bundles the union of referenced library rows, deduped, none unreferenced', () => {
+    const text = serializeAllTrips([sampleTrip(), secondTrip()], sampleLibrary());
+    const env = JSON.parse(text) as { trips: Trip[]; library: LibraryItem[] };
+    expect(env.trips.map((t) => t.name)).toEqual(['Portugal surf', 'City break']);
+    expect(env.library.map((l) => l.id).sort()).toEqual(['boa42', 'soc11']);
+  });
+
+  it('round-trips every trip with fresh ids and preserved references', () => {
+    const results = parseAllTrips(
+      serializeAllTrips([sampleTrip(), secondTrip()], sampleLibrary()),
+      genId,
+      NOW,
+    );
+    expect(results).toHaveLength(2);
+    expect(results.map((r) => r.trip.name)).toEqual(['Portugal surf', 'City break']);
+    expect(results[0].trip.id).not.toBe('orig-trip');
+    expect(results[0].trip.items[0].libraryId).toBe('boa42');
+    expect(results[1].trip.items[0].libraryId).toBe('soc11');
+  });
+
+  it('handles an empty backup', () => {
+    expect(parseAllTrips(serializeAllTrips([], sampleLibrary()), genId, NOW)).toEqual([]);
+  });
+
+  it('throws on a file that is not a trips backup', () => {
+    expect(() => parseAllTrips(JSON.stringify({ hello: 'world' }), genId, NOW)).toThrow();
   });
 });

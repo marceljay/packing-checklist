@@ -21,6 +21,9 @@ import {
 const EXPORT_KIND = 'packing-checklist/trip';
 const EXPORT_VERSION = 2;
 
+const TRIPS_EXPORT_KIND = 'packing-checklist/trips';
+const TRIPS_EXPORT_VERSION = 1;
+
 /** A library item as carried in an import. v2 exports carry the original `id`
  *  (identity is the id); legacy v1 exports have no id and are matched by name. */
 export interface ImportedLibraryItem {
@@ -49,6 +52,14 @@ interface TripEnvelope {
   library: LibraryItem[];
 }
 
+interface TripsEnvelope {
+  kind: typeof TRIPS_EXPORT_KIND;
+  version: number;
+  exportedAt: number;
+  trips: Trip[];
+  library: LibraryItem[];
+}
+
 /** Serialize a trip together with the library rows its items reference. */
 export function serializeTrip(trip: Trip, library: LibraryItem[]): string {
   const referenced = new Set(trip.items.map((i) => i.libraryId));
@@ -57,6 +68,20 @@ export function serializeTrip(trip: Trip, library: LibraryItem[]): string {
     version: EXPORT_VERSION,
     exportedAt: Date.now(),
     trip,
+    library: library.filter((l) => referenced.has(l.id)),
+  };
+  return JSON.stringify(envelope, null, 2);
+}
+
+/** Serialize every trip plus the union of library rows they reference — a full,
+ *  self-contained backup that {@link parseAllTrips} restores. */
+export function serializeAllTrips(trips: Trip[], library: LibraryItem[]): string {
+  const referenced = new Set(trips.flatMap((t) => t.items.map((i) => i.libraryId)));
+  const envelope: TripsEnvelope = {
+    kind: TRIPS_EXPORT_KIND,
+    version: TRIPS_EXPORT_VERSION,
+    exportedAt: Date.now(),
+    trips,
     library: library.filter((l) => referenced.has(l.id)),
   };
   return JSON.stringify(envelope, null, 2);
@@ -77,21 +102,17 @@ function asCategory(v: unknown): Category {
 }
 
 /**
- * Parse exported text (v2 envelope, legacy v1 envelope, or a bare trip) into a
- * fresh trip plus the library items it references. Trip/destination/context-tag
- * ids are regenerated; item references are keyed by `nameKey` for the importer to
- * resolve. Throws on invalid input.
+ * Build a fresh trip + the library items it references from a raw trip object and
+ * an optional bundled library (v2). Trip/destination/context-tag ids are
+ * regenerated; item references are keyed by id (v2) or nameKey (legacy). Throws
+ * if the raw object isn't a trip.
  */
-export function parseImport(text: string, genId: () => string, now: number): ImportResult {
-  let data: unknown;
-  try {
-    data = JSON.parse(text);
-  } catch {
-    throw new Error('That file isn’t valid JSON.');
-  }
-
-  const envelope = data as Partial<TripEnvelope>;
-  const raw = (envelope.trip ?? data) as Partial<Trip>;
+function buildTrip(
+  raw: Partial<Trip>,
+  bundledLibrary: LibraryItem[] | null,
+  genId: () => string,
+  now: number,
+): ImportResult {
   if (!raw || typeof raw !== 'object' || typeof raw.name !== 'string' || !Array.isArray(raw.items)) {
     throw new Error('That file isn’t a packing-checklist trip.');
   }
@@ -117,7 +138,6 @@ export function parseImport(text: string, genId: () => string, now: number): Imp
   const libByKey = new Map<string, ImportedLibraryItem>();
   const items: Item[] = [];
 
-  const bundledLibrary = Array.isArray(envelope.library) ? envelope.library : null;
   if (bundledLibrary) {
     // v2: items reference library rows by their stable id; preserve those ids so
     // identity carries across devices (importer dedups by id).
@@ -185,4 +205,38 @@ export function parseImport(text: string, genId: () => string, now: number): Imp
   };
 
   return { trip, libraryItems: [...libByKey.values()] };
+}
+
+function parseJson(text: string): unknown {
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error('That file isn’t valid JSON.');
+  }
+}
+
+/**
+ * Parse exported text (v2 envelope, legacy v1 envelope, or a bare trip) into a
+ * fresh trip plus the library items it references. Throws on invalid input.
+ */
+export function parseImport(text: string, genId: () => string, now: number): ImportResult {
+  const data = parseJson(text);
+  const envelope = data as Partial<TripEnvelope>;
+  const raw = (envelope.trip ?? data) as Partial<Trip>;
+  const bundled = Array.isArray(envelope.library) ? envelope.library : null;
+  return buildTrip(raw, bundled, genId, now);
+}
+
+/**
+ * Parse a full-backup file ({@link serializeAllTrips}) into one {@link ImportResult}
+ * per trip. The bundled library is shared across all trips. Throws on invalid input.
+ */
+export function parseAllTrips(text: string, genId: () => string, now: number): ImportResult[] {
+  const data = parseJson(text);
+  const envelope = data as Partial<TripsEnvelope>;
+  if (!envelope || !Array.isArray(envelope.trips)) {
+    throw new Error('That file isn’t a packing-checklist trips backup.');
+  }
+  const bundled = Array.isArray(envelope.library) ? envelope.library : [];
+  return envelope.trips.map((raw) => buildTrip(raw as Partial<Trip>, bundled, genId, now));
 }
