@@ -92,6 +92,14 @@ export function exportAllTrips(): string {
   return serializeAllTrips(trips, library);
 }
 
+/** Serialize a chosen subset of trips (by id) plus their referenced library rows.
+ *  An empty id list exports all trips. */
+export function exportTrips(ids: string[]): string {
+  const { trips, library } = getData();
+  const selected = ids.length > 0 ? trips.filter((t) => ids.includes(t.id)) : trips;
+  return serializeAllTrips(selected, library);
+}
+
 /** Import a full-backup file: each trip is added as a new, independent trip with
  *  its library items resolved into the store. Returns how many trips were added. */
 export function importAllTripsFromText(text: string): number {

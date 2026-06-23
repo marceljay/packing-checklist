@@ -1,15 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { importTripFromText, exportAllTrips, importAllTripsFromText, listTrips } from '../db/trips';
+import { importTripFromText, exportTrips, importAllTripsFromText, listTrips } from '../db/trips';
 import { listLibrary, importLibraryItems } from '../db/library';
 import { serializeLibrary, parseLibrary } from '../db/libraryTransfer';
 import { downloadText, pickTextFile } from '../lib/file';
+import ExportDialog from './ExportDialog';
 
 /** Header menu (hidden until opened) for backup/transfer actions: import a trip,
  *  and export / import the whole item library. */
 export default function SettingsMenu() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const [showExport, setShowExport] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -40,14 +42,14 @@ export default function SettingsMenu() {
     }
   }
 
-  function exportTrips() {
-    setOpen(false);
-    const trips = listTrips();
-    if (trips.length === 0) {
-      alert('No trips to export yet.');
-      return;
+  function runExport(tripIds: string[], includeLibrary: boolean) {
+    if (tripIds.length > 0) {
+      downloadText('packing-checklist-trips.json', exportTrips(tripIds));
     }
-    downloadText('packing-checklist-trips.json', exportAllTrips());
+    if (includeLibrary) {
+      downloadText('packing-checklist-library.json', serializeLibrary(listLibrary()));
+    }
+    setShowExport(false);
   }
 
   async function importTrips() {
@@ -60,12 +62,6 @@ export default function SettingsMenu() {
     } catch (e) {
       alert(e instanceof Error ? e.message : 'Could not import that file.');
     }
-  }
-
-  async function exportLibrary() {
-    setOpen(false);
-    const items = await listLibrary();
-    downloadText('packing-checklist-library.json', serializeLibrary(items));
   }
 
   async function importLibrary() {
@@ -97,16 +93,29 @@ export default function SettingsMenu() {
           role="menu"
           className="absolute right-0 z-20 mt-2 w-60 overflow-hidden rounded border border-line bg-paper-raised shadow-pass"
         >
-          <MenuLabel>Trips</MenuLabel>
-          <MenuItem onClick={importTrip}>Import trip…</MenuItem>
-          <MenuItem onClick={exportTrips}>Export all trips</MenuItem>
-          <MenuItem onClick={importTrips}>Import trips…</MenuItem>
+          <MenuItem
+            onClick={() => {
+              setOpen(false);
+              setShowExport(true);
+            }}
+          >
+            Export…
+          </MenuItem>
 
           <div className="border-t border-line" />
-          <MenuLabel>Item library</MenuLabel>
-          <MenuItem onClick={exportLibrary}>Export library</MenuItem>
+          <MenuLabel>Import</MenuLabel>
+          <MenuItem onClick={importTrip}>Import trip…</MenuItem>
+          <MenuItem onClick={importTrips}>Import trips…</MenuItem>
           <MenuItem onClick={importLibrary}>Import library…</MenuItem>
         </div>
+      )}
+
+      {showExport && (
+        <ExportDialog
+          trips={listTrips().map((t) => ({ id: t.id, name: t.name }))}
+          onCancel={() => setShowExport(false)}
+          onExport={runExport}
+        />
       )}
     </div>
   );

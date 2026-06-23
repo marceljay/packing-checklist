@@ -12,6 +12,10 @@ All notable changes to this project are documented here.
   removed built-ins back.
 
 ### Added
+- **Export picker.** The header menu's export is now a single **Export…** that
+  opens a modal — choose which trips to include (select all/none) and optionally
+  the item library, then download. Replaces the separate "Export all trips" /
+  "Export library" items.
 - **More activity tags + items.** Added **climbing, BBQ, road trip, and festival**
   as quick-add tags, each with relevant suggestions (climbing shoes/harness/chalk,
   BBQ tools, car charger/snacks/cool box, earplugs/poncho/wellies/power bank, a
