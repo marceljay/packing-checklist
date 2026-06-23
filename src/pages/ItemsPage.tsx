@@ -167,27 +167,32 @@ function LibraryItemEdit({
 function Section({
   title,
   count,
+  forceOpen = false,
   children,
 }: {
   title: React.ReactNode;
   count: number;
+  /** Keep the section expanded regardless of the toggle (e.g. while filtering). */
+  forceOpen?: boolean;
   children: React.ReactNode;
 }) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
+  const expanded = open || forceOpen;
   return (
     <section className="card overflow-hidden">
       <button
         className="flex w-full items-center gap-2 p-3 text-left"
-        aria-expanded={open}
+        aria-expanded={expanded}
+        disabled={forceOpen}
         onClick={() => setOpen((o) => !o)}
       >
         <span aria-hidden className="font-mono text-ink-faint">
-          {open ? '▾' : '▸'}
+          {expanded ? '▾' : '▸'}
         </span>
         <span className="font-display text-base font-bold">{title}</span>
         <span className="chip bg-paper-sunk text-ink-faint tabular-nums">{count}</span>
       </button>
-      {open && <ul className="divide-y divide-line/60 border-t border-line">{children}</ul>}
+      {expanded && <ul className="divide-y divide-line/60 border-t border-line">{children}</ul>}
     </section>
   );
 }
@@ -362,7 +367,7 @@ export default function ItemsPage() {
         // column (not grid) so collapsing one card doesn't leave a tall gap.
         <div className="gap-3 [column-fill:balance] sm:columns-2 [&>section]:mb-3 [&>section]:break-inside-avoid">
           {categoryGroups.map((g) => (
-            <Section key={g.category} title={g.category} count={g.items.length}>
+            <Section key={g.category} title={g.category} count={g.items.length} forceOpen={filtering}>
               {[...g.items].sort(byName).map((item) => (
                 <LibraryItemRow key={item.id} item={item} suggestions={tagKeys} />
               ))}
