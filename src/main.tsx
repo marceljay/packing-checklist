@@ -1,6 +1,13 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { RouterProvider, createHashRouter } from 'react-router-dom';
+// Self-hosted fonts (bundled into the build → fully offline, no CDN call).
+import '@fontsource/space-grotesk/latin-400.css';
+import '@fontsource/space-grotesk/latin-500.css';
+import '@fontsource/space-grotesk/latin-600.css';
+import '@fontsource/space-grotesk/latin-700.css';
+import '@fontsource/space-mono/latin-400.css';
+import '@fontsource/space-mono/latin-700.css';
 import './index.css';
 import App from './App';
 import HomeLayout from './pages/HomeLayout';
