@@ -82,6 +82,32 @@ export const CATALOG: CatalogItem[] = [
   { id: 'camera', name: 'Camera', category: 'Electronics', tagKeys: [t('photography', 2)], quantity: perTrip(1) },
   { id: 'camera-charger', name: 'Camera charger & cards', category: 'Electronics', tagKeys: [t('photography', 1)], quantity: perTrip(1) },
 
+  // --- Climbing ---
+  { id: 'climbing-shoes', name: 'Climbing shoes', category: 'Footwear', tagKeys: [t('climbing', 2)], quantity: perTrip(1) },
+  { id: 'harness', name: 'Climbing harness', category: 'Gear & Equipment', tagKeys: [t('climbing', 2)], quantity: perTrip(1) },
+  { id: 'chalk-bag', name: 'Chalk bag', category: 'Gear & Equipment', tagKeys: [t('climbing', 1)], quantity: perTrip(1) },
+  { id: 'belay-device', name: 'Belay device', category: 'Gear & Equipment', tagKeys: [t('climbing', 1)], quantity: perTrip(1) },
+
+  // --- BBQ ---
+  { id: 'bbq-tools', name: 'BBQ tools & tongs', category: 'Gear & Equipment', tagKeys: [t('bbq', 2)], quantity: perTrip(1) },
+  { id: 'lighter', name: 'Lighter / matches', category: 'Gear & Equipment', tagKeys: [t('bbq', 1), t('camping', 1)], quantity: perTrip(1) },
+  { id: 'apron', name: 'Apron', category: 'Comfort & Misc', tagKeys: [t('bbq', 1)], quantity: perTrip(1) },
+
+  // --- Road trip ---
+  { id: 'car-charger', name: 'Car phone charger', category: 'Electronics', tagKeys: [t('road trip', 2)], quantity: perTrip(1) },
+  { id: 'snacks', name: 'Road snacks', category: 'Comfort & Misc', tagKeys: [t('road trip', 1)], quantity: none() },
+  { id: 'cooler', name: 'Cool box', category: 'Gear & Equipment', tagKeys: [t('road trip', 1), t('camping', 1), t('bbq', 1)], quantity: perTrip(1) },
+
+  // --- Festival ---
+  { id: 'earplugs', name: 'Earplugs', category: 'Comfort & Misc', tagKeys: [t('festival', 1)], quantity: perTrip(1) },
+  { id: 'poncho', name: 'Rain poncho', category: 'Clothing', tagKeys: [t('festival', 1), t('rainy', 1)], quantity: perTrip(1) },
+  { id: 'wellies', name: 'Wellington boots', category: 'Footwear', tagKeys: [t('festival', 1), t('rainy', 1)], quantity: perTrip(1) },
+  { id: 'hand-sanitizer', name: 'Hand sanitizer', category: 'Toiletries & Health', tagKeys: [t('festival', 1)], quantity: perTrip(1) },
+
+  // --- Shared add-ons ---
+  { id: 'power-bank', name: 'Power bank', category: 'Electronics', tagKeys: [t('festival', 2), t('road trip', 1), t('photography', 1)], quantity: perTrip(1) },
+  { id: 'first-aid', name: 'First-aid kit', category: 'Toiletries & Health', tagKeys: [t('camping', 1), t('hiking', 1), t('climbing', 1), t('road trip', 1)], quantity: perTrip(1) },
+
   // --- Weather ---
   { id: 'sunscreen', name: 'Sunscreen', category: 'Toiletries & Health', tagKeys: [t('hot', 2), t('sunny', 2), t('beach', 1)], quantity: perTrip(1) },
   { id: 'sunglasses', name: 'Sunglasses', category: 'Comfort & Misc', tagKeys: [t('sunny', 2), t('hot', 1), t('beach', 1)], quantity: perTrip(1) },

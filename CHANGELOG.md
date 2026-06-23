@@ -12,6 +12,10 @@ All notable changes to this project are documented here.
   removed built-ins back.
 
 ### Added
+- **More activity tags + items.** Added **climbing, BBQ, road trip, and festival**
+  as quick-add tags, each with relevant suggestions (climbing shoes/harness/chalk,
+  BBQ tools, car charger/snacks/cool box, earplugs/poncho/wellies/power bank, a
+  shared first-aid kit). New built-ins appear automatically on next load.
 - **"Essential" is now visible and editable.** An item being suggested on every
   trip (an essential) is a property, not a tag — it now shows in the item's info
   panel and has a checkbox in the Item Library edit form, so you can make any item

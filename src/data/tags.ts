@@ -23,6 +23,10 @@ export const BUILTIN_TAGS: BuiltinTag[] = [
   { key: 'business', type: 'activity' },
   { key: 'formal', type: 'activity' },
   { key: 'photography', type: 'activity' },
+  { key: 'climbing', type: 'activity' },
+  { key: 'bbq', type: 'activity' },
+  { key: 'road trip', type: 'activity' },
+  { key: 'festival', type: 'activity' },
   // Weather / conditions
   { key: 'hot', type: 'weather' },
   { key: 'cold', type: 'weather' },
