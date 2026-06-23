@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type { Trip, TagType } from '../types';
 import { tagKey, tripDurationDays } from '../types';
 import { uid } from '../db/store';
@@ -57,25 +57,40 @@ export default function ContextPanel({ trip, update }: Props) {
   const [tagLabel, setTagLabel] = useState('');
   const [weatherStatus, setWeatherStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
   const [weatherMsg, setWeatherMsg] = useState('');
+  // Guards against stale results when several lookups overlap (e.g. adding two
+  // cities quickly) — only the most recent request applies its outcome.
+  const weatherReq = useRef(0);
 
   const days = tripDurationDays(trip);
   const hasDestinations = trip.destinations.length > 0;
 
-  async function suggestWeather() {
-    if (!hasDestinations) return;
-    if (!trip.startDate || !trip.endDate) {
-      setWeatherStatus('error');
-      setWeatherMsg('Add trip dates to look up the forecast.');
+  type DestInput = { label: string; lat?: number; lon?: number };
+
+  /**
+   * Look up the forecast for an explicit destination list (the caller passes the
+   * post-mutation list so it doesn't wait for a re-render). Auto calls stay quiet
+   * when dates are missing — the manual button reports that case instead.
+   */
+  async function runWeatherLookup(
+    destinations: DestInput[],
+    opts: { auto?: boolean; startDate?: string; endDate?: string } = {},
+  ) {
+    if (destinations.length === 0) return;
+    const start = opts.startDate ?? trip.startDate;
+    const end = opts.endDate ?? trip.endDate;
+    if (!start || !end) {
+      if (!opts.auto) {
+        setWeatherStatus('error');
+        setWeatherMsg('Add trip dates to look up the forecast.');
+      }
       return;
     }
+    const reqId = ++weatherReq.current;
     setWeatherStatus('loading');
     setWeatherMsg('');
     try {
-      const res = await lookupTripWeather(
-        trip.destinations.map((d) => ({ label: d.label, lat: d.lat, lon: d.lon })),
-        trip.startDate,
-        trip.endDate,
-      );
+      const res = await lookupTripWeather(destinations, start, end);
+      if (reqId !== weatherReq.current) return; // superseded by a newer lookup
       if (res.cities.length === 0) {
         setWeatherStatus('error');
         setWeatherMsg('Couldn’t find weather for those places. Add weather tags manually.');
@@ -108,9 +123,16 @@ export default function ContextPanel({ trip, update }: Props) {
         res.tags.length > 0 ? `Weather tags: ${res.tags.join(', ')}` : 'No strong weather signal',
       );
     } catch {
+      if (reqId !== weatherReq.current) return;
       setWeatherStatus('error');
       setWeatherMsg('Forecast lookup failed (offline?). Add weather tags manually.');
     }
+  }
+
+  function suggestWeather() {
+    void runWeatherLookup(
+      trip.destinations.map((d) => ({ label: d.label, lat: d.lat, lon: d.lon })),
+    );
   }
   const activeKeys = new Set(trip.tags.map((t) => tagKey(t.label)));
   const quickTags = BUILTIN_TAGS.filter((b) => !activeKeys.has(b.key));
@@ -131,22 +153,22 @@ export default function ContextPanel({ trip, update }: Props) {
   }
 
   function addPlace(place: GeoResult) {
-    update((d) => {
-      d.destinations.push({
-        id: uid(),
-        label: placeLabel(place),
-        lat: place.lat,
-        lon: place.lon,
-        countryCode: place.countryCode,
-        isPrimary: d.destinations.length === 0,
-      });
-    });
+    const dest = {
+      id: uid(),
+      label: placeLabel(place),
+      lat: place.lat,
+      lon: place.lon,
+      countryCode: place.countryCode,
+      isPrimary: trip.destinations.length === 0,
+    };
+    update((d) => void d.destinations.push(dest));
+    void runWeatherLookup([...trip.destinations, dest], { auto: true });
   }
 
   function addManualPlace(label: string) {
-    update((d) => {
-      d.destinations.push({ id: uid(), label, isPrimary: d.destinations.length === 0 });
-    });
+    const dest = { id: uid(), label, isPrimary: trip.destinations.length === 0 };
+    update((d) => void d.destinations.push(dest));
+    void runWeatherLookup([...trip.destinations, dest], { auto: true });
   }
 
   return (
@@ -173,12 +195,20 @@ export default function ContextPanel({ trip, update }: Props) {
         <DateRangeField
           start={trip.startDate}
           end={trip.endDate}
-          onChange={(startDate, endDate) =>
+          onChange={(startDate, endDate) => {
             update((d) => {
               d.startDate = startDate;
               d.endDate = endDate;
-            })
-          }
+            });
+            // Dates just became (or changed to) a usable window — refresh the
+            // forecast for any destinations already on the trip.
+            if (startDate && endDate && trip.destinations.length > 0) {
+              void runWeatherLookup(
+                trip.destinations.map((dd) => ({ label: dd.label, lat: dd.lat, lon: dd.lon })),
+                { auto: true, startDate, endDate },
+              );
+            }
+          }}
         />
         {days != null && (
           <p className="mt-1.5 font-mono text-xs text-ink-soft">
@@ -287,8 +317,13 @@ export default function ContextPanel({ trip, update }: Props) {
           disabled={!hasDestinations || weatherStatus === 'loading'}
           title={!hasDestinations ? 'Add a destination first' : undefined}
         >
-          {weatherStatus === 'loading' ? 'Checking forecast…' : '☀ Suggest weather tags'}
+          {weatherStatus === 'loading' ? 'Checking forecast…' : '☀ Refresh forecast'}
         </button>
+        {hasDestinations && (
+          <p className="mt-1.5 text-xs text-ink-faint">
+            Looked up automatically when you add a place or set dates.
+          </p>
+        )}
         {weatherMsg && (
           <p
             className={`mt-1.5 text-xs ${
