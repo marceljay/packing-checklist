@@ -23,6 +23,16 @@ interface Group {
 
 export default function Checklist({ trip, update, library, mode = 'plan' }: Props) {
   const [groupBy, setGroupBy] = useState<GroupBy>('category');
+  const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
+
+  function toggleGroup(key: string) {
+    setCollapsed((cur) => {
+      const next = new Set(cur);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
 
   const resolved = useMemo(() => resolveItems(trip.items, library), [trip.items, library]);
 
@@ -106,29 +116,61 @@ export default function Checklist({ trip, update, library, mode = 'plan' }: Prop
         </div>
       ) : (
         <div className="divide-y divide-line">
-          {groups.map((group) => (
-            <div key={group.key}>
-              <h3 className="flex items-baseline gap-2 bg-paper-sunk px-4 py-1.5">
-                <span className="font-mono text-[0.6875rem] font-bold uppercase tracking-code text-ink-soft">
-                  {group.label}
-                </span>
-                <span className="font-mono text-[0.625rem] tabular-nums text-ink-faint">
-                  {group.items.length}
-                </span>
-              </h3>
-              <div className="divide-y divide-line/60">
-                {group.items.map((item) => (
-                  <ItemRow
-                    key={item.libraryId}
-                    item={item}
-                    update={update}
-                    showCategory={groupBy !== 'category'}
-                    mode={mode}
-                  />
-                ))}
+          {groups.map((group) => {
+            const isCollapsed = collapsed.has(group.key);
+            const groupPacked = group.items.filter((i) => i.packed).length;
+            const groupTotal = group.items.length;
+            const groupPct = groupTotal > 0 ? Math.round((groupPacked / groupTotal) * 100) : 0;
+            return (
+              <div key={group.key}>
+                <h3>
+                  <button
+                    type="button"
+                    aria-expanded={!isCollapsed}
+                    onClick={() => toggleGroup(group.key)}
+                    className="flex w-full items-center gap-2 bg-paper-sunk px-4 py-1.5 text-left transition-colors hover:bg-line/60"
+                  >
+                    <span aria-hidden className="font-mono text-[0.625rem] text-ink-faint">
+                      {isCollapsed ? '▸' : '▾'}
+                    </span>
+                    <span className="font-mono text-[0.6875rem] font-bold uppercase tracking-code text-ink-soft">
+                      {group.label}
+                    </span>
+                    {mode === 'checklist' ? (
+                      <span className="ml-auto flex items-center gap-2">
+                        <span className="h-1 w-12 overflow-hidden rounded-full bg-paper">
+                          <span
+                            className="block h-full rounded-full bg-vermilion transition-[width]"
+                            style={{ width: `${groupPct}%` }}
+                          />
+                        </span>
+                        <span className="font-mono text-[0.625rem] tabular-nums text-ink-faint">
+                          {groupPacked}/{groupTotal}
+                        </span>
+                      </span>
+                    ) : (
+                      <span className="ml-auto font-mono text-[0.625rem] tabular-nums text-ink-faint">
+                        {groupTotal}
+                      </span>
+                    )}
+                  </button>
+                </h3>
+                {!isCollapsed && (
+                  <div className="divide-y divide-line/60">
+                    {group.items.map((item) => (
+                      <ItemRow
+                        key={item.libraryId}
+                        item={item}
+                        update={update}
+                        showCategory={groupBy !== 'category'}
+                        mode={mode}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </section>
