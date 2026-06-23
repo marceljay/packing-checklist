@@ -1,26 +1,32 @@
-import { useEffect, useRef, useState } from 'react';
-import type { Trip, TagType, LibraryItem, Destination, CityForecast } from '../types';
+import { useEffect, useRef, useState } from "react";
+import type {
+  Trip,
+  TagType,
+  LibraryItem,
+  Destination,
+  CityForecast,
+} from "../types";
 import {
   tagKey,
   tripDurationDays,
   isInternationalTrip,
   tripCountryCodes,
   tripItemsWithAnyTag,
-} from '../types';
-import { uid } from '../db/store';
-import { rememberItem } from '../db/library';
-import { powerSummary } from '../data/plugs';
-import { BUILTIN_TAGS } from '../data/tags';
-import { placeLabel, type GeoResult } from '../engine/weather';
+} from "../types";
+import { uid } from "../db/store";
+import { rememberItem } from "../db/library";
+import { powerSummary } from "../data/plugs";
+import { BUILTIN_TAGS } from "../data/tags";
+import { placeLabel, type GeoResult } from "../engine/weather";
 import {
   refreshWeather,
   applyWeather,
   recomputeWeatherAfterRemoval,
   type WeatherDest,
-} from '../engine/weatherSync';
-import DateRangeField from './DateRangeField';
-import PlaceSearch from './PlaceSearch';
-import ConfirmDialog from './ConfirmDialog';
+} from "../engine/weatherSync";
+import DateRangeField from "./DateRangeField";
+import PlaceSearch from "./PlaceSearch";
+import ConfirmDialog from "./ConfirmDialog";
 
 interface Props {
   trip: Trip;
@@ -30,10 +36,10 @@ interface Props {
 }
 
 const TAG_TYPE_STYLES: Record<TagType, string> = {
-  activity: 'bg-stamp-soft text-stamp',
-  weather: 'bg-airblue-soft text-airblue',
-  destination: 'bg-vermilion-soft text-vermilion-deep',
-  custom: 'bg-paper-sunk text-ink-soft',
+  activity: "bg-stamp-soft text-stamp",
+  weather: "bg-airblue-soft text-airblue",
+  destination: "bg-vermilion-soft text-vermilion-deep",
+  custom: "bg-paper-sunk text-ink-soft",
 };
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
@@ -71,9 +77,11 @@ function TagPalette({
 }
 
 export default function ContextPanel({ trip, update, library }: Props) {
-  const [tagLabel, setTagLabel] = useState('');
-  const [weatherStatus, setWeatherStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
-  const [weatherMsg, setWeatherMsg] = useState('');
+  const [tagLabel, setTagLabel] = useState("");
+  const [weatherStatus, setWeatherStatus] = useState<
+    "idle" | "loading" | "done" | "error"
+  >("idle");
+  const [weatherMsg, setWeatherMsg] = useState("");
   // Pending destination-removal confirmation (in-app dialog).
   const [pendingRemoval, setPendingRemoval] = useState<{
     dest: Destination;
@@ -97,7 +105,11 @@ export default function ContextPanel({ trip, update, library }: Props) {
     openRefetched.current = true;
     if (trip.destinations.length > 0 && trip.startDate && trip.endDate) {
       void runWeatherLookup(
-        trip.destinations.map((d) => ({ label: d.label, lat: d.lat, lon: d.lon })),
+        trip.destinations.map((d) => ({
+          label: d.label,
+          lat: d.lat,
+          lon: d.lon,
+        })),
         { auto: true },
       );
     }
@@ -118,56 +130,64 @@ export default function ContextPanel({ trip, update, library }: Props) {
     const start = opts.startDate ?? trip.startDate;
     const end = opts.endDate ?? trip.endDate;
     const reqId = ++weatherReq.current;
-    setWeatherStatus('loading');
-    setWeatherMsg('');
+    setWeatherStatus("loading");
+    setWeatherMsg("");
     const outcome = await refreshWeather(destinations, start, end);
     if (reqId !== weatherReq.current) return; // superseded by a newer lookup
 
     switch (outcome.status) {
-      case 'empty':
-        setWeatherStatus('idle');
+      case "empty":
+        setWeatherStatus("idle");
         return;
-      case 'no-dates':
+      case "no-dates":
         if (opts.auto) {
-          setWeatherStatus('idle');
+          setWeatherStatus("idle");
         } else {
-          setWeatherStatus('error');
-          setWeatherMsg('Add trip dates to look up the forecast.');
+          setWeatherStatus("error");
+          setWeatherMsg("Add trip dates to look up the forecast.");
         }
         return;
-      case 'no-match':
-        setWeatherStatus('error');
-        setWeatherMsg('Couldn’t find weather for those places. Add weather tags manually.');
+      case "no-match":
+        setWeatherStatus("error");
+        setWeatherMsg(
+          "Couldn’t find weather for those places. Add weather tags manually.",
+        );
         return;
-      case 'error':
+      case "error":
         if (opts.auto) {
           // Silent fallback: keep whatever forecast/tags are cached.
-          setWeatherStatus('idle');
+          setWeatherStatus("idle");
         } else {
-          setWeatherStatus('error');
-          setWeatherMsg('Forecast lookup failed (offline?). Add weather tags manually.');
+          setWeatherStatus("error");
+          setWeatherMsg(
+            "Forecast lookup failed (offline?). Add weather tags manually.",
+          );
         }
         return;
-      case 'done':
+      case "done":
         update((d) => applyWeather(d, outcome.result, uid));
-        setWeatherStatus('done');
+        setWeatherStatus("done");
         setWeatherMsg(
           outcome.result.tags.length > 0
-            ? `Weather tags: ${outcome.result.tags.join(', ')}`
-            : 'No strong weather signal',
+            ? `Weather tags: ${outcome.result.tags.join(", ")}`
+            : "No strong weather signal",
         );
     }
   }
 
   function suggestWeather() {
     void runWeatherLookup(
-      trip.destinations.map((d) => ({ label: d.label, lat: d.lat, lon: d.lon })),
+      trip.destinations.map((d) => ({
+        label: d.label,
+        lat: d.lat,
+        lon: d.lon,
+      })),
     );
   }
   const activeKeys = new Set(trip.tags.map((t) => tagKey(t.label)));
   const quickTags = BUILTIN_TAGS.filter((b) => !activeKeys.has(b.key));
-  const quickActivities = quickTags.filter((b) => b.type === 'activity');
-  const quickWeather = quickTags.filter((b) => b.type === 'weather');
+  const quickActivities = quickTags.filter((b) => b.type === "activity");
+  const quickWeather = quickTags.filter((b) => b.type === "weather");
 
   function addTag(label: string, type: TagType) {
     const clean = label.trim();
@@ -178,8 +198,8 @@ export default function ContextPanel({ trip, update, library }: Props) {
   }
 
   function addCustomTag() {
-    addTag(tagLabel, 'custom');
-    setTagLabel('');
+    addTag(tagLabel, "custom");
+    setTagLabel("");
   }
 
   function addPlace(place: GeoResult) {
@@ -196,7 +216,11 @@ export default function ContextPanel({ trip, update, library }: Props) {
   }
 
   function addManualPlace(label: string) {
-    const dest = { id: uid(), label, isPrimary: trip.destinations.length === 0 };
+    const dest = {
+      id: uid(),
+      label,
+      isPrimary: trip.destinations.length === 0,
+    };
     update((d) => void d.destinations.push(dest));
     void runWeatherLookup([...trip.destinations, dest], { auto: true });
   }
@@ -210,7 +234,9 @@ export default function ContextPanel({ trip, update, library }: Props) {
    */
   function removeDestination(dest: Destination) {
     const remaining = trip.destinations.filter((x) => x.id !== dest.id);
-    const currentWeatherTags = trip.tags.filter((t) => t.type === 'weather').map((t) => t.label);
+    const currentWeatherTags = trip.tags
+      .filter((t) => t.type === "weather")
+      .map((t) => t.label);
     const { cities: keptCities, tags: newTags } = recomputeWeatherAfterRemoval(
       trip.weather?.cities ?? [],
       remaining,
@@ -240,19 +266,23 @@ export default function ContextPanel({ trip, update, library }: Props) {
       if (!d.destinations.some((x) => x.isPrimary) && d.destinations[0]) {
         d.destinations[0].isPrimary = true;
       }
-      d.tags = d.tags.filter((t) => t.type !== 'weather' || newTags.includes(t.label));
+      d.tags = d.tags.filter(
+        (t) => t.type !== "weather" || newTags.includes(t.label),
+      );
       if (keptCities.length === 0) d.weather = undefined;
       else if (d.weather) d.weather = { ...d.weather, cities: keptCities };
-      if (removeItems) d.items = d.items.filter((i) => !removeIds.has(i.libraryId));
+      if (removeItems)
+        d.items = d.items.filter((i) => !removeIds.has(i.libraryId));
     });
-    setWeatherStatus('idle');
-    setWeatherMsg('');
+    setWeatherStatus("idle");
+    setWeatherMsg("");
     setPendingRemoval(null);
   }
 
   const international = isInternationalTrip(trip);
   const power = powerSummary(tripCountryCodes(trip));
-  const autoDetected = trip.settings.international === undefined && international;
+  const autoDetected =
+    trip.settings.international === undefined && international;
 
   function setInternational(checked: boolean) {
     update((d) => void (d.settings.international = checked));
@@ -260,10 +290,17 @@ export default function ContextPanel({ trip, update, library }: Props) {
 
   /** Add a travel adapter to the trip (resolve/create the library item, add once). */
   function addAdapter() {
-    const row = rememberItem('Travel adapter', 'Electronics', ['international']);
+    const row = rememberItem("Travel adapter", "Electronics", [
+      "international",
+    ]);
     update((d) => {
       if (!d.items.some((i) => i.libraryId === row.id)) {
-        d.items.push({ libraryId: row.id, quantitySuggested: null, quantityTaken: 1, packed: false });
+        d.items.push({
+          libraryId: row.id,
+          quantitySuggested: null,
+          quantityTaken: 1,
+          packed: false,
+        });
       }
     });
   }
@@ -301,7 +338,11 @@ export default function ContextPanel({ trip, update, library }: Props) {
             // forecast for any destinations already on the trip.
             if (startDate && endDate && trip.destinations.length > 0) {
               void runWeatherLookup(
-                trip.destinations.map((dd) => ({ label: dd.label, lat: dd.lat, lon: dd.lon })),
+                trip.destinations.map((dd) => ({
+                  label: dd.label,
+                  lat: dd.lat,
+                  lon: dd.lon,
+                })),
                 { auto: true, startDate, endDate },
               );
             }
@@ -309,7 +350,7 @@ export default function ContextPanel({ trip, update, library }: Props) {
         />
         {days != null && (
           <p className="mt-1.5 font-mono text-xs text-ink-soft">
-            {days} night{days === 1 ? '' : 's'}
+            {days} night{days === 1 ? "" : "s"}
           </p>
         )}
       </div>
@@ -322,15 +363,17 @@ export default function ContextPanel({ trip, update, library }: Props) {
             <li key={dest.id} className="flex items-center gap-2 text-sm">
               <span className="min-w-0 flex-1 truncate">{dest.label}</span>
               <button
-                className={`chip ${dest.isPrimary ? 'bg-vermilion-soft text-vermilion-deep' : 'bg-paper-sunk text-ink-faint hover:text-ink'}`}
+                className={`chip ${dest.isPrimary ? "bg-vermilion-soft text-vermilion-deep" : "bg-paper-sunk text-ink-faint hover:text-ink"}`}
                 title="Set as primary destination"
                 onClick={() =>
                   update((d) => {
-                    d.destinations.forEach((x) => (x.isPrimary = x.id === dest.id));
+                    d.destinations.forEach(
+                      (x) => (x.isPrimary = x.id === dest.id),
+                    );
                   })
                 }
               >
-                {dest.isPrimary ? 'Primary' : 'Set primary'}
+                {dest.isPrimary ? "Primary" : "Set primary"}
               </button>
               <button
                 className="btn-ghost px-1.5 py-0.5"
@@ -353,7 +396,9 @@ export default function ContextPanel({ trip, update, library }: Props) {
         </p>
         <div className="mt-2 flex flex-wrap gap-1.5">
           {trip.tags.length === 0 && (
-            <span className="font-mono text-xs text-ink-faint">No tags yet</span>
+            <span className="font-mono text-xs text-ink-faint">
+              No tags yet
+            </span>
           )}
           {trip.tags.map((tag) => (
             <span key={tag.id} className={`chip ${TAG_TYPE_STYLES[tag.type]}`}>
@@ -362,7 +407,10 @@ export default function ContextPanel({ trip, update, library }: Props) {
                 className="ml-0.5 opacity-60 hover:opacity-100"
                 aria-label={`Remove tag ${tag.label}`}
                 onClick={() =>
-                  update((d) => void (d.tags = d.tags.filter((t) => t.id !== tag.id)))
+                  update(
+                    (d) =>
+                      void (d.tags = d.tags.filter((t) => t.id !== tag.id)),
+                  )
                 }
               >
                 ✕
@@ -372,7 +420,11 @@ export default function ContextPanel({ trip, update, library }: Props) {
         </div>
         {/* Quick-add palettes — grouped so the choice reads as intentional. */}
         {quickActivities.length > 0 && (
-          <TagPalette label="Activities" tags={quickActivities} onAdd={addTag} />
+          <TagPalette
+            label="Activities"
+            tags={quickActivities}
+            onAdd={addTag}
+          />
         )}
         {quickWeather.length > 0 && (
           <TagPalette label="Weather" tags={quickWeather} onAdd={addTag} />
@@ -384,7 +436,7 @@ export default function ContextPanel({ trip, update, library }: Props) {
             className="input min-w-0 flex-1"
             value={tagLabel}
             onChange={(e) => setTagLabel(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && addCustomTag()}
+            onKeyDown={(e) => e.key === "Enter" && addCustomTag()}
             placeholder="Add your own tag…"
           />
           <button className="btn-secondary shrink-0" onClick={addCustomTag}>
@@ -399,10 +451,12 @@ export default function ContextPanel({ trip, update, library }: Props) {
         <button
           className="btn-secondary mt-1.5 w-full"
           onClick={() => void suggestWeather()}
-          disabled={!hasDestinations || weatherStatus === 'loading'}
-          title={!hasDestinations ? 'Add a destination first' : undefined}
+          disabled={!hasDestinations || weatherStatus === "loading"}
+          title={!hasDestinations ? "Add a destination first" : undefined}
         >
-          {weatherStatus === 'loading' ? 'Checking forecast…' : '☀ Refresh forecast'}
+          {weatherStatus === "loading"
+            ? "Checking forecast…"
+            : "☀ Refresh forecast"}
         </button>
         {hasDestinations && (
           <p className="mt-1.5 text-xs text-ink-faint">
@@ -412,7 +466,9 @@ export default function ContextPanel({ trip, update, library }: Props) {
         {weatherMsg && (
           <p
             className={`mt-1.5 text-xs ${
-              weatherStatus === 'error' ? 'text-vermilion-deep' : 'text-ink-soft'
+              weatherStatus === "error"
+                ? "text-vermilion-deep"
+                : "text-ink-soft"
             }`}
           >
             {weatherMsg}
@@ -439,8 +495,8 @@ export default function ContextPanel({ trip, update, library }: Props) {
             International trip
             <span className="block text-xs text-ink-faint">
               {autoDetected
-                ? 'Detected — destinations span multiple countries.'
-                : 'Tick if this trip crosses a border (adds plug & adapter info).'}
+                ? "Detected — destinations span multiple countries."
+                : "Tick if this trip crosses a border (adds plug & adapter info)."}
             </span>
           </span>
         </label>
@@ -456,26 +512,38 @@ export default function ContextPanel({ trip, update, library }: Props) {
                 <p className="label mb-1.5">Power &amp; plugs</p>
                 <ul className="space-y-1 text-sm">
                   {power.known.map((k) => (
-                    <li key={k.code} className="flex items-baseline justify-between gap-2">
+                    <li
+                      key={k.code}
+                      className="flex items-baseline justify-between gap-2"
+                    >
                       <span className="min-w-0 truncate">{k.info.name}</span>
                       <span className="shrink-0 font-mono text-xs text-ink-soft">
-                        Type {k.info.types.join('/')} · {k.info.voltage}V
+                        Type {k.info.types.join("/")} · {k.info.voltage}V
                       </span>
                     </li>
                   ))}
                   {power.unknown.map((code) => (
-                    <li key={code} className="flex items-baseline justify-between gap-2 text-ink-faint">
+                    <li
+                      key={code}
+                      className="flex items-baseline justify-between gap-2 text-ink-faint"
+                    >
                       <span>{code}</span>
-                      <span className="shrink-0 font-mono text-xs">no plug data</span>
+                      <span className="shrink-0 font-mono text-xs">
+                        no plug data
+                      </span>
                     </li>
                   ))}
                 </ul>
                 {power.voltages.length > 0 && (
                   <p className="mt-1.5 text-xs text-ink-faint">
-                    Mains {power.voltages.join(' / ')}V — check your devices’ range.
+                    Mains {power.voltages.join(" / ")}V — check your devices’
+                    range.
                   </p>
                 )}
-                <button className="btn-secondary mt-2 w-full text-xs" onClick={addAdapter}>
+                <button
+                  className="btn-secondary mt-2 w-full text-xs"
+                  onClick={addAdapter}
+                >
                   + Add travel adapter
                 </button>
               </>
@@ -490,20 +558,24 @@ export default function ContextPanel({ trip, update, library }: Props) {
           type="checkbox"
           className="mt-0.5 h-4 w-4 shrink-0 rounded border-line text-vermilion focus:ring-vermilion"
           checked={trip.settings.laundryAvailable}
-          onChange={(e) => update((d) => void (d.settings.laundryAvailable = e.target.checked))}
+          onChange={(e) =>
+            update((d) => void (d.settings.laundryAvailable = e.target.checked))
+          }
         />
         <span>
           Laundry available
-          <span className="block text-xs text-ink-faint">Reduces suggested quantities</span>
+          <span className="block text-xs text-ink-faint">
+            Reduces suggested quantities
+          </span>
         </span>
       </label>
 
       {pendingRemoval && (
         <ConfirmDialog
-          title={`Remove ${pendingRemoval.dest.label.split(',')[0]}?`}
-          confirmLabel={`Remove with ${pendingRemoval.items.length} item${pendingRemoval.items.length === 1 ? '' : 's'}`}
+          title={`Remove ${pendingRemoval.dest.label.split(",")[0]}?`}
+          confirmLabel={`Remove location with ${pendingRemoval.items.length} item${pendingRemoval.items.length === 1 ? "" : "s"}`}
           secondary={{
-            label: 'Remove, keep items',
+            label: "Remove location but keep items",
             onClick: () =>
               performRemoval(
                 pendingRemoval.dest,
@@ -526,13 +598,16 @@ export default function ContextPanel({ trip, update, library }: Props) {
           onCancel={() => setPendingRemoval(null)}
         >
           <p>
-            That leaves no destination needing{' '}
-            <strong>{pendingRemoval.dropped.join(', ')}</strong>. These items were added for it —
-            remove them with the city?
+            That leaves no destination needing{" "}
+            <strong>{pendingRemoval.dropped.join(", ")}</strong>. These items
+            were added for it — remove them with the city?
           </p>
           <ul className="mt-2 flex flex-wrap gap-1.5">
             {pendingRemoval.items.map((i) => (
-              <li key={i.libraryId} className="chip bg-paper-sunk text-ink-soft">
+              <li
+                key={i.libraryId}
+                className="chip bg-paper-sunk text-ink-soft"
+              >
                 {i.name}
               </li>
             ))}

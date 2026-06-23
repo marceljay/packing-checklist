@@ -12,6 +12,11 @@ All notable changes to this project are documented here.
   removed built-ins back.
 
 ### Added
+- **"Essential" is now visible and editable.** An item being suggested on every
+  trip (an essential) is a property, not a tag — it now shows in the item's info
+  panel and has a checkbox in the Item Library edit form, so you can make any item
+  essential or stop a built-in from always appearing. (Editing a built-in forks it
+  into your own copy, as with any edit; "Restore defaults" brings the original back.)
 - **Smarter forecast upkeep.** Opening a trip refreshes its forecast (falling back
   to the cached card when offline). Removing a destination re-derives the weather
   tags instantly from the remaining cities (no network, no flakiness) — and if

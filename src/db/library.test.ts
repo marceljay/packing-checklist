@@ -60,6 +60,14 @@ describe('trip-page mutations reflect in the library', () => {
     expect(getLibraryItem(row.id)?.quantity).toBeUndefined();
   });
 
+  it('toggles the essential flag on and off', () => {
+    const row = rememberItem('Phone charger', 'Electronics', []);
+    editLibraryItem(row.id, { essential: true });
+    expect(getLibraryItem(row.id)?.essential).toBe(true);
+    editLibraryItem(row.id, { essential: false });
+    expect(getLibraryItem(row.id)?.essential).toBeUndefined();
+  });
+
   it('editing a default item forks it and reflects the new tags', () => {
     seedLibrary();
     const def = aDefault();

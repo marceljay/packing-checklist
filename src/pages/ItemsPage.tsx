@@ -76,6 +76,12 @@ function LibraryItemRow({ item, suggestions }: { item: LibraryItem; suggestions:
           <dd className="text-ink-soft">{item.custom ? 'Custom' : 'Default'}</dd>
           <dt className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">Category</dt>
           <dd className="text-ink-soft">{item.category}</dd>
+          {item.essential && (
+            <>
+              <dt className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">Essential</dt>
+              <dd className="text-ink-soft">Suggested on every trip</dd>
+            </>
+          )}
           {item.quantity?.kind === 'perTrip' && (
             <>
               <dt className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">Default qty</dt>
@@ -113,11 +119,18 @@ function LibraryItemEdit({
   // A fixed default quantity shows as a number; smart/none rules show blank.
   const initialQty = item.quantity?.kind === 'perTrip' ? String(item.quantity.count) : '';
   const [qty, setQty] = useState(initialQty);
+  const [essential, setEssential] = useState(item.essential === true);
   const [error, setError] = useState('');
 
   function save() {
     if (!name.trim()) return;
-    const patch: Parameters<typeof editLibraryItem>[1] = { name, category, tagKeys: tags, notes };
+    const patch: Parameters<typeof editLibraryItem>[1] = {
+      name,
+      category,
+      tagKeys: tags,
+      notes,
+      essential,
+    };
     // Only touch quantity if the field changed, so untouched smart rules survive.
     if (qty !== initialQty) {
       const n = parseInt(qty, 10);
@@ -173,6 +186,18 @@ function LibraryItemEdit({
         placeholder="Notes / description (optional)"
         aria-label={`Notes for ${item.name}`}
       />
+      <label className="flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          className="h-4 w-4 rounded border-line text-vermilion focus:ring-vermilion"
+          checked={essential}
+          onChange={(e) => setEssential(e.target.checked)}
+        />
+        <span>
+          Essential
+          <span className="ml-1.5 text-xs text-ink-faint">suggested on every trip</span>
+        </span>
+      </label>
       {error && <p className="font-mono text-xs text-vermilion">{error}</p>}
       <div className="flex items-center justify-end gap-2">
         <button className="btn-ghost text-xs" onClick={onDone}>

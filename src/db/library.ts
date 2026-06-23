@@ -109,6 +109,8 @@ export function editLibraryItem(
     notes?: string;
     /** A rule sets the default add quantity; null clears it (back to 1). */
     quantity?: QuantityRule | null;
+    /** Whether the item is suggested on every trip (an "essential"). */
+    essential?: boolean;
   },
 ): { ok: boolean; id: string } {
   let result = { ok: false, id };
@@ -136,6 +138,7 @@ export function editLibraryItem(
     if (patch.tagKeys !== undefined) row.tagKeys = [...new Set(patch.tagKeys)];
     if (patch.notes !== undefined) row.notes = patch.notes.trim() || undefined;
     if (patch.quantity !== undefined) row.quantity = patch.quantity ?? undefined;
+    if (patch.essential !== undefined) row.essential = patch.essential || undefined;
     result = { ok: true, id: realId };
   });
   return result;
