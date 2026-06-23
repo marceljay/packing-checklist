@@ -155,11 +155,12 @@ function EditForm({ item, onDone }: { item: ResolvedItem; onDone: () => void }) 
   const [name, setName] = useState(item.name);
   const [category, setCategory] = useState<Category>(item.category);
   const [tags, setTags] = useState<string[]>(item.tagKeys);
+  const [essential, setEssential] = useState(item.essential);
   const [error, setError] = useState('');
 
   function save() {
     if (!name.trim()) return;
-    const res = editLibraryItem(item.libraryId, { name, category, tagKeys: tags });
+    const res = editLibraryItem(item.libraryId, { name, category, tagKeys: tags, essential });
     if (!res.ok) {
       setError('Another item already has that name.');
       return;
@@ -191,6 +192,18 @@ function EditForm({ item, onDone }: { item: ResolvedItem; onDone: () => void }) 
         </select>
       </div>
       <TagEditor value={tags} onChange={setTags} ariaLabel={`Tags for ${item.name}`} />
+      <label className="flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          className="h-4 w-4 rounded border-line text-vermilion focus:ring-vermilion"
+          checked={essential}
+          onChange={(e) => setEssential(e.target.checked)}
+        />
+        <span>
+          Essential
+          <span className="ml-1.5 text-xs text-ink-faint">suggested on every trip</span>
+        </span>
+      </label>
       {error && <p className="font-mono text-xs text-vermilion">{error}</p>}
       <div className="flex items-center justify-end gap-2">
         <button className="btn-ghost text-xs" onClick={onDone}>

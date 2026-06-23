@@ -58,6 +58,8 @@ export interface ResolvedItem {
   quantitySuggested: number | null;
   quantityTaken: number;
   packed: boolean;
+  /** Whether the library row is flagged essential (suggested on every trip). */
+  essential: boolean;
   /** true when the referenced library row no longer exists. */
   missing: boolean;
 }
@@ -279,6 +281,7 @@ export function resolveItems(items: Item[], libById: Map<ID, LibraryItem>): Reso
       quantitySuggested: it.quantitySuggested,
       quantityTaken: it.quantityTaken,
       packed: it.packed,
+      essential: lib?.essential === true,
       missing: lib === undefined,
     };
   });

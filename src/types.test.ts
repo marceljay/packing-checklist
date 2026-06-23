@@ -58,6 +58,7 @@ function resolved(name: string, category: Category, over: Partial<ResolvedItem> 
     quantitySuggested: null,
     quantityTaken: 1,
     packed: false,
+    essential: false,
     missing: false,
     ...over,
   };

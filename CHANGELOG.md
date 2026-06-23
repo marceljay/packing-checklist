@@ -16,11 +16,12 @@ All notable changes to this project are documented here.
   as quick-add tags, each with relevant suggestions (climbing shoes/harness/chalk,
   BBQ tools, car charger/snacks/cool box, earplugs/poncho/wellies/power bank, a
   shared first-aid kit). New built-ins appear automatically on next load.
-- **"Essential" is now visible and editable.** An item being suggested on every
-  trip (an essential) is a property, not a tag — it now shows in the item's info
-  panel and has a checkbox in the Item Library edit form, so you can make any item
-  essential or stop a built-in from always appearing. (Editing a built-in forks it
-  into your own copy, as with any edit; "Restore defaults" brings the original back.)
+- **"Essential" is now visible and editable everywhere.** An item being suggested
+  on every trip (an essential) is a property, not a tag — it shows in the item's
+  info panel and has a checkbox in **both** the Item Library edit form and the
+  trip-page item editor. The Item Library filter row has an **essentials** chip to
+  show just those. (Editing a built-in forks it into your own copy, as with any
+  edit; "Restore defaults" brings the original back.)
 - **Smarter forecast upkeep.** Opening a trip refreshes its forecast (falling back
   to the cached card when offline). Removing a destination re-derives the weather
   tags instantly from the remaining cities (no network, no flakiness) — and if

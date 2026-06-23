@@ -331,16 +331,19 @@ export default function ItemsPage() {
   );
   const [query, setQuery] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [essentialOnly, setEssentialOnly] = useState(false);
 
   const tagKeys = useMemo(() => allTagKeys(library), [library]);
+  const hasEssentials = useMemo(() => library.some((i) => i.essential), [library]);
 
   const results = useMemo(() => {
     let r = searchLibrary(library, query);
     if (selectedTags.length > 0) r = r.filter((i) => selectedTags.some((t) => i.tagKeys.includes(t)));
+    if (essentialOnly) r = r.filter((i) => i.essential);
     return r;
-  }, [library, query, selectedTags]);
+  }, [library, query, selectedTags, essentialOnly]);
 
-  const filtering = query.trim() !== '' || selectedTags.length > 0;
+  const filtering = query.trim() !== '' || selectedTags.length > 0 || essentialOnly;
 
   const categoryGroups = CATEGORIES.map((category) => ({
     category,
@@ -382,10 +385,24 @@ export default function ItemsPage() {
         </button>
       </div>
 
-      {/* Tag filter */}
-      {tagKeys.length > 0 && (
+      {/* Tag filter — plus a special "essentials" chip (essential is a property,
+          not a tag, but it filters here alongside tags). */}
+      {(tagKeys.length > 0 || hasEssentials) && (
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="label mr-1">Filter</span>
+          {hasEssentials && (
+            <button
+              aria-pressed={essentialOnly}
+              onClick={() => setEssentialOnly((v) => !v)}
+              className={`chip transition-colors ${
+                essentialOnly
+                  ? 'bg-vermilion text-paper-raised'
+                  : 'bg-vermilion-soft text-vermilion-deep hover:bg-vermilion/20'
+              }`}
+            >
+              essentials
+            </button>
+          )}
           {tagKeys.map((t) => {
             const on = selectedTags.includes(t);
             return (
@@ -401,8 +418,14 @@ export default function ItemsPage() {
               </button>
             );
           })}
-          {selectedTags.length > 0 && (
-            <button className="btn-ghost px-2 py-0.5 text-xs" onClick={() => setSelectedTags([])}>
+          {(selectedTags.length > 0 || essentialOnly) && (
+            <button
+              className="btn-ghost px-2 py-0.5 text-xs"
+              onClick={() => {
+                setSelectedTags([]);
+                setEssentialOnly(false);
+              }}
+            >
               Clear
             </button>
           )}
