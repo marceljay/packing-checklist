@@ -76,6 +76,12 @@ function LibraryItemRow({ item, suggestions }: { item: LibraryItem; suggestions:
           <dd className="text-ink-soft">{item.custom ? 'Custom' : 'Default'}</dd>
           <dt className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">Category</dt>
           <dd className="text-ink-soft">{item.category}</dd>
+          {item.quantity?.kind === 'perTrip' && (
+            <>
+              <dt className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">Default qty</dt>
+              <dd className="text-ink-soft">{item.quantity.count}</dd>
+            </>
+          )}
           {item.count > 0 && (
             <>
               <dt className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">Used</dt>
@@ -104,11 +110,20 @@ function LibraryItemEdit({
   const [category, setCategory] = useState<Category>(item.category);
   const [tags, setTags] = useState<string[]>(item.tagKeys);
   const [notes, setNotes] = useState(item.notes ?? '');
+  // A fixed default quantity shows as a number; smart/none rules show blank.
+  const initialQty = item.quantity?.kind === 'perTrip' ? String(item.quantity.count) : '';
+  const [qty, setQty] = useState(initialQty);
   const [error, setError] = useState('');
 
   function save() {
     if (!name.trim()) return;
-    const res = editLibraryItem(item.id, { name, category, tagKeys: tags, notes });
+    const patch: Parameters<typeof editLibraryItem>[1] = { name, category, tagKeys: tags, notes };
+    // Only touch quantity if the field changed, so untouched smart rules survive.
+    if (qty !== initialQty) {
+      const n = parseInt(qty, 10);
+      patch.quantity = Number.isFinite(n) && n > 0 ? { kind: 'perTrip', count: n } : null;
+    }
+    const res = editLibraryItem(item.id, patch);
     if (!res.ok) {
       setError('Another item already has that name.');
       return;
@@ -118,7 +133,7 @@ function LibraryItemEdit({
 
   return (
     <div className="flex flex-col gap-2 bg-paper-sunk/40 px-4 py-3">
-      <div className="grid gap-2 sm:grid-cols-[1fr_12rem]">
+      <div className="grid gap-2 sm:grid-cols-[1fr_11rem_5rem]">
         <input
           className="input min-w-0"
           value={name}
@@ -138,6 +153,17 @@ function LibraryItemEdit({
             </option>
           ))}
         </select>
+        <input
+          type="number"
+          min="1"
+          inputMode="numeric"
+          className="input min-w-0"
+          value={qty}
+          onChange={(e) => setQty(e.target.value)}
+          placeholder="Qty"
+          aria-label="Default quantity"
+          title="Default quantity when added to a trip (blank = 1, or its built-in rule)"
+        />
       </div>
       <TagEditor value={tags} onChange={setTags} suggestions={suggestions} ariaLabel={`Tags for ${item.name}`} />
       <textarea

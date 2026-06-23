@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Trip, Category } from '../types';
-import { CATEGORIES } from '../types';
+import { CATEGORIES, computeQuantity } from '../types';
 import { rememberItem } from '../db/library';
 import TagEditor from './TagEditor';
 
@@ -25,12 +25,14 @@ export default function AddItemCard({ update, tagSuggestions = [] }: Props) {
     const clean = name.trim();
     if (!clean) return;
     const row = rememberItem(clean, category, tags);
+    // Start at the item's remembered default quantity (1 when it has none).
+    const qty = computeQuantity(row.quantity ?? { kind: 'none' }, null, false);
     update((d) => {
       const existing = d.items.find((i) => i.libraryId === row.id);
       if (existing) {
         existing.quantityTaken += 1;
       } else {
-        d.items.push({ libraryId: row.id, quantitySuggested: null, quantityTaken: 1, packed: false });
+        d.items.push({ libraryId: row.id, quantitySuggested: null, quantityTaken: qty, packed: false });
       }
     });
     setName('');

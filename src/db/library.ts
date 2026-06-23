@@ -1,5 +1,5 @@
 import { getData, setData } from './store';
-import { customId, tagKey, type Category, type LibraryItem } from '../types';
+import { customId, tagKey, type Category, type LibraryItem, type QuantityRule } from '../types';
 import { forkDefault } from './appData';
 import { CATALOG } from '../data/catalog';
 import { catalogToLibraryItems } from '../data/seed';
@@ -102,7 +102,14 @@ export function rememberItem(name: string, category: Category, tagKeys: string[]
  */
 export function editLibraryItem(
   id: string,
-  patch: { name?: string; category?: Category; tagKeys?: string[]; notes?: string },
+  patch: {
+    name?: string;
+    category?: Category;
+    tagKeys?: string[];
+    notes?: string;
+    /** A rule sets the default add quantity; null clears it (back to 1). */
+    quantity?: QuantityRule | null;
+  },
 ): { ok: boolean; id: string } {
   let result = { ok: false, id };
   setData((d) => {
@@ -128,6 +135,7 @@ export function editLibraryItem(
     if (patch.category !== undefined) row.category = patch.category;
     if (patch.tagKeys !== undefined) row.tagKeys = [...new Set(patch.tagKeys)];
     if (patch.notes !== undefined) row.notes = patch.notes.trim() || undefined;
+    if (patch.quantity !== undefined) row.quantity = patch.quantity ?? undefined;
     result = { ok: true, id: realId };
   });
   return result;

@@ -52,6 +52,14 @@ describe('trip-page mutations reflect in the library', () => {
     expect(getLibraryItem(a.id)?.tagKeys.sort()).toEqual(['beach', 'sun']);
   });
 
+  it('stores and clears a default quantity rule', () => {
+    const row = rememberItem('Contact lenses', 'Toiletries & Health', []);
+    editLibraryItem(row.id, { quantity: { kind: 'perTrip', count: 14 } });
+    expect(getLibraryItem(row.id)?.quantity).toEqual({ kind: 'perTrip', count: 14 });
+    editLibraryItem(row.id, { quantity: null });
+    expect(getLibraryItem(row.id)?.quantity).toBeUndefined();
+  });
+
   it('editing a default item forks it and reflects the new tags', () => {
     seedLibrary();
     const def = aDefault();
