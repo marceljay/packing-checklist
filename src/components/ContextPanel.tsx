@@ -15,6 +15,7 @@ import { placeLabel, type GeoResult } from '../engine/weather';
 import { refreshWeather, applyWeather, type WeatherDest } from '../engine/weatherSync';
 import DateRangeField from './DateRangeField';
 import PlaceSearch from './PlaceSearch';
+import ConfirmDialog from './ConfirmDialog';
 
 interface Props {
   trip: Trip;
@@ -68,6 +69,8 @@ export default function ContextPanel({ trip, update, library }: Props) {
   const [tagLabel, setTagLabel] = useState('');
   const [weatherStatus, setWeatherStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
   const [weatherMsg, setWeatherMsg] = useState('');
+  // Pending "drop items for a removed weather tag?" prompt (in-app dialog).
+  const [prune, setPrune] = useState<{ tagKeys: string[]; items: { libraryId: string; name: string }[] } | null>(null);
   // Guards against stale results when several lookups overlap (e.g. adding two
   // cities quickly) — only the most recent request applies its outcome.
   const weatherReq = useRef(0);
@@ -231,18 +234,18 @@ export default function ContextPanel({ trip, update, library }: Props) {
     })();
   }
 
-  /** Ask whether to remove trip items that a now-absent weather tag pulled in. */
+  /** Open the in-app prompt to remove items a now-absent weather tag pulled in. */
   function promptPruneItems(droppedTagKeys: string[]) {
-    const candidates = tripItemsWithAnyTag(trip.items, library, droppedTagKeys);
-    if (candidates.length === 0) return;
-    const names = candidates.map((c) => c.name).join(', ');
-    const ok = confirm(
-      `Also remove ${candidates.length} item${candidates.length === 1 ? '' : 's'} added for ` +
-        `${droppedTagKeys.join(', ')}?\n\n${names}`,
-    );
-    if (!ok) return;
-    const ids = new Set(candidates.map((c) => c.libraryId));
+    const items = tripItemsWithAnyTag(trip.items, library, droppedTagKeys);
+    if (items.length === 0) return;
+    setPrune({ tagKeys: droppedTagKeys, items });
+  }
+
+  function confirmPrune() {
+    if (!prune) return;
+    const ids = new Set(prune.items.map((c) => c.libraryId));
     update((d) => void (d.items = d.items.filter((i) => !ids.has(i.libraryId))));
+    setPrune(null);
   }
 
   const international = isInternationalTrip(trip);
@@ -492,6 +495,29 @@ export default function ContextPanel({ trip, update, library }: Props) {
           <span className="block text-xs text-ink-faint">Reduces suggested quantities</span>
         </span>
       </label>
+
+      {prune && (
+        <ConfirmDialog
+          title="Remove related items?"
+          confirmLabel={`Remove ${prune.items.length} item${prune.items.length === 1 ? '' : 's'}`}
+          cancelLabel="Keep them"
+          tone="danger"
+          onConfirm={confirmPrune}
+          onCancel={() => setPrune(null)}
+        >
+          <p>
+            No destination needs <strong>{prune.tagKeys.join(', ')}</strong> anymore. Remove the
+            items it added to this trip?
+          </p>
+          <ul className="mt-2 flex flex-wrap gap-1.5">
+            {prune.items.map((i) => (
+              <li key={i.libraryId} className="chip bg-paper-sunk text-ink-soft">
+                {i.name}
+              </li>
+            ))}
+          </ul>
+        </ConfirmDialog>
+      )}
     </aside>
   );
 }
