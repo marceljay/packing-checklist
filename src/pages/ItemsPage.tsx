@@ -357,7 +357,9 @@ export default function ItemsPage() {
       ) : filtering && results.length === 0 ? (
         <p className="text-sm text-ink-soft">No items match your filter.</p>
       ) : (
-        <div className="flex flex-col gap-3">
+        // Two-column masonry on wider screens, single column on phones. Multi-
+        // column (not grid) so collapsing one card doesn't leave a tall gap.
+        <div className="gap-3 [column-fill:balance] sm:columns-2 [&>section]:mb-3 [&>section]:break-inside-avoid">
           {categoryGroups.map((g) => (
             <Section key={g.category} title={g.category} count={g.items.length}>
               {[...g.items].sort(byName).map((item) => (
