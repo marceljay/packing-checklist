@@ -370,6 +370,29 @@ export function isInternationalTrip(trip: Pick<Trip, 'destinations' | 'settings'
   return tripCountryCodes(trip).length >= 2;
 }
 
+/**
+ * Trip items whose library row carries any of `tagKeys` (normalized). Used when a
+ * weather tag drops (e.g. "cold" after removing the only cold destination) to
+ * offer removing the items that tag pulled in. Items missing from the library are
+ * skipped.
+ */
+export function tripItemsWithAnyTag(
+  items: Item[],
+  library: Map<string, LibraryItem>,
+  tagKeys: string[],
+): { libraryId: string; name: string }[] {
+  const keys = new Set(tagKeys.map(tagKey));
+  if (keys.size === 0) return [];
+  const out: { libraryId: string; name: string }[] = [];
+  for (const it of items) {
+    const row = library.get(it.libraryId);
+    if (row && (row.tagKeys ?? []).some((k) => keys.has(k))) {
+      out.push({ libraryId: it.libraryId, name: row.name });
+    }
+  }
+  return out;
+}
+
 // ---------------------------------------------------------------------------
 // Suggestion catalog (built-in, static) — SPEC §4.6 / §5
 // ---------------------------------------------------------------------------

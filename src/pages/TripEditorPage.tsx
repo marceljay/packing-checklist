@@ -176,7 +176,7 @@ export default function TripEditorPage() {
 
         {mode === 'plan' ? (
           <div className="grid gap-5 lg:grid-cols-[20rem_1fr]">
-            <ContextPanel trip={trip} update={update} />
+            <ContextPanel trip={trip} update={update} library={library} />
             <div className="flex flex-col gap-5">
               {trip.weather && <WeatherCard weather={trip.weather} />}
               <AddItemCard update={update} tagSuggestions={tagSuggestions} />

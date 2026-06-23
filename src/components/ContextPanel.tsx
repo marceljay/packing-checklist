@@ -1,6 +1,12 @@
-import { useRef, useState } from 'react';
-import type { Trip, TagType } from '../types';
-import { tagKey, tripDurationDays, isInternationalTrip, tripCountryCodes } from '../types';
+import { useEffect, useRef, useState } from 'react';
+import type { Trip, TagType, LibraryItem, Destination } from '../types';
+import {
+  tagKey,
+  tripDurationDays,
+  isInternationalTrip,
+  tripCountryCodes,
+  tripItemsWithAnyTag,
+} from '../types';
 import { uid } from '../db/store';
 import { rememberItem } from '../db/library';
 import { powerSummary } from '../data/plugs';
@@ -13,6 +19,8 @@ import PlaceSearch from './PlaceSearch';
 interface Props {
   trip: Trip;
   update: (mutator: (draft: Trip) => void) => void;
+  /** Library rows by id, to resolve item tags when pruning after a destination removal. */
+  library: Map<string, LibraryItem>;
 }
 
 const TAG_TYPE_STYLES: Record<TagType, string> = {
@@ -56,7 +64,7 @@ function TagPalette({
   );
 }
 
-export default function ContextPanel({ trip, update }: Props) {
+export default function ContextPanel({ trip, update, library }: Props) {
   const [tagLabel, setTagLabel] = useState('');
   const [weatherStatus, setWeatherStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
   const [weatherMsg, setWeatherMsg] = useState('');
@@ -66,6 +74,21 @@ export default function ContextPanel({ trip, update }: Props) {
 
   const days = tripDurationDays(trip);
   const hasDestinations = trip.destinations.length > 0;
+
+  // Refetch the forecast once when the trip opens, so a cached forecast refreshes.
+  // Offline (or no dates) keeps the cached card — runWeatherLookup stays silent.
+  const openRefetched = useRef(false);
+  useEffect(() => {
+    if (openRefetched.current) return;
+    openRefetched.current = true;
+    if (trip.destinations.length > 0 && trip.startDate && trip.endDate) {
+      void runWeatherLookup(
+        trip.destinations.map((d) => ({ label: d.label, lat: d.lat, lon: d.lon })),
+        { auto: true },
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   /**
    * Look up the forecast for an explicit destination list + date window (the
@@ -103,8 +126,13 @@ export default function ContextPanel({ trip, update }: Props) {
         setWeatherMsg('Couldn’t find weather for those places. Add weather tags manually.');
         return;
       case 'error':
-        setWeatherStatus('error');
-        setWeatherMsg('Forecast lookup failed (offline?). Add weather tags manually.');
+        if (opts.auto) {
+          // Silent fallback: keep whatever forecast/tags are cached.
+          setWeatherStatus('idle');
+        } else {
+          setWeatherStatus('error');
+          setWeatherMsg('Forecast lookup failed (offline?). Add weather tags manually.');
+        }
         return;
       case 'done':
         update((d) => applyWeather(d, outcome.result, uid));
@@ -157,6 +185,64 @@ export default function ContextPanel({ trip, update }: Props) {
     const dest = { id: uid(), label, isPrimary: trip.destinations.length === 0 };
     update((d) => void d.destinations.push(dest));
     void runWeatherLookup([...trip.destinations, dest], { auto: true });
+  }
+
+  /**
+   * Remove a destination, then keep the forecast honest: clear it if nothing's
+   * left, else refetch the remaining cities (recomputing the weather-tag union).
+   * Any weather tag that disappears was the removed place's — offer to also drop
+   * the items it had pulled in (e.g. "cold" → beanie, gloves).
+   */
+  function removeDestination(dest: Destination) {
+    const remaining = trip.destinations.filter((x) => x.id !== dest.id);
+    const prevWeatherTags = trip.tags.filter((t) => t.type === 'weather').map((t) => t.label);
+
+    update((d) => {
+      d.destinations = d.destinations.filter((x) => x.id !== dest.id);
+      if (!d.destinations.some((x) => x.isPrimary) && d.destinations[0]) {
+        d.destinations[0].isPrimary = true;
+      }
+    });
+
+    if (remaining.length === 0) {
+      update((d) => {
+        d.tags = d.tags.filter((t) => t.type !== 'weather');
+        d.weather = undefined;
+      });
+      setWeatherStatus('idle');
+      setWeatherMsg('');
+      promptPruneItems(prevWeatherTags);
+      return;
+    }
+
+    void (async () => {
+      const reqId = ++weatherReq.current;
+      const outcome = await refreshWeather(
+        remaining.map((r) => ({ label: r.label, lat: r.lat, lon: r.lon })),
+        trip.startDate,
+        trip.endDate,
+      );
+      if (reqId !== weatherReq.current) return;
+      if (outcome.status !== 'done') return; // offline/no dates → keep current tags
+      update((d) => applyWeather(d, outcome.result, uid));
+      const newTags = outcome.result.tags as string[];
+      const dropped = prevWeatherTags.filter((t) => !newTags.includes(t));
+      promptPruneItems(dropped);
+    })();
+  }
+
+  /** Ask whether to remove trip items that a now-absent weather tag pulled in. */
+  function promptPruneItems(droppedTagKeys: string[]) {
+    const candidates = tripItemsWithAnyTag(trip.items, library, droppedTagKeys);
+    if (candidates.length === 0) return;
+    const names = candidates.map((c) => c.name).join(', ');
+    const ok = confirm(
+      `Also remove ${candidates.length} item${candidates.length === 1 ? '' : 's'} added for ` +
+        `${droppedTagKeys.join(', ')}?\n\n${names}`,
+    );
+    if (!ok) return;
+    const ids = new Set(candidates.map((c) => c.libraryId));
+    update((d) => void (d.items = d.items.filter((i) => !ids.has(i.libraryId))));
   }
 
   const international = isInternationalTrip(trip);
@@ -244,19 +330,7 @@ export default function ContextPanel({ trip, update }: Props) {
               <button
                 className="btn-ghost px-1.5 py-0.5"
                 aria-label={`Remove ${dest.label}`}
-                onClick={() =>
-                  update((d) => {
-                    d.destinations = d.destinations.filter((x) => x.id !== dest.id);
-                    if (!d.destinations.some((x) => x.isPrimary) && d.destinations[0]) {
-                      d.destinations[0].isPrimary = true;
-                    }
-                    // No destinations left → drop the now-meaningless forecast.
-                    if (d.destinations.length === 0) {
-                      d.tags = d.tags.filter((t) => t.type !== 'weather');
-                      d.weather = undefined;
-                    }
-                  })
-                }
+                onClick={() => removeDestination(dest)}
               >
                 ✕
               </button>

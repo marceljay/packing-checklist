@@ -7,6 +7,7 @@ import {
   isEmptyTrip,
   tripCountryCodes,
   isInternationalTrip,
+  tripItemsWithAnyTag,
   resolveItems,
   resolvedByCategory,
   resolvedByTag,
@@ -641,5 +642,36 @@ describe('international trip detection', () => {
   it('honours an explicit override either way', () => {
     expect(isInternationalTrip(trip([{ countryCode: 'FR' }], true))).toBe(true); // single country, forced
     expect(isInternationalTrip(trip([{ countryCode: 'FR' }, { countryCode: 'DE' }], false))).toBe(false);
+  });
+});
+
+describe('tripItemsWithAnyTag', () => {
+  const library = new Map<string, LibraryItem>([
+    ['c:1', libRow('Beanie', 'Clothing', { tagKeys: ['cold'] })],
+    ['c:2', libRow('Gloves', 'Clothing', { tagKeys: ['cold', 'skiing'] })],
+    ['c:3', libRow('Sunhat', 'Clothing', { tagKeys: ['hot'] })],
+    ['c:4', libRow('Passport', 'Documents', { tagKeys: [] })],
+  ]);
+  const items = ['c:1', 'c:2', 'c:3', 'c:4'].map((id) => ref(id));
+
+  it('returns items whose library row carries any of the tags', () => {
+    expect(tripItemsWithAnyTag(items, library, ['cold']).map((i) => i.name)).toEqual([
+      'Beanie',
+      'Gloves',
+    ]);
+  });
+
+  it('matches on any of several tags, normalized', () => {
+    expect(tripItemsWithAnyTag(items, library, ['HOT', 'skiing']).map((i) => i.libraryId).sort())
+      .toEqual(['c:2', 'c:3']);
+  });
+
+  it('returns nothing for empty tags or no matches', () => {
+    expect(tripItemsWithAnyTag(items, library, [])).toEqual([]);
+    expect(tripItemsWithAnyTag(items, library, ['rainy'])).toEqual([]);
+  });
+
+  it('skips trip items missing from the library', () => {
+    expect(tripItemsWithAnyTag([ref('ghost')], library, ['cold'])).toEqual([]);
   });
 });
