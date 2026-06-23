@@ -15,8 +15,6 @@ All notable changes to this project are documented here.
 - **°C/°F (metric/imperial) toggle.** A switch on the forecast card flips the
   weather between metric and imperial — temperatures (°C/°F), precipitation
   (mm/in), and wind (km/h/mph). The choice persists across trips.
-- **Adjustable print quantities.** Each item on the print/PDF sheet now shows its
-  suggested quantity beside a blank box, so you can hand-write a last-minute count.
 - **Fonts are bundled, not fetched.** Space Grotesk and Space Mono ship with the
   app instead of loading from Google Fonts, so it renders fully offline with no
   external request.
