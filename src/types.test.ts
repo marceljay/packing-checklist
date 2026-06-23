@@ -5,6 +5,8 @@ import {
   destinationCode,
   computeQuantity,
   isEmptyTrip,
+  tripCountryCodes,
+  isInternationalTrip,
   resolveItems,
   resolvedByCategory,
   resolvedByTag,
@@ -593,5 +595,51 @@ describe('searchLibrary', () => {
   it('preserves the input order of matches', () => {
     const items = [lib('Sun hat'), lib('Sunscreen'), lib('Passport')];
     expect(searchLibrary(items, 'sun').map((i) => i.name)).toEqual(['Sun hat', 'Sunscreen']);
+  });
+});
+
+describe('international trip detection', () => {
+  function trip(
+    destinations: { countryCode?: string }[],
+    international?: boolean,
+  ): Trip {
+    return {
+      id: 't',
+      name: 'Trip',
+      destinations: destinations.map((d, i) => ({
+        id: `d${i}`,
+        label: `Place ${i}`,
+        isPrimary: i === 0,
+        ...(d.countryCode ? { countryCode: d.countryCode } : {}),
+      })),
+      tags: [],
+      items: [],
+      settings: { laundryAvailable: false, ...(international !== undefined ? { international } : {}) },
+      createdAt: 0,
+      updatedAt: 0,
+    };
+  }
+
+  it('lists distinct, uppercased destination country codes', () => {
+    expect(tripCountryCodes(trip([{ countryCode: 'pt' }, { countryCode: 'PT' }, { countryCode: 'es' }])))
+      .toEqual(['PT', 'ES']);
+  });
+
+  it('ignores destinations without a country code', () => {
+    expect(tripCountryCodes(trip([{}, { countryCode: 'FR' }]))).toEqual(['FR']);
+  });
+
+  it('infers international when 2+ countries are present', () => {
+    expect(isInternationalTrip(trip([{ countryCode: 'FR' }, { countryCode: 'DE' }]))).toBe(true);
+  });
+
+  it('defaults to domestic for a single or unknown country', () => {
+    expect(isInternationalTrip(trip([{ countryCode: 'FR' }]))).toBe(false);
+    expect(isInternationalTrip(trip([{}]))).toBe(false);
+  });
+
+  it('honours an explicit override either way', () => {
+    expect(isInternationalTrip(trip([{ countryCode: 'FR' }], true))).toBe(true); // single country, forced
+    expect(isInternationalTrip(trip([{ countryCode: 'FR' }, { countryCode: 'DE' }], false))).toBe(false);
   });
 });

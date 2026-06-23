@@ -12,6 +12,12 @@ All notable changes to this project are documented here.
   removed built-ins back.
 
 ### Added
+- **International trips & travel adapters.** A trip is flagged international
+  automatically when its destinations span two or more countries, with a
+  **checkbox** to set it yourself when there's only one (or no) detected country.
+  International trips show a **Power & plugs** panel — each destination country's
+  plug type(s) and mains voltage — plus a one-tap **Add travel adapter**. Backed
+  by a country→plug/voltage dataset for ~50 common destinations.
 - **°C/°F (metric/imperial) toggle.** A switch on the forecast card flips the
   weather between metric and imperial — temperatures (°C/°F), precipitation
   (mm/in), and wind (km/h/mph). The choice persists across trips.

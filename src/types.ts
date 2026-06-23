@@ -64,6 +64,9 @@ export interface ResolvedItem {
 
 export interface TripSettings {
   laundryAvailable: boolean;
+  /** User override for whether the trip is international (crosses a border).
+   *  Undefined → inferred from destinations (see {@link isInternationalTrip}). */
+  international?: boolean;
 }
 
 /** Where a forecast came from: live forecast, historical typical, or a mix. */
@@ -342,6 +345,29 @@ export function destinationCode(trip: Pick<Trip, 'destinations' | 'name'>): stri
   const source = primary?.countryCode || primary?.label || trip.name || '';
   const letters = source.replace(/[^a-zA-Z]/g, '').toUpperCase();
   return letters.slice(0, 3) || 'TRP';
+}
+
+/** Distinct ISO country codes across a trip's destinations (uppercased). */
+export function tripCountryCodes(trip: Pick<Trip, 'destinations'>): string[] {
+  return [
+    ...new Set(
+      trip.destinations
+        .map((d) => d.countryCode?.toUpperCase())
+        .filter((c): c is string => Boolean(c)),
+    ),
+  ];
+}
+
+/**
+ * Whether a trip is international. The user's explicit `settings.international`
+ * wins; otherwise it's inferred — destinations spanning 2+ countries cross a
+ * border, so they're international. A single (or no) detected country is
+ * ambiguous (we don't know the traveller's home country), so it defaults to
+ * domestic and the user can tick the override.
+ */
+export function isInternationalTrip(trip: Pick<Trip, 'destinations' | 'settings'>): boolean {
+  if (trip.settings.international !== undefined) return trip.settings.international;
+  return tripCountryCodes(trip).length >= 2;
 }
 
 // ---------------------------------------------------------------------------

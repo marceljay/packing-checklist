@@ -1,7 +1,9 @@
 import { useRef, useState } from 'react';
 import type { Trip, TagType } from '../types';
-import { tagKey, tripDurationDays } from '../types';
+import { tagKey, tripDurationDays, isInternationalTrip, tripCountryCodes } from '../types';
 import { uid } from '../db/store';
+import { rememberItem } from '../db/library';
+import { powerSummary } from '../data/plugs';
 import { BUILTIN_TAGS } from '../data/tags';
 import { placeLabel, type GeoResult } from '../engine/weather';
 import { refreshWeather, applyWeather, type WeatherDest } from '../engine/weatherSync';
@@ -155,6 +157,24 @@ export default function ContextPanel({ trip, update }: Props) {
     const dest = { id: uid(), label, isPrimary: trip.destinations.length === 0 };
     update((d) => void d.destinations.push(dest));
     void runWeatherLookup([...trip.destinations, dest], { auto: true });
+  }
+
+  const international = isInternationalTrip(trip);
+  const power = powerSummary(tripCountryCodes(trip));
+  const autoDetected = trip.settings.international === undefined && international;
+
+  function setInternational(checked: boolean) {
+    update((d) => void (d.settings.international = checked));
+  }
+
+  /** Add a travel adapter to the trip (resolve/create the library item, add once). */
+  function addAdapter() {
+    const row = rememberItem('Travel adapter', 'Electronics', ['international']);
+    update((d) => {
+      if (!d.items.some((i) => i.libraryId === row.id)) {
+        d.items.push({ libraryId: row.id, quantitySuggested: null, quantityTaken: 1, packed: false });
+      }
+    });
   }
 
   return (
@@ -323,6 +343,65 @@ export default function ContextPanel({ trip, update }: Props) {
           <p className="mt-1.5 text-xs text-ink-faint">
             Add a destination to check its forecast.
           </p>
+        )}
+      </div>
+
+      {/* Trip type — international + power/adapters */}
+      <div className="border-t border-line pt-4">
+        <SectionLabel>Trip type</SectionLabel>
+        <label className="mt-1.5 flex items-start gap-2.5 text-sm">
+          <input
+            type="checkbox"
+            className="mt-0.5 h-4 w-4 shrink-0 rounded border-line text-vermilion focus:ring-vermilion"
+            checked={international}
+            onChange={(e) => setInternational(e.target.checked)}
+          />
+          <span>
+            International trip
+            <span className="block text-xs text-ink-faint">
+              {autoDetected
+                ? 'Detected — destinations span multiple countries.'
+                : 'Tick if this trip crosses a border (adds plug & adapter info).'}
+            </span>
+          </span>
+        </label>
+
+        {international && (
+          <div className="mt-3">
+            {power.known.length === 0 && power.unknown.length === 0 ? (
+              <p className="text-xs text-ink-faint">
+                Add a destination with a country to see plug types and voltage.
+              </p>
+            ) : (
+              <>
+                <p className="label mb-1.5">Power &amp; plugs</p>
+                <ul className="space-y-1 text-sm">
+                  {power.known.map((k) => (
+                    <li key={k.code} className="flex items-baseline justify-between gap-2">
+                      <span className="min-w-0 truncate">{k.info.name}</span>
+                      <span className="shrink-0 font-mono text-xs text-ink-soft">
+                        Type {k.info.types.join('/')} · {k.info.voltage}V
+                      </span>
+                    </li>
+                  ))}
+                  {power.unknown.map((code) => (
+                    <li key={code} className="flex items-baseline justify-between gap-2 text-ink-faint">
+                      <span>{code}</span>
+                      <span className="shrink-0 font-mono text-xs">no plug data</span>
+                    </li>
+                  ))}
+                </ul>
+                {power.voltages.length > 0 && (
+                  <p className="mt-1.5 text-xs text-ink-faint">
+                    Mains {power.voltages.join(' / ')}V — check your devices’ range.
+                  </p>
+                )}
+                <button className="btn-secondary mt-2 w-full text-xs" onClick={addAdapter}>
+                  + Add travel adapter
+                </button>
+              </>
+            )}
+          </div>
         )}
       </div>
 
