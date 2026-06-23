@@ -4,6 +4,7 @@ import { CATEGORIES, type Category, type LibraryItem } from '../types';
 import { searchLibrary } from '../types';
 import { rememberItem, editLibraryItem, forgetItemById, restoreDefaults } from '../db/library';
 import TagEditor from '../components/TagEditor';
+import { InfoIcon, EditIcon, DeleteIcon } from '../components/icons';
 
 const byName = (a: LibraryItem, b: LibraryItem) => a.name.localeCompare(b.name);
 
@@ -50,21 +51,21 @@ function LibraryItemRow({ item, suggestions }: { item: LibraryItem; suggestions:
             aria-expanded={panel === 'info'}
             onClick={() => setPanel((p) => (p === 'info' ? 'none' : 'info'))}
           >
-            ⓘ
+            <InfoIcon />
           </button>
           <button
             className="btn-ghost px-1.5 py-1"
             aria-label={`Edit ${item.name}`}
             onClick={() => setPanel('edit')}
           >
-            ✎
+            <EditIcon />
           </button>
           <button
             className="btn-danger px-1.5 py-1"
             aria-label={`Remove ${item.name} from your library`}
             onClick={() => void forgetItemById(item.id)}
           >
-            ✕
+            <DeleteIcon />
           </button>
         </div>
       </div>

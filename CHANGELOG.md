@@ -4,7 +4,19 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+### Fixed
+- **Edited or removed built-in items now stick.** Deleting a default item, or
+  editing one (which forks it into your own copy), survives a reload — the boot
+  seeder no longer resurrects it, so trip-page edits show correctly in the Item
+  Library instead of reappearing as the original. **Restore defaults** brings
+  removed built-ins back.
+
 ### Added
+- **Icon buttons.** The info / edit / delete actions in the Item Library (and the
+  edit/remove actions on a trip's items) use real line icons instead of unicode
+  glyphs.
+- **No past trip dates.** The date-range calendar disables days before today, so
+  a trip can't start in the past.
 - **Automatic weather lookup.** The forecast now runs on its own when you add a
   place or set the trip dates (still skipped silently until dates exist); the
   button became a manual **Refresh forecast**. Overlapping lookups can't clobber

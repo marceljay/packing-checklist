@@ -3,6 +3,7 @@ import type { Item, ResolvedItem, Trip, Category } from '../types';
 import { CATEGORIES } from '../types';
 import { editLibraryItem } from '../db/library';
 import TagEditor from './TagEditor';
+import { EditIcon, DeleteIcon } from './icons';
 
 export type ItemRowMode = 'plan' | 'checklist';
 
@@ -128,7 +129,7 @@ export default function ItemRow({ item, update, showCategory = false, mode = 'pl
             title="Edit item (updates your library)"
             onClick={() => setEditing(true)}
           >
-            ✎
+            <EditIcon />
           </button>
         )}
         <button
@@ -137,7 +138,7 @@ export default function ItemRow({ item, update, showCategory = false, mode = 'pl
           title="Remove from this trip"
           onClick={removeFromTrip}
         >
-          ✕
+          <DeleteIcon />
         </button>
       </div>
     </div>

@@ -45,6 +45,10 @@ export default function DateRangeField({ start, end, onChange }: Props) {
   const from = fromISO(start);
   const to = fromISO(end);
 
+  // No packing a trip that already started — disable days before today.
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
   useEffect(() => {
     if (!open) return;
     function onDocClick(e: MouseEvent) {
@@ -94,7 +98,8 @@ export default function DateRangeField({ start, end, onChange }: Props) {
             mode="range"
             selected={{ from, to }}
             onSelect={handleSelect}
-            defaultMonth={from ?? new Date()}
+            defaultMonth={from ?? today}
+            disabled={{ before: today }}
             numberOfMonths={1}
             weekStartsOn={1}
             showOutsideDays
