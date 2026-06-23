@@ -25,7 +25,8 @@
   }
   html.dark {
     --paper: 19 25 33; /* ground */
-    --paper-raised: 28 37 48; /* cards / tags */
+    --paper-raised: 24 31 40; /* cards / tags — only a touch above ground so they
+                                  don't glare in the dark */
     --paper-sunk: 14 19 26; /* wells, grouped headers */
     --ink: 232 230 223; /* primary text */
     --ink-soft: 164 173 184;
@@ -55,6 +56,29 @@
   }
   ::selection {
     @apply bg-vermilion text-paper-raised;
+  }
+
+  /* Themed scrollbars — muted ink thumb on a transparent track, so it reads well
+     in both light and dark instead of the default bright OS bar. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--ink-faint) / 0.4) transparent;
+  }
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background-color: rgb(var(--ink-faint) / 0.35);
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: rgb(var(--ink-faint) / 0.55);
   }
 }
 
