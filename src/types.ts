@@ -76,6 +76,9 @@ export type WeatherBasis = 'forecast' | 'typical' | 'mixed';
 export interface CityForecast {
   place: string;
   basis: WeatherBasis;
+  /** Weather tag keys this city contributed (e.g. ['cold','rainy']). Lets a
+   *  destination's tags be recomputed locally when another is removed. */
+  tags?: string[];
   days: number;
   highC: number;
   lowC: number;

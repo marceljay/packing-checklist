@@ -7,6 +7,8 @@ interface Props {
   children?: React.ReactNode;
   confirmLabel?: string;
   cancelLabel?: string;
+  /** Optional middle action (e.g. "Keep items") between cancel and confirm. */
+  secondary?: { label: string; onClick: () => void };
   /** `danger` styles the confirm button as destructive. */
   tone?: 'default' | 'danger';
   onConfirm: () => void;
@@ -24,6 +26,7 @@ export default function ConfirmDialog({
   children,
   confirmLabel = 'Confirm',
   cancelLabel = 'Cancel',
+  secondary,
   tone = 'default',
   onConfirm,
   onCancel,
@@ -56,10 +59,15 @@ export default function ConfirmDialog({
         <div className="flex flex-col gap-3 p-5">
           <h2 className="font-display text-lg font-bold leading-tight">{title}</h2>
           {children && <div className="text-sm text-ink-soft">{children}</div>}
-          <div className="mt-1 flex items-center justify-end gap-2">
+          <div className="mt-1 flex flex-wrap items-center justify-end gap-2">
             <button className="btn-ghost text-sm" onClick={onCancel}>
               {cancelLabel}
             </button>
+            {secondary && (
+              <button className="btn-secondary text-sm" onClick={secondary.onClick}>
+                {secondary.label}
+              </button>
+            )}
             <button
               ref={confirmRef}
               className={`${tone === 'danger' ? 'btn-danger' : 'btn-primary'} text-sm`}

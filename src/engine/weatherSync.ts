@@ -5,8 +5,8 @@
  * injectable); `applyWeather` writes the result onto a trip draft. The component
  * owns only UI state (status text, stale-request guarding).
  */
-import { lookupTripWeather, type TripWeatherResult } from './weather';
-import type { Tag, Trip } from '../types';
+import { lookupTripWeather, WEATHER_TAG_KEYS, type TripWeatherResult } from './weather';
+import type { CityForecast, Tag, Trip } from '../types';
 
 export type WeatherDest = { label: string; lat?: number; lon?: number };
 
@@ -45,6 +45,30 @@ export async function refreshWeather(
   }
 }
 
+/** Tolerant match between a cached forecast city and a destination — stored place
+ *  names vary (full "Lisbon, Portugal" vs geocoded "Lisbon"). */
+export function cityMatchesDestination(city: CityForecast, dest: { label: string }): boolean {
+  const p = city.place.trim().toLowerCase();
+  const label = dest.label.trim().toLowerCase();
+  const head = label.split(',')[0].trim();
+  return p === label || p === head || (p.length > 0 && (label.includes(p) || p.includes(head)));
+}
+
+/**
+ * Recompute the forecast + weather-tag union for the destinations that remain
+ * after one is removed — locally, from each kept city's stored tags (no network).
+ * No destinations left → empty. Tags come back in canonical order.
+ */
+export function recomputeWeatherAfterRemoval(
+  cities: CityForecast[],
+  remaining: { label: string }[],
+): { cities: CityForecast[]; tags: string[] } {
+  if (remaining.length === 0) return { cities: [], tags: [] };
+  const kept = cities.filter((c) => remaining.some((d) => cityMatchesDestination(c, d)));
+  const present = new Set(kept.flatMap((c) => c.tags ?? []));
+  return { cities: kept, tags: WEATHER_TAG_KEYS.filter((k) => present.has(k)) };
+}
+
 /**
  * Apply a successful lookup to a trip draft: regenerate the weather-type tags
  * from scratch (so tags from a since-removed destination don't linger; context
@@ -67,6 +91,7 @@ export function applyWeather(
     cities: result.cities.map((c) => ({
       place: c.place.name,
       basis: c.basis,
+      tags: c.tags,
       days: c.summary.days,
       highC: c.summary.highC,
       lowC: c.summary.lowC,

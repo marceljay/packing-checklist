@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { Trip, TagType, LibraryItem, Destination } from '../types';
+import type { Trip, TagType, LibraryItem, Destination, CityForecast } from '../types';
 import {
   tagKey,
   tripDurationDays,
@@ -12,7 +12,12 @@ import { rememberItem } from '../db/library';
 import { powerSummary } from '../data/plugs';
 import { BUILTIN_TAGS } from '../data/tags';
 import { placeLabel, type GeoResult } from '../engine/weather';
-import { refreshWeather, applyWeather, type WeatherDest } from '../engine/weatherSync';
+import {
+  refreshWeather,
+  applyWeather,
+  recomputeWeatherAfterRemoval,
+  type WeatherDest,
+} from '../engine/weatherSync';
 import DateRangeField from './DateRangeField';
 import PlaceSearch from './PlaceSearch';
 import ConfirmDialog from './ConfirmDialog';
@@ -69,8 +74,14 @@ export default function ContextPanel({ trip, update, library }: Props) {
   const [tagLabel, setTagLabel] = useState('');
   const [weatherStatus, setWeatherStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
   const [weatherMsg, setWeatherMsg] = useState('');
-  // Pending "drop items for a removed weather tag?" prompt (in-app dialog).
-  const [prune, setPrune] = useState<{ tagKeys: string[]; items: { libraryId: string; name: string }[] } | null>(null);
+  // Pending destination-removal confirmation (in-app dialog).
+  const [pendingRemoval, setPendingRemoval] = useState<{
+    dest: Destination;
+    dropped: string[];
+    items: { libraryId: string; name: string }[];
+    keptCities: CityForecast[];
+    newTags: string[];
+  } | null>(null);
   // Guards against stale results when several lookups overlap (e.g. adding two
   // cities quickly) — only the most recent request applies its outcome.
   const weatherReq = useRef(0);
@@ -191,61 +202,52 @@ export default function ContextPanel({ trip, update, library }: Props) {
   }
 
   /**
-   * Remove a destination, then keep the forecast honest: clear it if nothing's
-   * left, else refetch the remaining cities (recomputing the weather-tag union).
-   * Any weather tag that disappears was the removed place's — offer to also drop
-   * the items it had pulled in (e.g. "cold" → beanie, gloves).
+   * Remove a destination. The forecast is kept honest *locally* (no network):
+   * the remaining cities' cached tags are re-unioned, so any weather tag the
+   * removed city alone justified disappears. If that orphans items (e.g. "cold"
+   * → beanie, gloves), confirm via the in-app dialog whether to drop them too;
+   * otherwise remove straight away.
    */
   function removeDestination(dest: Destination) {
     const remaining = trip.destinations.filter((x) => x.id !== dest.id);
-    const prevWeatherTags = trip.tags.filter((t) => t.type === 'weather').map((t) => t.label);
+    const currentWeatherTags = trip.tags.filter((t) => t.type === 'weather').map((t) => t.label);
+    const { cities: keptCities, tags: newTags } = recomputeWeatherAfterRemoval(
+      trip.weather?.cities ?? [],
+      remaining,
+    );
+    const dropped = currentWeatherTags.filter((t) => !newTags.includes(t));
+    const items = tripItemsWithAnyTag(trip.items, library, dropped);
 
+    if (items.length === 0) {
+      performRemoval(dest, newTags, keptCities, false);
+      return;
+    }
+    setPendingRemoval({ dest, dropped, items, keptCities, newTags });
+  }
+
+  /** Apply a destination removal: drop the city, re-derive weather tags + forecast,
+   *  reassign primary, and optionally remove the orphaned items. */
+  function performRemoval(
+    dest: Destination,
+    newTags: string[],
+    keptCities: CityForecast[],
+    removeItems: boolean,
+    items: { libraryId: string }[] = [],
+  ) {
+    const removeIds = new Set(items.map((i) => i.libraryId));
     update((d) => {
       d.destinations = d.destinations.filter((x) => x.id !== dest.id);
       if (!d.destinations.some((x) => x.isPrimary) && d.destinations[0]) {
         d.destinations[0].isPrimary = true;
       }
+      d.tags = d.tags.filter((t) => t.type !== 'weather' || newTags.includes(t.label));
+      if (keptCities.length === 0) d.weather = undefined;
+      else if (d.weather) d.weather = { ...d.weather, cities: keptCities };
+      if (removeItems) d.items = d.items.filter((i) => !removeIds.has(i.libraryId));
     });
-
-    if (remaining.length === 0) {
-      update((d) => {
-        d.tags = d.tags.filter((t) => t.type !== 'weather');
-        d.weather = undefined;
-      });
-      setWeatherStatus('idle');
-      setWeatherMsg('');
-      promptPruneItems(prevWeatherTags);
-      return;
-    }
-
-    void (async () => {
-      const reqId = ++weatherReq.current;
-      const outcome = await refreshWeather(
-        remaining.map((r) => ({ label: r.label, lat: r.lat, lon: r.lon })),
-        trip.startDate,
-        trip.endDate,
-      );
-      if (reqId !== weatherReq.current) return;
-      if (outcome.status !== 'done') return; // offline/no dates → keep current tags
-      update((d) => applyWeather(d, outcome.result, uid));
-      const newTags = outcome.result.tags as string[];
-      const dropped = prevWeatherTags.filter((t) => !newTags.includes(t));
-      promptPruneItems(dropped);
-    })();
-  }
-
-  /** Open the in-app prompt to remove items a now-absent weather tag pulled in. */
-  function promptPruneItems(droppedTagKeys: string[]) {
-    const items = tripItemsWithAnyTag(trip.items, library, droppedTagKeys);
-    if (items.length === 0) return;
-    setPrune({ tagKeys: droppedTagKeys, items });
-  }
-
-  function confirmPrune() {
-    if (!prune) return;
-    const ids = new Set(prune.items.map((c) => c.libraryId));
-    update((d) => void (d.items = d.items.filter((i) => !ids.has(i.libraryId))));
-    setPrune(null);
+    setWeatherStatus('idle');
+    setWeatherMsg('');
+    setPendingRemoval(null);
   }
 
   const international = isInternationalTrip(trip);
@@ -496,21 +498,40 @@ export default function ContextPanel({ trip, update, library }: Props) {
         </span>
       </label>
 
-      {prune && (
+      {pendingRemoval && (
         <ConfirmDialog
-          title="Remove related items?"
-          confirmLabel={`Remove ${prune.items.length} item${prune.items.length === 1 ? '' : 's'}`}
-          cancelLabel="Keep them"
+          title={`Remove ${pendingRemoval.dest.label.split(',')[0]}?`}
+          confirmLabel={`Remove with ${pendingRemoval.items.length} item${pendingRemoval.items.length === 1 ? '' : 's'}`}
+          secondary={{
+            label: 'Remove, keep items',
+            onClick: () =>
+              performRemoval(
+                pendingRemoval.dest,
+                pendingRemoval.newTags,
+                pendingRemoval.keptCities,
+                false,
+              ),
+          }}
+          cancelLabel="Cancel"
           tone="danger"
-          onConfirm={confirmPrune}
-          onCancel={() => setPrune(null)}
+          onConfirm={() =>
+            performRemoval(
+              pendingRemoval.dest,
+              pendingRemoval.newTags,
+              pendingRemoval.keptCities,
+              true,
+              pendingRemoval.items,
+            )
+          }
+          onCancel={() => setPendingRemoval(null)}
         >
           <p>
-            No destination needs <strong>{prune.tagKeys.join(', ')}</strong> anymore. Remove the
-            items it added to this trip?
+            That leaves no destination needing{' '}
+            <strong>{pendingRemoval.dropped.join(', ')}</strong>. These items were added for it —
+            remove them with the city?
           </p>
           <ul className="mt-2 flex flex-wrap gap-1.5">
-            {prune.items.map((i) => (
+            {pendingRemoval.items.map((i) => (
               <li key={i.libraryId} className="chip bg-paper-sunk text-ink-soft">
                 {i.name}
               </li>

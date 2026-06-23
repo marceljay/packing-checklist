@@ -1,7 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { refreshWeather, applyWeather } from './weatherSync';
+import {
+  refreshWeather,
+  applyWeather,
+  recomputeWeatherAfterRemoval,
+  cityMatchesDestination,
+} from './weatherSync';
 import type { DestinationWeather, TripWeatherResult } from './weather';
-import type { Trip } from '../types';
+import type { CityForecast, Trip } from '../types';
 
 function city(name: string): DestinationWeather {
   return {
@@ -120,5 +125,41 @@ describe('applyWeather', () => {
     const trip = makeTrip({ tags: [{ id: 'old', label: 'rainy', type: 'weather' }] });
     applyWeather(trip, { cities: [city('Lisbon')], tags: [] }, genId, 1);
     expect(trip.tags.filter((t) => t.type === 'weather')).toEqual([]);
+  });
+});
+
+describe('cityMatchesDestination', () => {
+  const fc = (place: string): CityForecast =>
+    ({ place, basis: 'forecast', days: 1, highC: 0, lowC: 0, maxC: 0, minC: 0, precipMm: 0, windMaxKmh: 0 });
+
+  it('matches a geocoded short name against a full label', () => {
+    expect(cityMatchesDestination(fc('Lisbon'), { label: 'Lisbon, Portugal' })).toBe(true);
+  });
+  it('matches a full stored place against the same label', () => {
+    expect(cityMatchesDestination(fc('Lisbon, Portugal'), { label: 'Lisbon, Portugal' })).toBe(true);
+  });
+  it('does not match a different city', () => {
+    expect(cityMatchesDestination(fc('Berlin'), { label: 'Lisbon, Portugal' })).toBe(false);
+  });
+});
+
+describe('recomputeWeatherAfterRemoval', () => {
+  const fc = (place: string, tags: string[]): CityForecast =>
+    ({ place, tags, basis: 'forecast', days: 1, highC: 0, lowC: 0, maxC: 0, minC: 0, precipMm: 0, windMaxKmh: 0 });
+  const cities = [fc('Reykjavik', ['cold', 'windy']), fc('Lisbon', ['hot', 'sunny'])];
+
+  it('returns empty when no destinations remain', () => {
+    expect(recomputeWeatherAfterRemoval(cities, [])).toEqual({ cities: [], tags: [] });
+  });
+
+  it('keeps the remaining city and re-unions its tags in canonical order', () => {
+    const r = recomputeWeatherAfterRemoval(cities, [{ label: 'Lisbon, Portugal' }]);
+    expect(r.cities.map((c) => c.place)).toEqual(['Lisbon']);
+    expect(r.tags).toEqual(['hot', 'sunny']); // 'cold'/'windy' dropped with Reykjavik
+  });
+
+  it('unions across multiple remaining cities', () => {
+    const r = recomputeWeatherAfterRemoval(cities, [{ label: 'Reykjavik' }, { label: 'Lisbon' }]);
+    expect(r.tags).toEqual(['hot', 'cold', 'sunny', 'windy']);
   });
 });

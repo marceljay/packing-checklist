@@ -14,8 +14,10 @@ All notable changes to this project are documented here.
 ### Added
 - **Smarter forecast upkeep.** Opening a trip refreshes its forecast (falling back
   to the cached card when offline). Removing a destination re-derives the weather
-  tags from what's left — and if a tag like "cold" no longer applies, offers to
-  remove the items it had added.
+  tags instantly from the remaining cities (no network, no flakiness) — and if
+  that orphans items (e.g. removing the only cold place leaves a beanie behind),
+  an in-app dialog asks whether to remove the city with those items, keep the
+  items, or cancel.
 - **Default item quantities.** An item in the Item Library can carry a default
   quantity (set it in the edit form); adding that item to a trip starts at it.
 - **International trips & travel adapters.** A trip is flagged international
