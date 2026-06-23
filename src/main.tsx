@@ -8,8 +8,6 @@ import TripsListPage from './pages/TripsListPage';
 import TripEditorPage from './pages/TripEditorPage';
 import ItemsPage from './pages/ItemsPage';
 import { seedLibrary } from './db/library';
-import { hasStoredDoc, setData } from './db/store';
-import { importLegacyIndexedDB } from './db/legacy';
 import { initTheme } from './lib/theme';
 
 // Hash router keeps the app deployable on any static host (GitHub Pages etc.)
@@ -31,14 +29,9 @@ const router = createHashRouter([
   },
 ]);
 
-/** First run on the JSON-document model: best-effort import the old IndexedDB,
- *  then seed any missing defaults, before rendering. */
-async function boot() {
+/** Apply the saved theme and seed any missing built-in defaults before rendering. */
+function boot() {
   initTheme();
-  if (!hasStoredDoc()) {
-    const legacy = await importLegacyIndexedDB();
-    if (legacy) setData((d) => void Object.assign(d, legacy));
-  }
   seedLibrary();
 
   ReactDOM.createRoot(document.getElementById('root')!).render(
@@ -48,4 +41,4 @@ async function boot() {
   );
 }
 
-void boot();
+boot();
