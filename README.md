@@ -15,30 +15,44 @@ See [`SPEC.md`](./SPEC.md) for the full specification.
 ## Features
 
 - **Trips** — create, duplicate, and delete trips; each gets an IATA-style
-  destination code derived from its primary destination.
-- **Tags drive suggestions** — quick-add activity/weather tags (beach, hiking,
-  cold, rainy…) or add custom ones; the engine ranks matching catalog items by
-  weight and shows why each was suggested.
-- **Smart quantities** — per-day / per-trip / bucket rules scaled to trip length,
-  reduced when laundry is available.
-- **Weather tags** — one tap fetches the destination's forecast (Open-Meteo) and
-  adds hot/cold/rainy/sunny/windy tags; works for trips within ~16 days, with a
-  graceful fallback to manual tags when offline.
-- **Your item library** — custom items you add are remembered globally (not stuck
-  in one trip) and resurface on future trips, ranked by how often you use them.
-- **Manifest checklist** — adjustable quantities, packed check-off with a packed
-  meter, and grouping by category or tag.
+  destination code derived from its primary destination. Abandoned, never-edited
+  trips are pruned automatically.
+- **Tag-driven suggestions** — quick-add activity/weather tags (beach, hiking,
+  climbing, festival, cold, rainy…) or add custom ones; the **Recommended** tray
+  ranks your item library by how many active tags an item matches (ties broken by
+  how often you've used it) and shows why each was suggested.
+- **Smart quantities** — per-day / per-trip / bucket rules scaled to trip length
+  and reduced when laundry is available; you can also set a default quantity per
+  item.
+- **Automatic weather** — adding a destination (or changing the dates) fetches the
+  forecast from Open-Meteo and derives hot/cold/rainy/sunny/windy tags. A
+  per-destination **forecast card** shows highs/lows, rain, and wind with a
+  **°C/°F (metric/imperial)** toggle. It refreshes when you open a trip and falls
+  back to the cached forecast offline. Removing a destination re-derives the tags
+  and offers to drop the items that tag had pulled in.
+- **Item library (single source of truth)** — every item lives in one editable
+  library shared across trips (built-in defaults + your own). Edit a name,
+  category, tags, notes, default quantity, or mark it **essential** (suggested on
+  every trip). Search, filter by tag or essentials, and restore built-in defaults
+  you've changed or removed.
+- **International trips & travel adapters** — flagged international automatically
+  when destinations span more than one country (or tick the box yourself); shows
+  each country's plug type(s) and mains voltage, with one-tap "Add travel adapter".
+- **Light / dark / system theme** — a header toggle; *system* follows your OS.
+- **Backup & transfer** — an **Export** picker lets you choose which trips and/or
+  the whole item library to download as JSON, and import them back later.
 - **Print / Save as PDF** — a clean, category-grouped sheet you can print or save
   as PDF straight from the browser.
 
 ## Tech stack
 
 - **Vite** + **React 18** + **TypeScript** — static, client-only SPA
-- **Tailwind CSS** — the "Manifest" travel-document design system
-  (Space Grotesk + Space Mono, paper/ink palette)
-- **Dexie** (IndexedDB) — local-only persistence
+- **Tailwind CSS** — the "Manifest" travel-document design system, with
+  self-hosted **Space Grotesk** + **Space Mono** (no font CDN)
+- **Persistence** — the whole app state is one versioned JSON document in
+  `localStorage` (no backend, no IndexedDB); migrations are pure object transforms
 - **React Router** (hash router) — deployable on any static host
-- **Vitest** — unit tests for the domain logic and suggestion engine
+- **Vitest** — unit tests for the domain logic, suggestion engine, and helpers
 
 ## Setup
 
@@ -61,20 +75,22 @@ npm run test:ui     # tests in the browser UI
 
 ## Status
 
-The suggestion engine, tag system, and the "Manifest" visual design are in place,
-with unit tests over the domain logic. See [`STATUS.md`](./STATUS.md) for current
-work, [`_planning/backlog.md`](./_planning/backlog.md) for what's next (print/PDF
-output, weather lookup), and [`CHANGELOG.md`](./CHANGELOG.md) for milestones.
+See [`STATUS.md`](./STATUS.md) for current work,
+[`_planning/backlog.md`](./_planning/backlog.md) for what's next (e.g. a per-day
+forecast breakdown, library import modes), and [`CHANGELOG.md`](./CHANGELOG.md)
+for completed milestones.
 
 ## Deployment
 
-Static build (`dist/`) deploys to any static host (Netlify, Vercel static,
-GitHub Pages, Cloudflare Pages). No server runtime required.
+The static build (`dist/`) deploys to any static host (Netlify, Vercel static,
+GitHub Pages, Cloudflare Pages) or a plain web root — assets use relative paths
+and routing lives after the URL `#`, so no server runtime or rewrite rules are
+required.
 
 ## Privacy
 
-All trip data stays in your browser (IndexedDB) — no analytics, no accounts.
-The only outbound requests are: web fonts (Google Fonts CDN; self-hosting is on
-the backlog) and the **user-triggered** weather/geocoding lookup (Open-Meteo),
-which sends only the destination name and coordinates and runs only when you tap
-"Suggest weather tags."
+All trip and library data stays in your browser's `localStorage` — no analytics,
+no accounts, no tracking. Fonts are bundled with the app (no CDN call). The only
+outbound request is the weather/geocoding lookup (Open-Meteo), which sends only a
+destination name and coordinates; it runs when you add a place, change dates, or
+open a trip, and falls back to cached data when you're offline.
