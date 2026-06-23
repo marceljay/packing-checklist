@@ -5,6 +5,20 @@ All notable changes to this project are documented here.
 ## [Unreleased]
 
 ### Added
+- **Automatic weather lookup.** The forecast now runs on its own when you add a
+  place or set the trip dates (still skipped silently until dates exist); the
+  button became a manual **Refresh forecast**. Overlapping lookups can't clobber
+  each other with stale results.
+- **Light / dark / system theme.** A header button cycles Light → Dark → System;
+  the choice persists and System tracks the OS live. The whole palette moved to
+  CSS variables, so every surface repaints with no flash on load.
+- **Export / import all trips.** The header ⋯ menu can now export **every trip**
+  (plus the library rows they reference) as one backup file and import it back,
+  each trip restored as a new, independent trip.
+- **Suggestions read your library.** Recommendations are now drawn from the Item
+  Library (defaults *and* your custom items) rather than a fixed catalog, so
+  edits, removals, and new custom items change what's suggested. Ranking is by
+  number of matched tags, ties broken by how often you've used the item.
 - **Item Library, reworked.** Items show their tags as chips; **category and
   default/custom status moved into an ⓘ info panel** (with an optional notes /
   description field) instead of inline badges. The three view tabs are gone —
@@ -97,6 +111,9 @@ All notable changes to this project are documented here.
 - Vite dev server binds `--host` on port 5000; devcontainer forwards the port.
 
 ### Changed
+- **Two-column Item Library.** Category cards flow into a responsive two-column
+  masonry on wider screens (single column on phones) instead of stretching full
+  width.
 - **Home is now two full-width tabs** — **Your trips** and **Item library** —
   spanning the content width, instead of a separate page reached by a link. The
   active tab follows the route (`/` and `/items`), so deep links and back/forward
