@@ -100,34 +100,6 @@ describe('serializeTrip / parseImport (v2 bundle)', () => {
     expect(parsed.items.map((i) => i.libraryId)).toEqual(['boa42']);
   });
 
-  it('imports a legacy v1 export (items carried name/category/tagIds)', () => {
-    const legacy = {
-      kind: 'packing-checklist/trip',
-      version: 1,
-      trip: {
-        name: 'Old trip',
-        tags: [{ id: 'tg', label: 'beach', type: 'activity' }],
-        items: [
-          {
-            id: 'i1',
-            name: 'Towel',
-            category: 'Comfort & Misc',
-            tagIds: ['tg'],
-            quantityTaken: 1,
-            packed: false,
-          },
-        ],
-        settings: { laundryAvailable: false },
-      },
-    };
-    const { trip, libraryItems } = parseImport(JSON.stringify(legacy), genId, NOW);
-    expect(trip.name).toBe('Old trip');
-    expect(libraryItems).toEqual([
-      { nameKey: 'towel', name: 'Towel', category: 'Comfort & Misc', tagKeys: ['beach'], custom: true },
-    ]);
-    expect(trip.items[0].libraryId).toBe('towel');
-  });
-
   it('throws on invalid JSON', () => {
     expect(() => parseImport('{not json', genId, NOW)).toThrow();
   });

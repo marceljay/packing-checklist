@@ -13,7 +13,6 @@ import {
   resolvedByTag,
   defaultId,
   customId,
-  legacyItemToRef,
   ensureTripTags,
   renameLibraryTag,
   removeLibraryTag,
@@ -310,32 +309,6 @@ describe('resolvedByTag', () => {
     ]);
     expect(groups.map((g) => g.tag)).toEqual(['beach', 'hiking', '']);
     expect(groups[2].items.map((i) => i.name)).toEqual(['Passport']);
-  });
-});
-
-describe('legacyItemToRef', () => {
-  const tags: Tag[] = [
-    { id: 't1', label: 'Beach', type: 'activity' },
-    { id: 't2', label: 'Hiking', type: 'activity' },
-  ];
-
-  it('normalizes name/category and maps tagIds to tag keys', () => {
-    const out = legacyItemToRef(
-      { name: '  Towel ', category: 'Comfort & Misc', tagIds: ['t1', 't2'] },
-      tags,
-    );
-    expect(out).toEqual({
-      nameKey: 'towel',
-      name: 'Towel',
-      category: 'Comfort & Misc',
-      tagKeys: ['beach', 'hiking'],
-    });
-  });
-
-  it('drops unknown tag ids and defaults a bad category', () => {
-    const out = legacyItemToRef({ name: 'X', category: 'Nope', tagIds: ['t1', 'zzz'] }, tags);
-    expect(out.category).toBe('Comfort & Misc');
-    expect(out.tagKeys).toEqual(['beach']);
   });
 });
 

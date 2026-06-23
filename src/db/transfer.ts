@@ -1,7 +1,6 @@
 import {
   CATEGORIES,
   tagKey,
-  legacyItemToRef,
   type Category,
   type Item,
   type LibraryItem,
@@ -24,10 +23,9 @@ const EXPORT_VERSION = 2;
 const TRIPS_EXPORT_KIND = 'packing-checklist/trips';
 const TRIPS_EXPORT_VERSION = 1;
 
-/** A library item as carried in an import. v2 exports carry the original `id`
- *  (identity is the id); legacy v1 exports have no id and are matched by name. */
+/** A library item as carried in an import — identity is the stable `id`. */
 export interface ImportedLibraryItem {
-  id?: string;
+  id: string;
   nameKey: string;
   name: string;
   category: Category;
@@ -38,8 +36,8 @@ export interface ImportedLibraryItem {
 }
 
 export interface ImportResult {
-  /** A normalized trip whose `items[].libraryId` holds a placeholder — the source
-   *  `id` (v2) or `nameKey` (legacy) — that the importer rewrites to a local id. */
+  /** A normalized trip whose `items[].libraryId` holds the source library `id`
+   *  that the importer rewrites to a local id. */
   trip: Trip;
   libraryItems: ImportedLibraryItem[];
 }
@@ -103,13 +101,13 @@ function asCategory(v: unknown): Category {
 
 /**
  * Build a fresh trip + the library items it references from a raw trip object and
- * an optional bundled library (v2). Trip/destination/context-tag ids are
- * regenerated; item references are keyed by id (v2) or nameKey (legacy). Throws
- * if the raw object isn't a trip.
+ * its bundled library. Trip/destination/context-tag ids are regenerated; item
+ * references keep the source library `id` for the importer to resolve. Throws if
+ * the raw object isn't a trip.
  */
 function buildTrip(
   raw: Partial<Trip>,
-  bundledLibrary: LibraryItem[] | null,
+  bundledLibrary: LibraryItem[],
   genId: () => string,
   now: number,
 ): ImportResult {
@@ -135,60 +133,35 @@ function buildTrip(
     destinations[0].isPrimary = true;
   }
 
+  // Items reference library rows by their stable id; preserve those ids so
+  // identity carries across devices (the importer dedups by id).
   const libByKey = new Map<string, ImportedLibraryItem>();
+  const knownIds = new Set<string>();
+  for (const row of bundledLibrary) {
+    const id = asString(row.id);
+    if (!id) continue;
+    knownIds.add(id);
+    libByKey.set(id, {
+      id,
+      nameKey: asString(row.nameKey) || tagKey(asString(row.name)),
+      name: asString(row.name),
+      category: asCategory(row.category),
+      tagKeys: Array.isArray(row.tagKeys) ? row.tagKeys.map((k) => tagKey(String(k))) : [],
+      custom: row.custom !== false,
+      ...(row.essential ? { essential: true } : {}),
+      ...(row.quantity ? { quantity: row.quantity } : {}),
+    });
+  }
   const items: Item[] = [];
-
-  if (bundledLibrary) {
-    // v2: items reference library rows by their stable id; preserve those ids so
-    // identity carries across devices (importer dedups by id).
-    const knownIds = new Set<string>();
-    for (const row of bundledLibrary) {
-      const id = asString(row.id);
-      if (!id) continue;
-      knownIds.add(id);
-      libByKey.set(id, {
-        id,
-        nameKey: asString(row.nameKey) || tagKey(asString(row.name)),
-        name: asString(row.name),
-        category: asCategory(row.category),
-        tagKeys: Array.isArray(row.tagKeys) ? row.tagKeys.map((k) => tagKey(String(k))) : [],
-        custom: row.custom !== false,
-        ...(row.essential ? { essential: true } : {}),
-        ...(row.quantity ? { quantity: row.quantity } : {}),
-      });
-    }
-    for (const it of raw.items as { libraryId?: unknown; quantitySuggested?: unknown; quantityTaken?: unknown; packed?: unknown }[]) {
-      const id = asString(it.libraryId);
-      if (!knownIds.has(id)) continue;
-      items.push({
-        libraryId: id,
-        quantitySuggested: typeof it.quantitySuggested === 'number' ? it.quantitySuggested : null,
-        quantityTaken: typeof it.quantityTaken === 'number' ? it.quantityTaken : 1,
-        packed: it.packed === true,
-      });
-    }
-  } else {
-    // Legacy v1 / bare: items carried name/category/tagIds — synthesize library
-    // items from them and reference by nameKey.
-    for (const legacy of raw.items as { name?: string; quantitySuggested?: unknown; quantityTaken?: unknown; packed?: unknown }[]) {
-      const ref = legacyItemToRef(legacy as Parameters<typeof legacyItemToRef>[0], raw.tags as Tag[] ?? []);
-      if (!ref.name) continue;
-      if (!libByKey.has(ref.nameKey)) {
-        libByKey.set(ref.nameKey, {
-          nameKey: ref.nameKey,
-          name: ref.name,
-          category: ref.category,
-          tagKeys: ref.tagKeys,
-          custom: true,
-        });
-      }
-      items.push({
-        libraryId: ref.nameKey,
-        quantitySuggested: typeof legacy.quantitySuggested === 'number' ? legacy.quantitySuggested : null,
-        quantityTaken: typeof legacy.quantityTaken === 'number' ? legacy.quantityTaken : 1,
-        packed: legacy.packed === true,
-      });
-    }
+  for (const it of raw.items as { libraryId?: unknown; quantitySuggested?: unknown; quantityTaken?: unknown; packed?: unknown }[]) {
+    const id = asString(it.libraryId);
+    if (!knownIds.has(id)) continue;
+    items.push({
+      libraryId: id,
+      quantitySuggested: typeof it.quantitySuggested === 'number' ? it.quantitySuggested : null,
+      quantityTaken: typeof it.quantityTaken === 'number' ? it.quantityTaken : 1,
+      packed: it.packed === true,
+    });
   }
 
   const trip: Trip = {
@@ -216,15 +189,16 @@ function parseJson(text: string): unknown {
 }
 
 /**
- * Parse exported text (v2 envelope, legacy v1 envelope, or a bare trip) into a
+ * Parse an exported trip file (the v2 envelope from {@link serializeTrip}) into a
  * fresh trip plus the library items it references. Throws on invalid input.
  */
 export function parseImport(text: string, genId: () => string, now: number): ImportResult {
   const data = parseJson(text);
   const envelope = data as Partial<TripEnvelope>;
-  const raw = (envelope.trip ?? data) as Partial<Trip>;
-  const bundled = Array.isArray(envelope.library) ? envelope.library : null;
-  return buildTrip(raw, bundled, genId, now);
+  if (!envelope || typeof envelope !== 'object' || !envelope.trip || !Array.isArray(envelope.library)) {
+    throw new Error('That file isn’t a packing-checklist trip export.');
+  }
+  return buildTrip(envelope.trip, envelope.library, genId, now);
 }
 
 /**

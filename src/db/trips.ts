@@ -1,7 +1,7 @@
 import { getData, setData, uid } from './store';
 import { isEmptyTrip, type Trip } from '../types';
 import { parseImport, parseAllTrips, serializeAllTrips, type ImportResult } from './transfer';
-import { ensureLibraryItem, getLibraryItem, putWithId } from './library';
+import { getLibraryItem, putWithId } from './library';
 import type { LibraryItem } from '../types';
 
 /** Trips live in the JSON document (`store.ts`); these are synchronous ops over it. */
@@ -75,9 +75,8 @@ export function cloneTrip(id: string): string | undefined {
 
 /**
  * Import a trip from exported JSON text as a new, independent trip. Resolves the
- * bundled library items into the library (dedup by id; mints ids for id-less
- * legacy rows) and rewires the trip's references. Throws on invalid input.
- * Returns the new trip id.
+ * bundled library items into the library (dedup by id) and rewires the trip's
+ * references. Throws on invalid input. Returns the new trip id.
  */
 export function importTripFromText(text: string): string {
   const result = parseImport(text, uid, Date.now());
@@ -112,34 +111,30 @@ export function importAllTripsFromText(text: string): number {
   return results.length;
 }
 
-/** Resolve an import's library items into the store (dedup by id; mint ids for
- *  id-less legacy rows), rewire the trip's references, and return the ready trip.
- *  Library writes happen here; the trip itself is pushed by the caller. */
+/** Resolve an import's library items into the store (dedup by id; an id clash with
+ *  a different item mints a fresh id), rewire the trip's references, and return the
+ *  ready trip. Library writes happen here; the trip itself is pushed by the caller. */
 function storeImported({ trip, libraryItems }: ImportResult): Trip {
   const keyToId = new Map<string, string>();
   for (const li of libraryItems) {
-    if (li.id) {
-      const existing = getLibraryItem(li.id);
-      if (existing) {
-        keyToId.set(li.id, existing.id);
-        continue;
-      }
-      const row: LibraryItem = {
-        id: li.id,
-        nameKey: li.nameKey,
-        name: li.name,
-        category: li.category,
-        tagKeys: li.tagKeys,
-        custom: li.custom,
-        count: 0,
-        lastUsed: 0,
-        ...(li.essential ? { essential: true } : {}),
-        ...(li.quantity ? { quantity: li.quantity } : {}),
-      };
-      keyToId.set(li.id, putWithId(row).id);
-    } else {
-      keyToId.set(li.nameKey, ensureLibraryItem(li.name, li.category, li.tagKeys).id);
+    const existing = getLibraryItem(li.id);
+    if (existing) {
+      keyToId.set(li.id, existing.id);
+      continue;
     }
+    const row: LibraryItem = {
+      id: li.id,
+      nameKey: li.nameKey,
+      name: li.name,
+      category: li.category,
+      tagKeys: li.tagKeys,
+      custom: li.custom,
+      count: 0,
+      lastUsed: 0,
+      ...(li.essential ? { essential: true } : {}),
+      ...(li.quantity ? { quantity: li.quantity } : {}),
+    };
+    keyToId.set(li.id, putWithId(row).id);
   }
 
   const items = trip.items

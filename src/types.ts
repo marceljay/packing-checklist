@@ -319,29 +319,6 @@ export function resolvedByTag(items: ResolvedItem[]): { tag: string; items: Reso
   return groups;
 }
 
-/** Convert an old-shape trip item (denormalized name/category/tagIds, plus the
- *  trip's tags) into the fields needed to resolve-or-create a {@link LibraryItem}.
- *  Pure, so the legacy-trip migration is unit-testable without Dexie. */
-export function legacyItemToRef(
-  item: { name?: string; category?: string; tagIds?: string[] },
-  tags: Tag[],
-): { nameKey: string; name: string; category: Category; tagKeys: string[] } {
-  const name = (item.name ?? '').trim();
-  const category = CATEGORIES.includes(item.category as Category)
-    ? (item.category as Category)
-    : 'Comfort & Misc';
-  const labelById = new Map(tags.map((t) => [t.id, t.label]));
-  const tagKeys = [
-    ...new Set(
-      (item.tagIds ?? [])
-        .map((id) => labelById.get(id))
-        .filter((l): l is string => Boolean(l))
-        .map((l) => tagKey(l)),
-    ),
-  ];
-  return { nameKey: tagKey(name), name, category, tagKeys };
-}
-
 /**
  * IATA-style 3-letter code for a trip, derived from its primary destination
  * (falls back to the trip name). Drives the luggage-tag / boarding-pass UI.

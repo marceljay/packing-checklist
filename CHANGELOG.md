@@ -11,6 +11,13 @@ All notable changes to this project are documented here.
   Library instead of reappearing as the original. **Restore defaults** brings
   removed built-ins back.
 
+### Changed
+- **Removed all legacy-compatibility code.** The one-time Dexie/IndexedDB importer
+  was already gone; now the old v1 trip-file import path (`legacyItemToRef` and the
+  name-keyed branch) is removed too. Trip import requires the current self-contained
+  export envelope (every export the app produces). No behaviour change for files
+  exported by this app.
+
 ### Added
 - **Library import modes.** Importing an item library now opens a dialog: **Merge**
   (default) or **Replace all**. Merge previews how many items are new vs. already
