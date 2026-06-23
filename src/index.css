@@ -3,13 +3,54 @@
 @tailwind utilities;
 
 @layer base {
+  /* Palette as RGB channels — see tailwind.config.js. Light = the "Manifest"
+     paper/ink document; dark = the same document developed on dark stock. */
+  :root {
+    --paper: 248 247 242;
+    --paper-raised: 255 254 251;
+    --paper-sunk: 240 238 230;
+    --ink: 22 32 46;
+    --ink-soft: 86 97 111;
+    --ink-faint: 139 148 160;
+    --line: 227 223 212;
+    --vermilion: 216 58 43;
+    --vermilion-deep: 182 44 30;
+    --vermilion-soft: 247 227 223;
+    --airblue: 31 86 115;
+    --airblue-soft: 221 233 239;
+    --stamp: 58 107 79;
+    --stamp-soft: 221 233 225;
+    --grain: 22 32 46; /* document-grain dot tint */
+    --grain-opacity: 0.025;
+  }
+  html.dark {
+    --paper: 19 25 33; /* ground */
+    --paper-raised: 28 37 48; /* cards / tags */
+    --paper-sunk: 14 19 26; /* wells, grouped headers */
+    --ink: 232 230 223; /* primary text */
+    --ink-soft: 164 173 184;
+    --ink-faint: 108 119 133;
+    --line: 43 54 67;
+    --vermilion: 230 92 78; /* lifted so the accent stays vivid on dark */
+    --vermilion-deep: 216 58 43;
+    --vermilion-soft: 58 32 28;
+    --airblue: 122 173 200;
+    --airblue-soft: 30 45 54;
+    --stamp: 122 178 144;
+    --stamp-soft: 29 44 36;
+    --grain: 255 255 255;
+    --grain-opacity: 0.02;
+  }
   html {
     @apply antialiased;
   }
   body {
     @apply bg-paper font-sans text-ink;
     /* Faint document grain so the paper reads as paper, not flat white. */
-    background-image: radial-gradient(rgba(22, 32, 46, 0.025) 1px, transparent 1px);
+    background-image: radial-gradient(
+      rgb(var(--grain) / var(--grain-opacity)) 1px,
+      transparent 1px
+    );
     background-size: 22px 22px;
   }
   ::selection {
@@ -104,16 +145,16 @@
   font-family: theme('fontFamily.mono');
   font-size: 0.625rem;
   text-transform: uppercase;
-  color: theme('colors.ink.faint');
+  color: rgb(var(--ink-faint));
   font-weight: 700;
 }
 .rdp-popover .rdp-button_previous,
 .rdp-popover .rdp-button_next {
-  color: theme('colors.ink.soft');
+  color: rgb(var(--ink-soft));
 }
 .rdp-popover .rdp-button_previous:hover,
 .rdp-popover .rdp-button_next:hover {
-  background: theme('colors.paper.sunk');
+  background: rgb(var(--paper-sunk));
   border-radius: 0.375rem;
 }
 

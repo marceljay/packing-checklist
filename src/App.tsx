@@ -1,5 +1,6 @@
 import { Link, Outlet } from 'react-router-dom';
 import SettingsMenu from './components/SettingsMenu';
+import ThemeToggle from './components/ThemeToggle';
 
 /** Luggage-tag mark — crisp ink shape with a punched eyelet. */
 function TagMark() {
@@ -33,7 +34,8 @@ export default function App() {
           <span className="ml-auto hidden font-mono text-[0.625rem] uppercase tracking-code text-ink-faint sm:inline">
             private · offline · no account
           </span>
-          <div className="ml-auto sm:ml-3">
+          <div className="ml-auto flex items-center gap-1 sm:ml-3">
+            <ThemeToggle />
             <SettingsMenu />
           </div>
         </div>

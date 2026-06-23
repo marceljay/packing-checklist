@@ -1,33 +1,36 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
-        // "Manifest" palette — travel-document vernacular.
+        // "Manifest" palette — travel-document vernacular. Driven by CSS
+        // variables (channels in `index.css`) so a `.dark` theme can repaint
+        // every surface without touching component classes.
         paper: {
-          DEFAULT: '#f8f7f2', // document ground
-          raised: '#fffefb', // tags, cards, raised surfaces
-          sunk: '#f0eee6', // wells, grouped headers
+          DEFAULT: 'rgb(var(--paper) / <alpha-value>)', // document ground
+          raised: 'rgb(var(--paper-raised) / <alpha-value>)', // tags, cards
+          sunk: 'rgb(var(--paper-sunk) / <alpha-value>)', // wells, headers
         },
         ink: {
-          DEFAULT: '#16202e', // passport-ink navy; primary text + dark surfaces
-          soft: '#56616f', // secondary text
-          faint: '#8b94a0', // tertiary / placeholder
+          DEFAULT: 'rgb(var(--ink) / <alpha-value>)', // primary text
+          soft: 'rgb(var(--ink-soft) / <alpha-value>)', // secondary text
+          faint: 'rgb(var(--ink-faint) / <alpha-value>)', // tertiary / placeholder
         },
-        line: '#e3dfd4', // warm hairline on paper
+        line: 'rgb(var(--line) / <alpha-value>)', // hairline
         vermilion: {
-          DEFAULT: '#d83a2b', // airmail red — the one accent
-          deep: '#b62c1e',
-          soft: '#f7e3df',
+          DEFAULT: 'rgb(var(--vermilion) / <alpha-value>)', // the one accent
+          deep: 'rgb(var(--vermilion-deep) / <alpha-value>)',
+          soft: 'rgb(var(--vermilion-soft) / <alpha-value>)',
         },
         airblue: {
-          DEFAULT: '#1f5673', // stamp blue — secondary accent
-          soft: '#dde9ef',
+          DEFAULT: 'rgb(var(--airblue) / <alpha-value>)', // secondary accent
+          soft: 'rgb(var(--airblue-soft) / <alpha-value>)',
         },
         stamp: {
-          DEFAULT: '#3a6b4f', // stamp green
-          soft: '#dde9e1',
+          DEFAULT: 'rgb(var(--stamp) / <alpha-value>)',
+          soft: 'rgb(var(--stamp-soft) / <alpha-value>)',
         },
       },
       fontFamily: {
