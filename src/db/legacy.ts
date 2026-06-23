@@ -1,4 +1,3 @@
-import Dexie from 'dexie';
 import { customId, defaultId, tagKey, type CatalogItem, type Item, type LibraryItem, type Trip } from '../types';
 import { CATALOG } from '../data/catalog';
 import { CURRENT_SCHEMA_VERSION, type AppData } from './appData';
@@ -65,25 +64,47 @@ export function remapLegacyData(
   return { schemaVersion: CURRENT_SCHEMA_VERSION, trips, library };
 }
 
+/** Open the legacy DB at its current version (no upgrade). Resolves null if it
+ *  can't be opened. Opening a non-existent name creates an empty DB — harmless,
+ *  and reported as "nothing to import" since it has no object stores. */
+function openLegacyDb(): Promise<IDBDatabase | null> {
+  return new Promise((resolve) => {
+    const req = indexedDB.open('packing-checklist');
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => resolve(null);
+    req.onblocked = () => resolve(null);
+  });
+}
+
+/** Read an entire object store into an array. */
+function getAll<T>(db: IDBDatabase, store: string): Promise<T[]> {
+  return new Promise((resolve, reject) => {
+    const req = db.transaction(store, 'readonly').objectStore(store).getAll();
+    req.onsuccess = () => resolve(req.result as T[]);
+    req.onerror = () => reject(req.error);
+  });
+}
+
 /**
- * Best-effort read of the legacy IndexedDB database. Returns the remapped document,
- * or null if there's nothing to import (fresh install, or read failure).
+ * Best-effort read of the legacy IndexedDB database (the pre-JSON-document
+ * storage) via the raw IndexedDB API — no Dexie dependency. Returns the remapped
+ * document, or null if there's nothing to import (fresh install, or read failure).
  */
 export async function importLegacyIndexedDB(): Promise<AppData | null> {
-  const idb = new Dexie('packing-checklist');
+  if (typeof indexedDB === 'undefined') return null;
+  let db: IDBDatabase | null = null;
   try {
-    await idb.open(); // dynamic open: reads the existing schema
-    const names = idb.tables.map((t) => t.name);
+    db = await openLegacyDb();
+    if (!db) return null;
+    const names = Array.from(db.objectStoreNames);
     if (!names.includes('trips') && !names.includes('library')) return null;
-    const oldTrips = names.includes('trips') ? ((await idb.table('trips').toArray()) as Trip[]) : [];
-    const oldLibrary = names.includes('library')
-      ? ((await idb.table('library').toArray()) as LibraryItem[])
-      : [];
+    const oldTrips = names.includes('trips') ? await getAll<Trip>(db, 'trips') : [];
+    const oldLibrary = names.includes('library') ? await getAll<LibraryItem>(db, 'library') : [];
     if (oldTrips.length === 0 && oldLibrary.length === 0) return null;
     return remapLegacyData(oldTrips, oldLibrary);
   } catch {
     return null;
   } finally {
-    idb.close();
+    db?.close();
   }
 }
