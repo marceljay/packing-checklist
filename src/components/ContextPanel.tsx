@@ -3,7 +3,8 @@ import type { Trip, TagType } from '../types';
 import { tagKey, tripDurationDays } from '../types';
 import { uid } from '../db/store';
 import { BUILTIN_TAGS } from '../data/tags';
-import { lookupTripWeather, placeLabel, type GeoResult } from '../engine/weather';
+import { placeLabel, type GeoResult } from '../engine/weather';
+import { refreshWeather, applyWeather, type WeatherDest } from '../engine/weatherSync';
 import DateRangeField from './DateRangeField';
 import PlaceSearch from './PlaceSearch';
 
@@ -64,68 +65,53 @@ export default function ContextPanel({ trip, update }: Props) {
   const days = tripDurationDays(trip);
   const hasDestinations = trip.destinations.length > 0;
 
-  type DestInput = { label: string; lat?: number; lon?: number };
-
   /**
-   * Look up the forecast for an explicit destination list (the caller passes the
-   * post-mutation list so it doesn't wait for a re-render). Auto calls stay quiet
-   * when dates are missing — the manual button reports that case instead.
+   * Look up the forecast for an explicit destination list + date window (the
+   * caller passes the post-mutation values so it doesn't wait for a re-render).
+   * Auto calls stay quiet when dates are missing — the manual button reports it.
+   * Orchestration lives in engine/weatherSync (unit-tested); here we only drive
+   * UI status and guard against stale overlapping lookups.
    */
   async function runWeatherLookup(
-    destinations: DestInput[],
+    destinations: WeatherDest[],
     opts: { auto?: boolean; startDate?: string; endDate?: string } = {},
   ) {
-    if (destinations.length === 0) return;
     const start = opts.startDate ?? trip.startDate;
     const end = opts.endDate ?? trip.endDate;
-    if (!start || !end) {
-      if (!opts.auto) {
-        setWeatherStatus('error');
-        setWeatherMsg('Add trip dates to look up the forecast.');
-      }
-      return;
-    }
     const reqId = ++weatherReq.current;
     setWeatherStatus('loading');
     setWeatherMsg('');
-    try {
-      const res = await lookupTripWeather(destinations, start, end);
-      if (reqId !== weatherReq.current) return; // superseded by a newer lookup
-      if (res.cities.length === 0) {
+    const outcome = await refreshWeather(destinations, start, end);
+    if (reqId !== weatherReq.current) return; // superseded by a newer lookup
+
+    switch (outcome.status) {
+      case 'empty':
+        setWeatherStatus('idle');
+        return;
+      case 'no-dates':
+        if (opts.auto) {
+          setWeatherStatus('idle');
+        } else {
+          setWeatherStatus('error');
+          setWeatherMsg('Add trip dates to look up the forecast.');
+        }
+        return;
+      case 'no-match':
         setWeatherStatus('error');
         setWeatherMsg('Couldn’t find weather for those places. Add weather tags manually.');
         return;
-      }
-      update((d) => {
-        // Regenerate weather tags from scratch so stale ones (e.g. from a
-        // since-removed destination) don't linger — drop existing weather-type
-        // tags, then add the current union. (Context tags drive suggestions;
-        // item tags live in the library, so items are untouched here.)
-        d.tags = d.tags.filter((t) => t.type !== 'weather');
-        for (const k of res.tags) d.tags.push({ id: uid(), label: k, type: 'weather' });
-        d.weather = {
-          fetchedAt: Date.now(),
-          cities: res.cities.map((c) => ({
-            place: c.place.name,
-            basis: c.basis,
-            days: c.summary.days,
-            highC: c.summary.highC,
-            lowC: c.summary.lowC,
-            maxC: c.summary.maxC,
-            minC: c.summary.minC,
-            precipMm: c.summary.precipMm,
-            windMaxKmh: c.summary.windMaxKmh,
-          })),
-        };
-      });
-      setWeatherStatus('done');
-      setWeatherMsg(
-        res.tags.length > 0 ? `Weather tags: ${res.tags.join(', ')}` : 'No strong weather signal',
-      );
-    } catch {
-      if (reqId !== weatherReq.current) return;
-      setWeatherStatus('error');
-      setWeatherMsg('Forecast lookup failed (offline?). Add weather tags manually.');
+      case 'error':
+        setWeatherStatus('error');
+        setWeatherMsg('Forecast lookup failed (offline?). Add weather tags manually.');
+        return;
+      case 'done':
+        update((d) => applyWeather(d, outcome.result, uid));
+        setWeatherStatus('done');
+        setWeatherMsg(
+          outcome.result.tags.length > 0
+            ? `Weather tags: ${outcome.result.tags.join(', ')}`
+            : 'No strong weather signal',
+        );
     }
   }
 
