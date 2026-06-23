@@ -11,7 +11,17 @@ All notable changes to this project are documented here.
   Library instead of reappearing as the original. **Restore defaults** brings
   removed built-ins back.
 
+### Added
+- **Collapsible checklist categories + per-category progress.** Each category (or
+  tag) group can be collapsed, and in the Checklist view each group header shows a
+  small packed bar and count, so you can see what's left per category at a glance.
+
 ### Changed
+- **Name a trip right on the ticket.** The trip name is now edited inline in the
+  boarding-pass header (and focused, ready to type, the moment you create a trip);
+  the separate "Trip name" field in the details panel is gone.
+- **Night-mode polish.** Themed scrollbars (a muted thumb instead of the bright OS
+  bar) and dimmer cards so the trip overview no longer glares in dark mode.
 - **Removed all legacy-compatibility code.** The one-time Dexie/IndexedDB importer
   was already gone; now the old v1 trip-file import path (`legacyItemToRef` and the
   name-keyed branch) is removed too. Trip import requires the current self-contained

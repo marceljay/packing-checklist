@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useParams, useLocation } from 'react-router-dom';
 import { useTripEditor } from './useTripEditor';
 import { useAppData } from '../db/store';
 import ContextPanel from '../components/ContextPanel';
@@ -23,27 +23,54 @@ function formatDate(d?: string): string {
   });
 }
 
-/** Boarding-pass stub: route code, dates, duration, packed gauge. */
-function PassHeader({ trip }: { trip: Trip }) {
+/** Boarding-pass stub: route code, editable name, dates, duration, packed gauge. */
+function PassHeader({
+  trip,
+  update,
+  autoFocusName,
+}: {
+  trip: Trip;
+  update: (mutator: (draft: Trip) => void) => void;
+  autoFocusName?: boolean;
+}) {
   const days = tripDurationDays(trip);
   const code = destinationCode(trip);
   const total = trip.items.length;
   const packed = trip.items.filter((i) => i.packed).length;
   const pct = total > 0 ? Math.round((packed / total) * 100) : 0;
 
+  // On a freshly created trip, focus the name and select the placeholder text so
+  // the user can type straight over it.
+  const nameRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (autoFocusName) {
+      nameRef.current?.focus();
+      nameRef.current?.select();
+    }
+  }, [autoFocusName]);
+
   return (
     <div className="card overflow-hidden bg-ink text-paper-raised shadow-pass">
       <div className="flex flex-col gap-5 p-5 sm:flex-row sm:items-center">
         {/* Route */}
-        <div className="flex items-center gap-4">
+        <div className="flex min-w-0 items-center gap-4">
           <span className="code text-5xl leading-none">{code}</span>
-          <div className="min-w-0">
-            <p className="font-mono text-[0.625rem] uppercase tracking-code text-paper-raised/50">
+          <div className="min-w-0 flex-1">
+            <label
+              htmlFor="pass-trip-name"
+              className="font-mono text-[0.625rem] uppercase tracking-code text-paper-raised/50"
+            >
               Packing list
-            </p>
-            <h1 className="truncate font-display text-xl font-bold leading-tight">
-              {trip.name || 'Untitled trip'}
-            </h1>
+            </label>
+            <input
+              id="pass-trip-name"
+              ref={nameRef}
+              value={trip.name}
+              onChange={(e) => update((d) => void (d.name = e.target.value))}
+              placeholder="Name this trip"
+              aria-label="Trip name"
+              className="w-full truncate rounded bg-transparent font-display text-xl font-bold leading-tight text-paper-raised placeholder:text-paper-raised/40 hover:bg-paper-raised/5 focus:bg-paper-raised/10 focus:outline-none"
+            />
           </div>
         </div>
 
@@ -93,6 +120,8 @@ function Field({ label, value }: { label: string; value: string }) {
 
 export default function TripEditorPage() {
   const { tripId } = useParams();
+  const location = useLocation();
+  const isNew = (location.state as { isNew?: boolean } | null)?.isNew === true;
   const { trip, status, update } = useTripEditor(tripId);
   const [mode, setMode] = useState<EditorMode>('plan');
 
@@ -172,7 +201,7 @@ export default function TripEditorPage() {
           </div>
         </div>
 
-        <PassHeader trip={trip} />
+        <PassHeader trip={trip} update={update} autoFocusName={isNew} />
 
         {mode === 'plan' ? (
           <div className="grid gap-5 lg:grid-cols-[20rem_1fr]">

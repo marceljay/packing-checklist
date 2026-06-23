@@ -27,7 +27,7 @@ export default function TripsListPage() {
   }, []);
 
   function handleNew() {
-    navigate(`/trip/${createTrip()}`);
+    navigate(`/trip/${createTrip()}`, { state: { isNew: true } });
   }
 
   function handleClone(id: string) {

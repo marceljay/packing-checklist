@@ -309,19 +309,7 @@ export default function ContextPanel({ trip, update, library }: Props) {
     <aside className="card flex h-fit flex-col gap-6 p-5">
       <p className="label -mb-2">Trip details</p>
 
-      {/* Name */}
-      <div>
-        <label className="label" htmlFor="trip-name">
-          Trip name
-        </label>
-        <input
-          id="trip-name"
-          className="input mt-1.5"
-          value={trip.name}
-          onChange={(e) => update((d) => void (d.name = e.target.value))}
-          placeholder="Portugal surf, Oct 2026"
-        />
-      </div>
+      {/* Name is edited in the boarding-pass header (PassHeader). */}
 
       {/* Dates */}
       <div>
