@@ -47,6 +47,11 @@ export default function PrintSheet({ trip, library }: Props) {
             {trip.tags.map((t) => t.label).join(' · ')}
           </p>
         )}
+        <p className="mt-2 flex items-center gap-1.5 font-mono text-[0.625rem] uppercase tracking-wide text-ink-faint">
+          <span aria-hidden className="inline-block h-3 w-3 border border-ink" /> pack
+          <span className="ml-2">· number = suggested qty ·</span>
+          <span aria-hidden className="inline-block h-3.5 w-5 border border-ink" /> your count
+        </p>
       </header>
 
       {groups.length === 0 ? (
@@ -67,11 +72,13 @@ export default function PrintSheet({ trip, library }: Props) {
                         i.packed ? 'bg-ink' : ''
                       }`}
                     />
-                    <span className={i.packed ? 'text-ink-soft line-through' : ''}>
-                      {i.quantityTaken > 1 && (
-                        <span className="font-mono font-bold">{i.quantityTaken}× </span>
-                      )}
+                    <span className={`min-w-0 flex-1 ${i.packed ? 'text-ink-soft line-through' : ''}`}>
                       {i.name}
+                    </span>
+                    {/* Suggested qty + a blank box for a hand-written adjustment. */}
+                    <span className="flex shrink-0 items-center gap-1 font-mono text-xs tabular-nums">
+                      <span className="text-ink-soft">{i.quantityTaken}</span>
+                      <span aria-hidden className="inline-block h-4 w-6 border border-ink" />
                     </span>
                   </li>
                 ))}
