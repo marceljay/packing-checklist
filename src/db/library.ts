@@ -11,12 +11,18 @@ import { catalogToLibraryItems } from '../data/seed';
  * convenience for the typed-add "reuse same-named row" path and for search.
  */
 
-/** Seed built-in defaults into the document (idempotent by id). */
+/**
+ * Seed built-in defaults on boot. Idempotent by id, and — crucially — skips
+ * defaults the user has removed or edited (tombstoned in `removedDefaultIds`), so
+ * deletions and edits survive a reload. New catalog defaults (from an app update)
+ * are still added. Use {@link restoreDefaults} to bring tombstoned defaults back.
+ */
 export function seedLibrary(): void {
   const seeds = catalogToLibraryItems(CATALOG);
   setData((d) => {
     const have = new Set(d.library.map((i) => i.id));
-    for (const s of seeds) if (!have.has(s.id)) d.library.push(s);
+    const removed = new Set(d.removedDefaultIds ?? []);
+    for (const s of seeds) if (!have.has(s.id) && !removed.has(s.id)) d.library.push(s);
   });
 }
 
@@ -127,17 +133,27 @@ export function editLibraryItem(
   return result;
 }
 
-/** Remove an item from the library by id (does not touch any trip). */
+/** Remove an item from the library by id (does not touch any trip). Removing a
+ *  built-in default tombstones it so the boot seeder won't bring it back. */
 export function forgetItemById(id: string): void {
   setData((d) => {
     d.library = d.library.filter((i) => i.id !== id);
+    if (id.startsWith('d:')) {
+      d.removedDefaultIds = [...new Set([...(d.removedDefaultIds ?? []), id])];
+    }
   });
 }
 
 /** Re-add any built-in defaults that are missing (deleted, or forked into customs),
- *  without touching the user's custom items. Idempotent — same as seeding. */
+ *  without touching the user's custom items. Clears the removed-defaults tombstones
+ *  so the restored defaults stick. */
 export function restoreDefaults(): void {
-  seedLibrary();
+  const seeds = catalogToLibraryItems(CATALOG);
+  setData((d) => {
+    d.removedDefaultIds = [];
+    const have = new Set(d.library.map((i) => i.id));
+    for (const s of seeds) if (!have.has(s.id)) d.library.push(s);
+  });
 }
 
 /**

@@ -51,6 +51,7 @@ describe('forkDefault', () => {
     expect(row.custom).toBe(true);
     expect(d.trips[0].items[0].libraryId).toBe('c:new');
     expect(d.trips[0].items[1].libraryId).toBe('c:abc'); // untouched
+    expect(d.removedDefaultIds).toContain('d:passport'); // freed slot tombstoned
   });
 
   it('is a no-op for an already-custom item', () => {

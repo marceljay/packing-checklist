@@ -9,13 +9,17 @@ export interface AppData {
   schemaVersion: number;
   trips: Trip[];
   library: LibraryItem[];
+  /** Ids of built-in defaults the user removed or edited (forked). The boot-time
+   *  seeder skips these so deletes/edits survive reloads; "Restore defaults"
+   *  clears the list. Absent on pre-existing docs → treated as empty. */
+  removedDefaultIds?: string[];
 }
 
 /** Document format version. Bump + handle in `migrate` when the shape changes. */
 export const CURRENT_SCHEMA_VERSION = 1;
 
 export function emptyData(): AppData {
-  return { schemaVersion: CURRENT_SCHEMA_VERSION, trips: [], library: [] };
+  return { schemaVersion: CURRENT_SCHEMA_VERSION, trips: [], library: [], removedDefaultIds: [] };
 }
 
 /**
@@ -30,6 +34,7 @@ export function migrate(raw: unknown): AppData {
     schemaVersion: CURRENT_SCHEMA_VERSION,
     trips: Array.isArray(o.trips) ? o.trips : [],
     library: Array.isArray(o.library) ? o.library : [],
+    removedDefaultIds: Array.isArray(o.removedDefaultIds) ? o.removedDefaultIds : [],
   };
 }
 
@@ -46,6 +51,8 @@ export function forkDefault(data: AppData, oldId: string, newId: string): string
   if (!item || item.custom) return oldId;
   item.id = newId;
   item.custom = true;
+  // Tombstone the freed default slot so the boot seeder won't resurrect it.
+  data.removedDefaultIds = [...new Set([...(data.removedDefaultIds ?? []), oldId])];
   for (const trip of data.trips) {
     for (const ref of trip.items) {
       if (ref.libraryId === oldId) ref.libraryId = newId;
