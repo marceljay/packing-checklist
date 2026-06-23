@@ -30,6 +30,42 @@ export interface ParsedLibraryItem {
   lastUsed: number;
 }
 
+/** How to resolve a name clash between an incoming item and an existing one. */
+export type ConflictResolution = 'mine' | 'theirs' | 'both';
+
+export interface LibraryImportPlan {
+  /** Incoming items with no existing id and no name clash — safe to add. */
+  fresh: ParsedLibraryItem[];
+  /** Incoming items whose id is already present (same identity) — re-imports. */
+  idMatches: ParsedLibraryItem[];
+  /** Incoming items whose name matches an existing item but the id differs. */
+  conflicts: { incoming: ParsedLibraryItem; existing: LibraryItem }[];
+}
+
+/**
+ * Classify a parsed import against the current library (for the merge flow):
+ * id already present → re-import (skip), same name + different id → conflict to
+ * resolve, otherwise a fresh add. Pure.
+ */
+export function planLibraryImport(
+  incoming: ParsedLibraryItem[],
+  current: LibraryItem[],
+): LibraryImportPlan {
+  const byId = new Map(current.map((i) => [i.id, i]));
+  const byNameKey = new Map(current.map((i) => [i.nameKey, i]));
+  const plan: LibraryImportPlan = { fresh: [], idMatches: [], conflicts: [] };
+  for (const inc of incoming) {
+    if (inc.id && byId.has(inc.id)) {
+      plan.idMatches.push(inc);
+      continue;
+    }
+    const existing = byNameKey.get(inc.nameKey);
+    if (existing) plan.conflicts.push({ incoming: inc, existing });
+    else plan.fresh.push(inc);
+  }
+  return plan;
+}
+
 export function serializeLibrary(items: LibraryItem[]): string {
   const envelope: LibraryEnvelope = {
     kind: EXPORT_KIND,

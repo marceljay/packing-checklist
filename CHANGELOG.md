@@ -12,6 +12,12 @@ All notable changes to this project are documented here.
   removed built-ins back.
 
 ### Added
+- **Library import modes.** Importing an item library now opens a dialog: **Merge**
+  (default) or **Replace all**. Merge previews how many items are new vs. already
+  present and flags **name conflicts** (same name, different id) for you to resolve
+  per item — keep **mine**, **theirs** (overwrite, keeping your id so trips still
+  work), or **both** (add as a separate item), with a "set all" shortcut. Replace
+  all wipes the library and loads the file.
 - **Export picker.** The header menu's export is now a single **Export…** that
   opens a modal — choose which trips to include (select all/none) and optionally
   the item library, then download. Replaces the separate "Export all trips" /

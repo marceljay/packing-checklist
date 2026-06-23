@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { serializeLibrary, parseLibrary } from './libraryTransfer';
+import { serializeLibrary, parseLibrary, planLibraryImport, type ParsedLibraryItem } from './libraryTransfer';
 import type { LibraryItem } from '../types';
 
 function row(over: Partial<LibraryItem> = {}): LibraryItem {
@@ -45,5 +45,35 @@ describe('serializeLibrary / parseLibrary', () => {
   it('throws on invalid JSON and on non-library files', () => {
     expect(() => parseLibrary('{nope')).toThrow();
     expect(() => parseLibrary(JSON.stringify({ hello: 'world' }))).toThrow();
+  });
+});
+
+describe('planLibraryImport', () => {
+  const parsed = (over: Partial<ParsedLibraryItem> & Pick<ParsedLibraryItem, 'name'>): ParsedLibraryItem => ({
+    nameKey: over.name.toLowerCase(),
+    category: 'Clothing',
+    tagKeys: [],
+    custom: true,
+    count: 0,
+    lastUsed: 0,
+    ...over,
+  });
+  const current: LibraryItem[] = [
+    row({ id: 'd:passport', nameKey: 'passport', name: 'Passport' }),
+    row({ id: 'c:mine', nameKey: 'gloves', name: 'Gloves', category: 'Clothing', custom: true, essential: undefined }),
+  ];
+
+  it('classifies fresh / id-match / name-conflict', () => {
+    const incoming = [
+      parsed({ id: 'd:passport', name: 'Passport' }), // id already present → idMatch
+      parsed({ id: 'c:theirs', name: 'Gloves' }), //      same name, different id → conflict
+      parsed({ id: 'c:new', name: 'Crampons' }), //       brand new → fresh
+      parsed({ name: 'Helmet' }), //                       no id, no clash → fresh
+    ];
+    const plan = planLibraryImport(incoming, current);
+    expect(plan.idMatches.map((p) => p.name)).toEqual(['Passport']);
+    expect(plan.conflicts.map((c) => c.incoming.name)).toEqual(['Gloves']);
+    expect(plan.conflicts[0].existing.id).toBe('c:mine');
+    expect(plan.fresh.map((p) => p.name)).toEqual(['Crampons', 'Helmet']);
   });
 });

@@ -3,6 +3,7 @@ import { customId, tagKey, type Category, type LibraryItem, type QuantityRule } 
 import { forkDefault } from './appData';
 import { CATALOG } from '../data/catalog';
 import { catalogToLibraryItems } from '../data/seed';
+import type { ParsedLibraryItem, LibraryImportPlan, ConflictResolution } from './libraryTransfer';
 
 /**
  * The item library lives in the JSON document (`store.ts`). Built-in defaults are
@@ -167,47 +168,90 @@ export function restoreDefaults(): void {
   });
 }
 
+/** Build a full library row from a parsed import item under a given id. */
+function rowFromParsed(p: ParsedLibraryItem, id: string): LibraryItem {
+  return {
+    id,
+    nameKey: p.nameKey,
+    name: p.name,
+    category: p.category,
+    tagKeys: p.tagKeys,
+    custom: p.custom,
+    count: p.count,
+    lastUsed: p.lastUsed,
+    ...(p.essential ? { essential: true } : {}),
+    ...(p.quantity ? { quantity: p.quantity } : {}),
+  };
+}
+
 /**
- * Merge parsed library rows (from an import) into the store. De-dups by id: a row
- * whose id already exists is left untouched; a new id is inserted preserving it; a
- * row without an id is resolved/created by name. Returns how many rows were added.
+ * Replace-all import: wipe the library and load the parsed items as-is (ids
+ * preserved; clashing/absent ids get a fresh `c:` id). Clears the removed-default
+ * tombstones, so built-ins missing from the file reappear on the next load.
  */
-export function importLibraryItems(
-  items: {
-    id?: string;
-    nameKey: string;
-    name: string;
-    category: Category;
-    tagKeys: string[];
-    custom: boolean;
-    essential?: boolean;
-    quantity?: LibraryItem['quantity'];
-    count?: number;
-    lastUsed?: number;
-  }[],
-): number {
-  let added = 0;
-  for (const li of items) {
-    if (li.id) {
-      if (getLibraryItem(li.id)) continue; // already present — keep local copy
-      putWithId({
-        id: li.id,
-        nameKey: li.nameKey,
-        name: li.name,
-        category: li.category,
-        tagKeys: li.tagKeys,
-        custom: li.custom,
-        count: li.count ?? 0,
-        lastUsed: li.lastUsed ?? 0,
-        ...(li.essential ? { essential: true } : {}),
-        ...(li.quantity ? { quantity: li.quantity } : {}),
-      });
-      added += 1;
-    } else {
-      const before = getData().library.find((i) => i.nameKey === li.nameKey);
-      ensureLibraryItem(li.name, li.category, li.tagKeys);
-      if (!before) added += 1;
+export function replaceLibrary(incoming: ParsedLibraryItem[]): number {
+  setData((d) => {
+    const rows: LibraryItem[] = [];
+    const used = new Set<string>();
+    for (const p of incoming) {
+      const id = p.id && !used.has(p.id) ? p.id : customId();
+      used.add(id);
+      rows.push(rowFromParsed(p, id));
     }
-  }
-  return added;
+    d.library = rows;
+    d.removedDefaultIds = [];
+  });
+  return incoming.length;
+}
+
+/**
+ * Merge import with per-conflict resolution. Fresh items are added (id preserved
+ * when free, else minted); id matches are skipped; each name conflict resolves to
+ * **mine** (skip), **theirs** (overwrite the existing row's fields, keeping its id
+ * so trip references survive), or **both** (add the incoming as a separate item).
+ * `resolutions` is aligned to `plan.conflicts`. Returns a summary.
+ */
+export function applyLibraryImport(
+  plan: LibraryImportPlan,
+  resolutions: ConflictResolution[],
+): { added: number; replaced: number; skipped: number } {
+  let added = 0;
+  let replaced = 0;
+  let skipped = plan.idMatches.length;
+  setData((d) => {
+    const insert = (p: ParsedLibraryItem) => {
+      const id = p.id && !d.library.some((x) => x.id === p.id) ? p.id : customId();
+      d.library.push(rowFromParsed(p, id));
+    };
+    for (const p of plan.fresh) {
+      insert(p);
+      added += 1;
+    }
+    plan.conflicts.forEach((c, i) => {
+      const r = resolutions[i] ?? 'mine';
+      if (r === 'mine') {
+        skipped += 1;
+      } else if (r === 'both') {
+        insert(c.incoming);
+        added += 1;
+      } else {
+        const row = d.library.find((x) => x.id === c.existing.id);
+        if (row) {
+          // Overwrite in place, keeping the existing id so trip refs survive.
+          const p = c.incoming;
+          row.name = p.name;
+          row.nameKey = p.nameKey;
+          row.category = p.category;
+          row.tagKeys = p.tagKeys;
+          row.custom = p.custom;
+          row.count = p.count;
+          row.lastUsed = p.lastUsed;
+          row.essential = p.essential || undefined;
+          row.quantity = p.quantity;
+          replaced += 1;
+        }
+      }
+    });
+  });
+  return { added, replaced, skipped };
 }

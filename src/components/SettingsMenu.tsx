@@ -1,10 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { importTripFromText, exportTrips, importAllTripsFromText, listTrips } from '../db/trips';
-import { listLibrary, importLibraryItems } from '../db/library';
-import { serializeLibrary, parseLibrary } from '../db/libraryTransfer';
+import { listLibrary, replaceLibrary, applyLibraryImport } from '../db/library';
+import {
+  serializeLibrary,
+  parseLibrary,
+  planLibraryImport,
+  type LibraryImportPlan,
+  type ConflictResolution,
+} from '../db/libraryTransfer';
 import { downloadText, pickTextFile } from '../lib/file';
 import ExportDialog from './ExportDialog';
+import ImportLibraryDialog from './ImportLibraryDialog';
 
 /** Header menu (hidden until opened) for backup/transfer actions: import a trip,
  *  and export / import the whole item library. */
@@ -12,6 +19,11 @@ export default function SettingsMenu() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [showExport, setShowExport] = useState(false);
+  // Pending library import: parsed file + its plan against the current library.
+  const [libImport, setLibImport] = useState<{
+    plan: LibraryImportPlan;
+    incoming: ReturnType<typeof parseLibrary>;
+  } | null>(null);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -69,11 +81,24 @@ export default function SettingsMenu() {
     const text = await pickTextFile();
     if (text == null) return;
     try {
-      const added = await importLibraryItems(parseLibrary(text));
-      alert(added > 0 ? `Imported ${added} new item${added === 1 ? '' : 's'}.` : 'No new items to import.');
+      const incoming = parseLibrary(text);
+      setLibImport({ plan: planLibraryImport(incoming, listLibrary()), incoming });
     } catch (e) {
       alert(e instanceof Error ? e.message : 'Could not import that file.');
     }
+  }
+
+  function applyLibImport(mode: 'merge' | 'replace', resolutions: ConflictResolution[]) {
+    if (!libImport) return;
+    const { plan, incoming } = libImport;
+    if (mode === 'replace') {
+      replaceLibrary(incoming);
+      alert(`Replaced your library with ${incoming.length} item${incoming.length === 1 ? '' : 's'}.`);
+    } else {
+      const { added, replaced, skipped } = applyLibraryImport(plan, resolutions);
+      alert(`Imported: ${added} added, ${replaced} replaced, ${skipped} skipped.`);
+    }
+    setLibImport(null);
   }
 
   return (
@@ -115,6 +140,15 @@ export default function SettingsMenu() {
           trips={listTrips().map((t) => ({ id: t.id, name: t.name }))}
           onCancel={() => setShowExport(false)}
           onExport={runExport}
+        />
+      )}
+
+      {libImport && (
+        <ImportLibraryDialog
+          plan={libImport.plan}
+          incomingCount={libImport.incoming.length}
+          onCancel={() => setLibImport(null)}
+          onApply={applyLibImport}
         />
       )}
     </div>

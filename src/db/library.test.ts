@@ -8,7 +8,10 @@ import {
   editLibraryItem,
   forgetItemById,
   restoreDefaults,
+  replaceLibrary,
+  applyLibraryImport,
 } from './library';
+import { planLibraryImport, type ParsedLibraryItem } from './libraryTransfer';
 import { getData, setData } from './store';
 
 const defaults = () => listLibrary().filter((i) => !i.custom);
@@ -120,5 +123,77 @@ describe('restoreDefaults', () => {
     const mine = rememberItem('My thing', 'Comfort & Misc', []);
     restoreDefaults();
     expect(getLibraryItem(mine.id)?.name).toBe('My thing');
+  });
+});
+
+describe('library import modes', () => {
+  const parsed = (over: Partial<ParsedLibraryItem> & Pick<ParsedLibraryItem, 'name'>): ParsedLibraryItem => ({
+    nameKey: over.name.toLowerCase(),
+    category: 'Clothing',
+    tagKeys: [],
+    custom: true,
+    count: 0,
+    lastUsed: 0,
+    ...over,
+  });
+
+  describe('replaceLibrary', () => {
+    it('wipes the library and loads the incoming items, preserving ids', () => {
+      rememberItem('Old thing', 'Comfort & Misc', []);
+      replaceLibrary([parsed({ id: 'c:a', name: 'Anchor' }), parsed({ id: 'c:b', name: 'Buoy' })]);
+      expect(listLibrary().map((i) => i.id).sort()).toEqual(['c:a', 'c:b']);
+    });
+
+    it('mints ids for id-less or clashing incoming rows', () => {
+      replaceLibrary([parsed({ name: 'No id' }), parsed({ id: 'c:dup', name: 'One' }), parsed({ id: 'c:dup', name: 'Two' })]);
+      const ids = listLibrary().map((i) => i.id);
+      expect(ids).toHaveLength(3);
+      expect(new Set(ids).size).toBe(3); // all unique
+    });
+  });
+
+  describe('applyLibraryImport', () => {
+    function setup() {
+      setData((d) => {
+        d.library = [
+          { id: 'c:mine', nameKey: 'gloves', name: 'Gloves', category: 'Clothing', tagKeys: ['snow'], custom: true, count: 2, lastUsed: 1 },
+        ];
+      });
+    }
+
+    it('adds fresh items and skips id matches', () => {
+      setup();
+      const incoming = [parsed({ id: 'c:mine', name: 'Gloves' }), parsed({ id: 'c:new', name: 'Crampons' })];
+      const plan = planLibraryImport(incoming, listLibrary());
+      const r = applyLibraryImport(plan, []);
+      expect(r).toEqual({ added: 1, replaced: 0, skipped: 1 });
+      expect(getLibraryItem('c:new')?.name).toBe('Crampons');
+    });
+
+    it('"mine" keeps the existing item; "theirs" overwrites it (same id)', () => {
+      setup();
+      const incoming = [parsed({ id: 'c:theirs', name: 'Gloves', category: 'Gear & Equipment', tagKeys: ['surf'] })];
+      const plan = planLibraryImport(incoming, listLibrary());
+
+      const mine = applyLibraryImport(plan, ['mine']);
+      expect(mine).toEqual({ added: 0, replaced: 0, skipped: 1 });
+      expect(getLibraryItem('c:mine')?.category).toBe('Clothing');
+
+      const theirs = applyLibraryImport(plan, ['theirs']);
+      expect(theirs).toEqual({ added: 0, replaced: 1, skipped: 0 });
+      const row = getLibraryItem('c:mine'); // id kept, content overwritten
+      expect(row?.category).toBe('Gear & Equipment');
+      expect(row?.tagKeys).toEqual(['surf']);
+      expect(getLibraryItem('c:theirs')).toBeUndefined();
+    });
+
+    it('"both" keeps mine and adds theirs as a separate item', () => {
+      setup();
+      const incoming = [parsed({ id: 'c:theirs', name: 'Gloves', tagKeys: ['surf'] })];
+      const plan = planLibraryImport(incoming, listLibrary());
+      const r = applyLibraryImport(plan, ['both']);
+      expect(r).toEqual({ added: 1, replaced: 0, skipped: 0 });
+      expect(listLibrary().filter((i) => i.nameKey === 'gloves')).toHaveLength(2);
+    });
   });
 });
