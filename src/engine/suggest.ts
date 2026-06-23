@@ -1,35 +1,34 @@
 import {
   computeQuantity,
   tagKey,
-  type CatalogItem,
+  type LibraryItem,
   type Tag,
   type Trip,
 } from '../types';
-import { CATALOG } from '../data/catalog';
 
 export interface Suggestion {
-  catalog: CatalogItem;
+  item: LibraryItem;
+  /** Number of active trip tags this item matched (0 for an essential-only hit). */
   score: number;
   /** Active trip tags that caused the match (for reason chips). Empty = essential. */
   reasonTags: Tag[];
   quantity: number;
-  /** Whether this came from an `always` essential vs. a tag match. */
+  /** Whether this came from an essential rather than a tag match. */
   essential: boolean;
 }
 
-const ESSENTIAL_BASE_SCORE = 0.5;
-
 /**
- * Rank catalog items for a trip (SPEC §5). Union matching: an item is suggested
- * if it's essential or any of its tagKeys matches an active trip tag. Score is
- * the sum of matched weights (+ a small base for essentials), so items matching
- * more / higher-weighted active tags float to the top. Catalog items whose
- * normalized name is in `excludeNameKeys` (i.e. already on the trip) are skipped.
+ * Rank library items for a trip (SPEC §5). Union matching: an item is suggested
+ * if it's an essential or any of its `tagKeys` matches an active trip tag. Score
+ * is the count of matched tags (no per-tag weights — the unified library doesn't
+ * carry them), so items matching more active tags float to the top; ties break by
+ * usage count (the library's memory), then name. Items whose id is in
+ * `excludeIds` (already on the trip) are skipped.
  */
 export function suggestItems(
   trip: Trip,
-  catalog: CatalogItem[] = CATALOG,
-  excludeNameKeys: Set<string> = new Set(),
+  library: LibraryItem[],
+  excludeIds: Set<string> = new Set(),
 ): Suggestion[] {
   const days = trip.startDate && trip.endDate
     ? // tripDurationDays inlined to avoid a circular-ish import; cheap enough
@@ -49,32 +48,32 @@ export function suggestItems(
   }
 
   const out: Suggestion[] = [];
-  for (const item of catalog) {
-    if (excludeNameKeys.has(tagKey(item.name))) continue;
+  for (const item of library) {
+    if (excludeIds.has(item.id)) continue;
 
-    let score = 0;
     const reasonTags: Tag[] = [];
-    for (const link of item.tagKeys) {
-      const tag = tagsByKey.get(link.key);
-      if (tag) {
-        score += link.weight;
-        reasonTags.push(tag);
-      }
+    for (const key of item.tagKeys) {
+      const tag = tagsByKey.get(key);
+      if (tag) reasonTags.push(tag);
     }
 
     const matched = reasonTags.length > 0;
-    if (!matched && !item.always) continue;
-    if (item.always) score += ESSENTIAL_BASE_SCORE;
+    if (!matched && !item.essential) continue;
 
     out.push({
-      catalog: item,
-      score,
+      item,
+      score: reasonTags.length,
       reasonTags,
-      essential: item.always === true && !matched,
-      quantity: computeQuantity(item.quantity, validDays, trip.settings.laundryAvailable),
+      essential: item.essential === true && !matched,
+      quantity: computeQuantity(item.quantity ?? { kind: 'none' }, validDays, trip.settings.laundryAvailable),
     });
   }
 
-  out.sort((a, b) => b.score - a.score || a.catalog.name.localeCompare(b.catalog.name));
+  out.sort(
+    (a, b) =>
+      b.score - a.score ||
+      b.item.count - a.item.count ||
+      a.item.name.localeCompare(b.item.name),
+  );
   return out;
 }

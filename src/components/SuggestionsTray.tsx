@@ -1,31 +1,28 @@
 import { useMemo, useState } from 'react';
 import type { Trip, LibraryItem } from '../types';
-import { resolveItems, tagKey } from '../types';
 import { rememberItem } from '../db/library';
-import { CATALOG } from '../data/catalog';
 import { suggestItems, type Suggestion } from '../engine/suggest';
 
 interface Props {
   trip: Trip;
   update: (mutator: (draft: Trip) => void) => void;
-  /** Library rows by id, to know which items are already on the trip. */
+  /** Library rows by id — the suggestion source and the already-on-trip filter. */
   library: Map<string, LibraryItem>;
 }
 
 export default function SuggestionsTray({ trip, update, library }: Props) {
   const [open, setOpen] = useState(true);
 
-  const excludeNameKeys = useMemo(
-    () => new Set(resolveItems(trip.items, library).map((r) => tagKey(r.name))),
-    [trip.items, library],
-  );
+  // Suggestions are drawn from the whole library (defaults + customs), so edits
+  // and removals there flow straight through. Already-listed items are excluded.
+  const excludeIds = useMemo(() => new Set(trip.items.map((i) => i.libraryId)), [trip.items]);
   const suggestions = useMemo(
-    () => suggestItems(trip, CATALOG, excludeNameKeys),
-    [trip, excludeNameKeys],
+    () => suggestItems(trip, [...library.values()], excludeIds),
+    [trip, library, excludeIds],
   );
 
   async function add(s: Suggestion) {
-    const row = await rememberItem(s.catalog.name, s.catalog.category);
+    const row = await rememberItem(s.item.name, s.item.category);
     update((d) => {
       if (!d.items.some((i) => i.libraryId === row.id)) {
         d.items.push({
@@ -79,19 +76,19 @@ export default function SuggestionsTray({ trip, update, library }: Props) {
               <ul className="max-h-80 divide-y divide-line/60 overflow-y-auto">
                 {suggestions.map((s) => (
                   <li
-                    key={s.catalog.id}
+                    key={s.item.id}
                     className="flex items-center gap-3 px-4 py-2 transition-colors hover:bg-paper-sunk"
                   >
                     <button
                       className="btn-secondary h-7 w-7 shrink-0 p-0 text-base leading-none"
-                      aria-label={`Add ${s.catalog.name}`}
+                      aria-label={`Add ${s.item.name}`}
                       onClick={() => void add(s)}
                     >
                       +
                     </button>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-baseline gap-1.5">
-                        <span className="truncate text-sm">{s.catalog.name}</span>
+                        <span className="truncate text-sm">{s.item.name}</span>
                         {s.quantity > 1 && (
                           <span className="font-mono text-xs tabular-nums text-ink-faint">
                             ×{s.quantity}
@@ -111,7 +108,7 @@ export default function SuggestionsTray({ trip, update, library }: Props) {
                       </div>
                     </div>
                     <span className="shrink-0 font-mono text-[0.625rem] uppercase tracking-wide text-ink-faint">
-                      {s.catalog.category}
+                      {s.item.category}
                     </span>
                   </li>
                 ))}
