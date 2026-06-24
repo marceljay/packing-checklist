@@ -17,7 +17,8 @@ All notable changes to this project are documented here.
   a **plug adapter** (your plugs don't fit the destination's sockets) and/or a
   **voltage converter** (the destination's mains is in a different 120-vs-230
   region) — accounting for plug interoperability (e.g. the Europlug fits across
-  continental Europe). The preference is remembered across trips.
+  continental Europe). The preference is remembered across trips. The plug/voltage
+  dataset now covers ~89 countries.
 - **Tropical trips.** A new **tropical** weather tag suggests insect repellent, a
   mosquito net, rehydration salts, a light long-sleeve top, and a reminder to
   check vaccinations / a travel clinic. Add it from the Weather quick-tags.

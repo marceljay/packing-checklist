@@ -66,6 +66,46 @@ export const PLUGS: Record<string, PlugInfo> = {
   CL: { name: 'Chile', types: ['C', 'L'], voltage: 220 },
   PE: { name: 'Peru', types: ['A', 'B', 'C'], voltage: 220 },
   CO: { name: 'Colombia', types: ['A', 'B'], voltage: 110 },
+  // --- Expanded coverage ---------------------------------------------------
+  // Europe
+  LU: { name: 'Luxembourg', types: ['C', 'F'], voltage: 230 },
+  SK: { name: 'Slovakia', types: ['C', 'E'], voltage: 230 },
+  SI: { name: 'Slovenia', types: ['C', 'F'], voltage: 230 },
+  BG: { name: 'Bulgaria', types: ['C', 'F'], voltage: 230 },
+  RS: { name: 'Serbia', types: ['C', 'F'], voltage: 230 },
+  UA: { name: 'Ukraine', types: ['C', 'F'], voltage: 230 },
+  EE: { name: 'Estonia', types: ['C', 'F'], voltage: 230 },
+  LV: { name: 'Latvia', types: ['C', 'F'], voltage: 230 },
+  LT: { name: 'Lithuania', types: ['C', 'F'], voltage: 230 },
+  CY: { name: 'Cyprus', types: ['G'], voltage: 230 },
+  MT: { name: 'Malta', types: ['G'], voltage: 230 },
+  // Americas
+  CR: { name: 'Costa Rica', types: ['A', 'B'], voltage: 120 },
+  PA: { name: 'Panama', types: ['A', 'B'], voltage: 120 },
+  EC: { name: 'Ecuador', types: ['A', 'B'], voltage: 120 },
+  UY: { name: 'Uruguay', types: ['C', 'F', 'L'], voltage: 230 },
+  DO: { name: 'Dominican Republic', types: ['A', 'B'], voltage: 120 },
+  GT: { name: 'Guatemala', types: ['A', 'B'], voltage: 120 },
+  // Asia
+  LK: { name: 'Sri Lanka', types: ['D', 'G', 'M'], voltage: 230 },
+  NP: { name: 'Nepal', types: ['C', 'D', 'M'], voltage: 230 },
+  PK: { name: 'Pakistan', types: ['C', 'D'], voltage: 230 },
+  BD: { name: 'Bangladesh', types: ['C', 'D', 'G'], voltage: 220 },
+  KH: { name: 'Cambodia', types: ['A', 'C', 'G'], voltage: 230 },
+  KZ: { name: 'Kazakhstan', types: ['C', 'F'], voltage: 220 },
+  // Middle East
+  QA: { name: 'Qatar', types: ['D', 'G'], voltage: 240 },
+  KW: { name: 'Kuwait', types: ['C', 'G'], voltage: 240 },
+  BH: { name: 'Bahrain', types: ['G'], voltage: 230 },
+  OM: { name: 'Oman', types: ['G'], voltage: 240 },
+  JO: { name: 'Jordan', types: ['C', 'F', 'G'], voltage: 230 },
+  // Africa
+  KE: { name: 'Kenya', types: ['G'], voltage: 240 },
+  NG: { name: 'Nigeria', types: ['D', 'G'], voltage: 230 },
+  TZ: { name: 'Tanzania', types: ['D', 'G'], voltage: 230 },
+  GH: { name: 'Ghana', types: ['D', 'G'], voltage: 230 },
+  TN: { name: 'Tunisia', types: ['C', 'E'], voltage: 230 },
+  DZ: { name: 'Algeria', types: ['C', 'F'], voltage: 230 },
 };
 
 /** Plug/voltage info for a country code (case-insensitive), or undefined if unknown. */

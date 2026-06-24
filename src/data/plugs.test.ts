@@ -78,4 +78,18 @@ describe('travelPowerAdvice', () => {
     expect(a.needsAdapter).toBe(false);
     expect(a.needsConverter).toBe(false);
   });
+
+  it('covers expanded Type-G countries (GB → CY: same plug & region)', () => {
+    expect(plugInfo('CY')?.types).toEqual(['G']);
+    const a = travelPowerAdvice('GB', ['CY']);
+    expect(a.needsAdapter).toBe(false);
+    expect(a.needsConverter).toBe(false);
+  });
+
+  it('advises adapter + converter for US → Kenya (A/B 120V → G 240V)', () => {
+    expect(plugInfo('KE')?.voltage).toBe(240);
+    const a = travelPowerAdvice('US', ['KE']);
+    expect(a.needsAdapter).toBe(true);
+    expect(a.needsConverter).toBe(true);
+  });
 });
