@@ -134,3 +134,49 @@ describe('suggestItems', () => {
     expect(bs?.quantity).toBe(2); // 7-day trip → week bucket
   });
 });
+
+describe('suggestItems — conditional (international/domestic) essentials', () => {
+  const docs: LibraryItem[] = [
+    lib({ id: 'd:passport', name: 'Passport', category: 'Documents', essential: true }),
+    lib({ id: 'd:id-card', name: 'ID / driving licence', category: 'Documents', essential: true, essentialWhen: 'domestic' }),
+    lib({ id: 'd:visa-check', name: 'Check visa requirements', category: 'Documents', essential: true, essentialWhen: 'international' }),
+  ];
+
+  it('shows the domestic ID (not the visa check) on a domestic trip', () => {
+    const ids = suggestItems(makeTrip(), docs).map((s) => s.item.id);
+    expect(ids).toContain('d:passport'); // unconditional essential always shows
+    expect(ids).toContain('d:id-card');
+    expect(ids).not.toContain('d:visa-check');
+  });
+
+  it('shows the visa check (not the domestic ID) when international is set', () => {
+    const trip = makeTrip({ settings: { laundryAvailable: false, international: true } });
+    const ids = suggestItems(trip, docs).map((s) => s.item.id);
+    expect(ids).toContain('d:passport');
+    expect(ids).toContain('d:visa-check');
+    expect(ids).not.toContain('d:id-card');
+  });
+
+  it('detects international from multiple destination countries', () => {
+    const trip = makeTrip({
+      destinations: [
+        { id: 'a', label: 'Paris', countryCode: 'FR', isPrimary: true },
+        { id: 'b', label: 'Madrid', countryCode: 'ES', isPrimary: false },
+      ],
+    });
+    const ids = suggestItems(trip, docs).map((s) => s.item.id);
+    expect(ids).toContain('d:visa-check');
+    expect(ids).not.toContain('d:id-card');
+  });
+
+  it('still surfaces a conditional item when one of its tags matches, regardless of trip scope', () => {
+    const tagged: LibraryItem[] = [
+      lib({ id: 'd:visa-check', name: 'Check visa requirements', category: 'Documents', essential: true, essentialWhen: 'international', tagKeys: ['business'] }),
+    ];
+    const res = suggestItems(makeTrip({ tags: [tag('business')] }), tagged); // domestic trip
+    const visa = res.find((s) => s.item.id === 'd:visa-check');
+    expect(visa).toBeDefined();
+    expect(visa?.essential).toBe(false); // shown via tag match, not as an essential
+    expect(visa?.reasonTags.map((t) => t.label)).toEqual(['business']);
+  });
+});

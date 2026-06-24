@@ -17,7 +17,9 @@ const t = (key: string, weight = 1) => ({ key, weight });
  */
 export const CATALOG: CatalogItem[] = [
   // --- Essentials (always) ---
-  { id: 'passport', name: 'Passport / ID', category: 'Documents', always: true, tagKeys: [], quantity: perTrip(1) },
+  { id: 'passport', name: 'Passport', category: 'Documents', always: true, essentialWhen: 'international', tagKeys: [], quantity: perTrip(1) },
+  { id: 'id-card', name: 'ID / driving licence', category: 'Documents', always: true, essentialWhen: 'domestic', tagKeys: [], quantity: perTrip(1) },
+  { id: 'visa-check', name: 'Check visa & entry rules', category: 'Documents', always: true, essentialWhen: 'international', tagKeys: [], quantity: none() },
   { id: 'wallet', name: 'Wallet & cards', category: 'Money & Cards', always: true, tagKeys: [], quantity: perTrip(1) },
   { id: 'cash', name: 'Some cash', category: 'Money & Cards', always: true, tagKeys: [], quantity: none() },
   { id: 'phone', name: 'Phone', category: 'Electronics', always: true, tagKeys: [], quantity: perTrip(1) },

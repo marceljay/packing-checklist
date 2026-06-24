@@ -15,6 +15,7 @@ export function catalogToLibraryItems(catalog: CatalogItem[]): LibraryItem[] {
     tagKeys: c.tagKeys.map((t) => t.key),
     custom: false,
     essential: c.always === true,
+    ...(c.essentialWhen ? { essentialWhen: c.essentialWhen } : {}),
     quantity: c.quantity,
     count: 0,
     lastUsed: 0,

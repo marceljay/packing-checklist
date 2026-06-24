@@ -170,6 +170,9 @@ export interface LibraryItem {
   custom: boolean;
   /** Suggested on every trip regardless of tags (seeded from catalog `always`). */
   essential?: boolean;
+  /** Restrict a seeded essential to international or domestic trips (e.g. visa
+   *  check vs domestic ID). Absent → every trip. Ignored unless `essential`. */
+  essentialWhen?: TripScope;
   /** Smart-quantity rule (seeded from the catalog); absent → quantity 1. */
   quantity?: QuantityRule;
   /** Optional free-text note / longer description, shown in the item's info card. */
@@ -400,10 +403,16 @@ export interface CatalogItem {
   category: Category;
   /** Suggested on every trip regardless of tags (essentials). */
   always?: boolean;
+  /** Restrict an essential to international or domestic trips (e.g. visa check vs
+   *  domestic ID). Absent → applies to every trip. Ignored unless `always`. */
+  essentialWhen?: TripScope;
   /** Tag keys (normalized labels) that surface this item, with ranking weight. */
   tagKeys: { key: string; weight: number }[];
   quantity: QuantityRule;
 }
+
+/** Whether a conditional essential applies to international or domestic trips. */
+export type TripScope = 'international' | 'domestic';
 
 /** Normalize a tag label for matching against catalog keys. */
 export function tagKey(label: string): string {

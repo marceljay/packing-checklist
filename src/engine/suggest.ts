@@ -1,5 +1,6 @@
 import {
   computeQuantity,
+  isInternationalTrip,
   tagKey,
   type LibraryItem,
   type Tag,
@@ -40,6 +41,8 @@ export function suggestItems(
     : null;
   const validDays = days != null && days > 0 ? days : null;
 
+  const international = isInternationalTrip(trip);
+
   // Map normalized tag key -> the trip Tag(s) carrying it.
   const tagsByKey = new Map<string, Tag>();
   for (const tag of trip.tags) {
@@ -57,14 +60,21 @@ export function suggestItems(
       if (tag) reasonTags.push(tag);
     }
 
+    // A conditional essential (essentialWhen) only counts as an essential when the
+    // trip's scope matches; it can still surface via a tag match like any item.
+    const essentialActive =
+      item.essential === true &&
+      (item.essentialWhen === undefined ||
+        (item.essentialWhen === 'international') === international);
+
     const matched = reasonTags.length > 0;
-    if (!matched && !item.essential) continue;
+    if (!matched && !essentialActive) continue;
 
     out.push({
       item,
       score: reasonTags.length,
       reasonTags,
-      essential: item.essential === true && !matched,
+      essential: essentialActive && !matched,
       quantity: computeQuantity(item.quantity ?? { kind: 'none' }, validDays, trip.settings.laundryAvailable),
     });
   }

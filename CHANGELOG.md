@@ -12,6 +12,12 @@ All notable changes to this project are documented here.
   removed built-ins back.
 
 ### Added
+- **Documents match the trip.** Suggestions now adapt to whether a trip is
+  international: a **passport** and a **visa & entry-rules check** are suggested
+  only on international trips, and an **ID / driving licence** only on domestic
+  ones. International is detected from multiple destination countries or the
+  "International trip" toggle. (New `essentialWhen` field on items; conditional
+  essentials still surface normally when one of their tags matches.)
 - **Instant forecast feedback.** Adding a destination now shows the Forecast card
   right away with a skeleton/“Updating…” placeholder row for the new place, instead
   of nothing until the async lookup returns. Refreshing an existing forecast shows
