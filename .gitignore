@@ -11,6 +11,7 @@ Thumbs.db
 # Node / build artifacts
 node_modules/
 dist/
+dist-single/
 *.local
 .vite/
 *.tsbuildinfo

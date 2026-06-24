@@ -12,6 +12,10 @@ All notable changes to this project are documented here.
   removed built-ins back.
 
 ### Added
+- **Single-file build.** `npm run build:single` emits one self-contained
+  `dist-single/index.html` with all JS, CSS, and fonts inlined as data URIs — it
+  runs by double-clicking from `file://`, no web server needed. A fully-offline,
+  copy-anywhere artifact. The normal `npm run build` stays code-split for hosting.
 - **Collapsible checklist categories + per-category progress.** Each category (or
   tag) group can be collapsed, and in the Checklist view each group header shows a
   small packed bar and count, so you can see what's left per category at a glance.
