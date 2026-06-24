@@ -235,6 +235,14 @@ describe('averageDaily', () => {
   it('returns empty series for no input', () => {
     expect(averageDaily([])).toEqual({ tMax: [], tMin: [], precip: [], wind: [] });
   });
+
+  it('carries dates from the first year, truncated to the shortest', () => {
+    const avg = averageDaily([
+      { tMax: [10, 20], tMin: [0, 0], precip: [0, 0], wind: [0, 0], dates: ['2025-01-01', '2025-01-02'] },
+      { tMax: [20], tMin: [0], precip: [0], wind: [0], dates: ['2024-01-01'] },
+    ]);
+    expect(avg.dates).toEqual(['2025-01-01']);
+  });
 });
 
 describe('geocodeQuery', () => {

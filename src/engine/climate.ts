@@ -126,7 +126,7 @@ export function climateDailyForRange(
   city: ClimateCity,
   range: { startDate: string; endDate: string },
 ): DailyWeather {
-  const out: DailyWeather = { tMax: [], tMin: [], precip: [], wind: [] };
+  const out: DailyWeather = { tMax: [], tMin: [], precip: [], wind: [], dates: [] };
   const end = new Date(range.endDate + 'T00:00:00');
   for (let d = new Date(range.startDate + 'T00:00:00'); d <= end; d.setDate(d.getDate() + 1)) {
     const m = d.getMonth();
@@ -139,6 +139,7 @@ export function climateDailyForRange(
     out.tMin.push(mn.lo);
     out.precip.push(wet && wetDays > 0 ? mn.rain / wetDays : 0);
     out.wind.push(0);
+    out.dates!.push(d.toISOString().slice(0, 10));
   }
   return out;
 }

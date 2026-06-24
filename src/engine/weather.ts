@@ -12,6 +12,9 @@ export interface DailyWeather {
   tMin: number[];
   precip: number[];
   wind: number[];
+  /** ISO date per day, parallel to the metric arrays. Optional — present for
+   *  online forecasts and bundled climate normals; drives the per-day breakdown. */
+  dates?: string[];
 }
 
 /** Weather tag keys this engine can produce (subset of BUILTIN_TAGS). */
@@ -93,6 +96,11 @@ function addDays(iso: string, n: number): string {
   return d.toISOString().slice(0, 10);
 }
 
+/** ISO dates starting at `startDate` for `count` days (start inclusive). */
+export function enumerateDates(startDate: string, count: number): string[] {
+  return Array.from({ length: count }, (_, i) => addDays(startDate, i));
+}
+
 /** Shift an ISO date by a number of years (month/day preserved where possible). */
 export function shiftDateYears(iso: string, delta: number): string {
   const d = new Date(iso + 'T00:00:00');
@@ -140,15 +148,22 @@ export function averageDaily(perYear: DailyWeather[]): DailyWeather {
     tMin: series((d) => d.tMin),
     precip: series((d) => d.precip),
     wind: series((d) => d.wind),
+    // Representative calendar dates come from the first year (caller may override
+    // with the trip's own dates); truncated to the shared length.
+    dates: perYear[0].dates?.slice(0, len),
   };
 }
 
 function mergeDaily(parts: DailyWeather[]): DailyWeather {
+  // Keep the dated breakdown only if every part carries dates, so the dates array
+  // stays parallel to the metric arrays.
+  const dates = parts.every((d) => d.dates) ? parts.flatMap((d) => d.dates!) : undefined;
   return {
     tMax: parts.flatMap((d) => d.tMax),
     tMin: parts.flatMap((d) => d.tMin),
     precip: parts.flatMap((d) => d.precip),
     wind: parts.flatMap((d) => d.wind),
+    dates,
   };
 }
 
@@ -262,6 +277,7 @@ async function fetchDaily(baseUrl: string, lat: number, lon: number, range: Date
   if (!res.ok) throw new Error(`Weather request failed (${res.status})`);
   const data = (await res.json()) as {
     daily?: {
+      time: string[];
       temperature_2m_max: number[];
       temperature_2m_min: number[];
       precipitation_sum: number[];
@@ -274,6 +290,7 @@ async function fetchDaily(baseUrl: string, lat: number, lon: number, range: Date
     tMin: day?.temperature_2m_min ?? [],
     precip: day?.precipitation_sum ?? [],
     wind: day?.wind_speed_10m_max ?? [],
+    dates: day?.time ?? [],
   };
 }
 
@@ -300,13 +317,17 @@ export async function fetchTypicalDaily(
       });
     }),
   );
-  return averageDaily(perYear);
+  // The averaged series spans past years; label it with the trip's actual dates.
+  const avg = averageDaily(perYear);
+  return { ...avg, dates: enumerateDates(range.startDate, avg.tMax.length) };
 }
 
 export interface DestinationWeather {
   place: GeoResult;
   tags: WeatherTagKey[];
   summary: WeatherSummary;
+  /** Merged daily series (carries `dates` when available) for a per-day breakdown. */
+  daily?: DailyWeather;
   basis: WeatherBasis;
   /** True when any part came from bundled climate normals (a network leg failed). */
   offline?: boolean;
@@ -374,6 +395,7 @@ export async function lookupDestinationWeather(
     place: geo,
     tags: deriveWeatherTags(daily),
     summary: summarizeWeather(daily),
+    daily,
     basis,
     ...(offline && climate ? { offline: true, approxFrom: climate.name } : {}),
   };

@@ -126,6 +126,33 @@ describe('applyWeather', () => {
     applyWeather(trip, { cities: [city('Lisbon')], tags: [] }, genId, 1);
     expect(trip.tags.filter((t) => t.type === 'weather')).toEqual([]);
   });
+
+  it('maps the daily series into per-day CityForecast.daily (rounded)', () => {
+    n = 0;
+    const trip = makeTrip();
+    const withDaily: DestinationWeather = {
+      ...city('Lisbon'),
+      daily: {
+        dates: ['2026-06-01', '2026-06-02'],
+        tMax: [25.4, 26.6],
+        tMin: [15.1, 16.9],
+        precip: [0, 3.2],
+        wind: [10, 12.5],
+      },
+    };
+    applyWeather(trip, { cities: [withDaily], tags: [] }, genId, 1);
+    expect(trip.weather?.cities[0].daily).toEqual([
+      { date: '2026-06-01', highC: 25, lowC: 15, precipMm: 0, windKmh: 10 },
+      { date: '2026-06-02', highC: 27, lowC: 17, precipMm: 3, windKmh: 13 },
+    ]);
+  });
+
+  it('omits daily when there is no dated series', () => {
+    n = 0;
+    const trip = makeTrip();
+    applyWeather(trip, { cities: [city('Lisbon')], tags: [] }, genId, 1);
+    expect(trip.weather?.cities[0].daily).toBeUndefined();
+  });
 });
 
 describe('cityMatchesDestination', () => {

@@ -5,8 +5,8 @@
  * injectable); `applyWeather` writes the result onto a trip draft. The component
  * owns only UI state (status text, stale-request guarding).
  */
-import { lookupTripWeather, WEATHER_TAG_KEYS, type TripWeatherResult } from './weather';
-import type { CityForecast, Tag, Trip } from '../types';
+import { lookupTripWeather, WEATHER_TAG_KEYS, type DailyWeather, type TripWeatherResult } from './weather';
+import type { CityDay, CityForecast, Tag, Trip } from '../types';
 
 export type WeatherDest = { label: string; lat?: number; lon?: number };
 
@@ -79,6 +79,25 @@ export function recomputeWeatherAfterRemoval(
  * tags drive suggestions, item tags live in the library) and cache the per-city
  * forecast. Pure aside from the injected id/clock.
  */
+/**
+ * Reduce a merged daily series to the compact, rounded per-day breakdown stored
+ * on a trip. Returns undefined unless the series carries dates parallel to its
+ * metrics (so the breakdown is only kept when it's actually day-aligned).
+ */
+export function buildCityDays(daily: DailyWeather | undefined): CityDay[] | undefined {
+  const dates = daily?.dates;
+  if (!daily || !dates || dates.length === 0 || dates.length !== daily.tMax.length) {
+    return undefined;
+  }
+  return dates.map((date, i) => ({
+    date,
+    highC: Math.round(daily.tMax[i]),
+    lowC: Math.round(daily.tMin[i]),
+    precipMm: Math.round(daily.precip[i]),
+    windKmh: Math.round(daily.wind[i]),
+  }));
+}
+
 export function applyWeather(
   draft: Trip,
   result: TripWeatherResult,
@@ -97,6 +116,7 @@ export function applyWeather(
       basis: c.basis,
       offline: c.offline,
       approxFrom: c.approxFrom,
+      daily: buildCityDays(c.daily),
       tags: c.tags,
       days: c.summary.days,
       highC: c.summary.highC,

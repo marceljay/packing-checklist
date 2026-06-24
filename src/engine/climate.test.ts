@@ -91,6 +91,11 @@ describe('climateDailyForRange', () => {
     const d = climateDailyForRange(c, { startDate: '2026-03-30', endDate: '2026-04-02' });
     expect(d.tMax).toEqual([22, 22, 23, 23]); // Mar, Mar, Apr, Apr
   });
+
+  it('labels each day with its ISO date', () => {
+    const d = climateDailyForRange(c, { startDate: '2026-03-30', endDate: '2026-04-02' });
+    expect(d.dates).toEqual(['2026-03-30', '2026-03-31', '2026-04-01', '2026-04-02']);
+  });
 });
 
 describe('localSearchCities', () => {

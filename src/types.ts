@@ -76,10 +76,21 @@ export interface TripSettings {
 /** Where a forecast came from: live forecast, historical typical, or a mix. */
 export type WeatherBasis = 'forecast' | 'typical' | 'mixed';
 
+/** One day of a destination's forecast (rounded, °C / mm / km/h). */
+export interface CityDay {
+  date: string;
+  highC: number;
+  lowC: number;
+  precipMm: number;
+  windKmh: number;
+}
+
 /** Forecast summary for one destination (SPEC §6). Temps °C, precip mm. */
 export interface CityForecast {
   place: string;
   basis: WeatherBasis;
+  /** Per-day breakdown when a dated daily series was available. */
+  daily?: CityDay[];
   /** Set when this city's data came from bundled offline climate normals. */
   offline?: boolean;
   /** Nearest bundled climate city the offline normals came from. */
