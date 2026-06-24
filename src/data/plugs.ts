@@ -84,6 +84,69 @@ export interface PowerSummary {
   voltages: number[];
 }
 
+/** Two mains "regions": 100–127 V and 220–240 V. Devices rated for one often
+ *  don't tolerate the other, so crossing this divide is the converter signal. */
+function voltageRegion(v: number): 'low' | 'high' {
+  return v < 160 ? 'low' : 'high';
+}
+
+/** Which socket types a given plug type physically fits, beyond its own (a plug
+ *  always fits its own socket). Captures common interoperability: the round-pin
+ *  Europlug (C) fits the whole CEE 7 family; E/F are mutually compatible; the US
+ *  Type-A plug fits grounded Type-B sockets. Conservative — unknown plugs only
+ *  fit their own socket. Used to decide whether a travel adapter is needed. */
+const PLUG_FITS: Record<string, string[]> = {
+  A: ['B'],
+  C: ['E', 'F', 'J', 'K', 'L', 'N'],
+  E: ['F'],
+  F: ['E'],
+};
+
+function plugFits(plug: string, socket: string): boolean {
+  return plug === socket || (PLUG_FITS[plug]?.includes(socket) ?? false);
+}
+
+export interface PowerAdvice {
+  /** Resolved home country (undefined if unset or unknown). */
+  home?: { code: string; info: PlugInfo };
+  /** Destination plug-type letters the home plug doesn't provide. */
+  adapterFor: string[];
+  needsAdapter: boolean;
+  /** Distinct destination voltages in a different region from home. */
+  voltageMismatch: number[];
+  needsConverter: boolean;
+}
+
+/**
+ * Compare the traveller's home country against the trip's destination countries
+ * and advise whether to bring a plug adapter (destination uses plug types the
+ * home plug lacks) and/or a voltage converter (destination mains is in a
+ * different 120-vs-230 region). Pure; no advice without a known home country.
+ */
+export function travelPowerAdvice(homeCode: string | undefined, destCodes: string[]): PowerAdvice {
+  const home = plugInfo(homeCode);
+  if (!home) {
+    return { home: undefined, adapterFor: [], needsAdapter: false, voltageMismatch: [], needsConverter: false };
+  }
+  const homeCodeUp = homeCode!.toUpperCase();
+  const summary = powerSummary(destCodes);
+  const homeRegion = voltageRegion(home.voltage);
+
+  // A destination socket needs an adapter only if none of the home plugs fit it.
+  const adapterFor = summary.plugTypes.filter(
+    (socket) => !home.types.some((plug) => plugFits(plug, socket)),
+  );
+  const voltageMismatch = summary.voltages.filter((v) => voltageRegion(v) !== homeRegion);
+
+  return {
+    home: { code: homeCodeUp, info: home },
+    adapterFor,
+    needsAdapter: adapterFor.length > 0,
+    voltageMismatch,
+    needsConverter: voltageMismatch.length > 0,
+  };
+}
+
 /** Aggregate plug/voltage data across a set of destination country codes. */
 export function powerSummary(countryCodes: string[]): PowerSummary {
   const known: { code: string; info: PlugInfo }[] = [];

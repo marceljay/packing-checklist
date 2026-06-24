@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type {
   Trip,
   TagType,
@@ -15,7 +15,8 @@ import {
 } from "../types";
 import { uid } from "../db/store";
 import { rememberItem } from "../db/library";
-import { powerSummary } from "../data/plugs";
+import { PLUGS, powerSummary, travelPowerAdvice } from "../data/plugs";
+import { useHomeCountry, setHomeCountry } from "../lib/homeCountry";
 import { BUILTIN_TAGS } from "../data/tags";
 import { placeLabel, type GeoResult } from "../engine/weather";
 import {
@@ -292,6 +293,15 @@ export default function ContextPanel({
 
   const international = isInternationalTrip(trip);
   const power = powerSummary(tripCountryCodes(trip));
+  const homeCountry = useHomeCountry();
+  const advice = travelPowerAdvice(homeCountry, tripCountryCodes(trip));
+  const countryOptions = useMemo(
+    () =>
+      Object.entries(PLUGS)
+        .map(([code, info]) => ({ code, name: info.name }))
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    [],
+  );
   const autoDetected =
     trip.settings.international === undefined && international;
 
@@ -539,8 +549,60 @@ export default function ContextPanel({
                     range.
                   </p>
                 )}
+
+                {/* Home country → adapter / converter advice */}
+                <div className="mt-3">
+                  <label
+                    htmlFor="home-country"
+                    className="label mb-1.5 block"
+                  >
+                    Your home country
+                  </label>
+                  <select
+                    id="home-country"
+                    className="input w-full"
+                    value={homeCountry}
+                    onChange={(e) => setHomeCountry(e.target.value)}
+                  >
+                    <option value="">Select…</option>
+                    {countryOptions.map((c) => (
+                      <option key={c.code} value={c.code}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+
+                  {advice.home && (advice.needsAdapter || advice.needsConverter) && (
+                    <ul className="mt-2 space-y-1 text-xs text-vermilion-deep">
+                      {advice.needsAdapter && (
+                        <li>
+                          Bring a plug adapter — destinations use type{" "}
+                          {advice.adapterFor.join("/")}, which your{" "}
+                          {advice.home.info.name} plugs don’t fit.
+                        </li>
+                      )}
+                      {advice.needsConverter && (
+                        <li>
+                          Voltage differs ({advice.home.info.voltage}V at home vs{" "}
+                          {advice.voltageMismatch.join("/")}V) — check your
+                          devices are dual-voltage or bring a converter.
+                        </li>
+                      )}
+                    </ul>
+                  )}
+                  {advice.home &&
+                    !advice.needsAdapter &&
+                    !advice.needsConverter &&
+                    power.known.length > 0 && (
+                      <p className="mt-2 text-xs text-ink-faint">
+                        Your plugs and voltage work at every destination — no
+                        adapter or converter needed.
+                      </p>
+                    )}
+                </div>
+
                 <button
-                  className="btn-secondary mt-2 w-full text-xs"
+                  className="btn-secondary mt-3 w-full text-xs"
                   onClick={addAdapter}
                 >
                   + Add travel adapter
