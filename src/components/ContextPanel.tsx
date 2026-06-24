@@ -624,9 +624,10 @@ export default function ContextPanel({
           }
         />
         <span>
-          Laundry available
+          I’ll do laundry on this trip
           <span className="block text-xs text-ink-faint">
-            Reduces suggested quantities
+            Packs fewer clothes. Leave off to pack full quantities even if laundry
+            is available.
           </span>
         </span>
       </label>

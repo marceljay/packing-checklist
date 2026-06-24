@@ -65,6 +65,10 @@ All notable changes to this project are documented here.
   small packed bar and count, so you can see what's left per category at a glance.
 
 ### Changed
+- **Clearer laundry choice.** The laundry checkbox now reads "I'll do laundry on
+  this trip" (packs fewer clothes) and explains that leaving it off packs full
+  quantities even when laundry is available — making the "available vs. I'd rather
+  not" distinction explicit.
 - **Trip export moved to one place.** The redundant **Export trip** button on the
   trip page is gone — export any trip (or all of them, plus the library) from the
   header's **Export…** dialog.
