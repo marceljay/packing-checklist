@@ -1,4 +1,5 @@
-import type { CityForecast, Destination, TripWeather, WeatherBasis } from '../types';
+import { useState } from 'react';
+import type { CityDay, CityForecast, Destination, TripWeather, WeatherBasis } from '../types';
 import { cityMatchesDestination } from '../engine/weatherSync';
 import {
   useUnits,
@@ -33,10 +34,44 @@ function relativeTime(ts: number): string {
   return `${Math.round(hrs / 24)}d ago`;
 }
 
-function CityRow({ c, units }: { c: CityForecast; units: UnitSystem }) {
+function fmtDay(iso: string): string {
+  return new Date(iso + 'T00:00:00').toLocaleDateString(undefined, {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+  });
+}
+
+/** Expandable list of each day's high/low, precip and wind. */
+function DayBreakdown({ days, units }: { days: CityDay[]; units: UnitSystem }) {
   const t = (celsius: number) => convTemp(celsius, units);
   return (
-    <div className="flex flex-col gap-1 px-5 py-3 sm:flex-row sm:items-center sm:gap-4">
+    <ul className="mt-2 space-y-1 border-t border-paper-raised/10 pt-2">
+      {days.map((d) => (
+        <li
+          key={d.date}
+          className="flex items-baseline justify-between gap-3 font-mono text-xs tabular-nums text-paper-raised/80"
+        >
+          <span className="w-24 shrink-0 text-paper-raised/60">{fmtDay(d.date)}</span>
+          <span className="flex-1">
+            <span className="text-paper-raised/50">↑</span> {t(d.highC)}°{' '}
+            <span className="text-paper-raised/50">↓</span> {t(d.lowC)}°
+          </span>
+          <span className="text-paper-raised/60">{formatPrecip(d.precipMm, units)}</span>
+          <span className="text-paper-raised/60">{formatWind(d.windKmh, units)}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function CityRow({ c, units }: { c: CityForecast; units: UnitSystem }) {
+  const t = (celsius: number) => convTemp(celsius, units);
+  const [open, setOpen] = useState(false);
+  const hasDaily = (c.daily?.length ?? 0) > 0;
+  return (
+    <div className="px-5 py-3">
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-4">
       <div className="min-w-0 sm:w-40">
         <p className="truncate font-display font-bold">{c.place}</p>
         <p className="font-mono text-[0.625rem] uppercase tracking-code text-paper-raised/50">
@@ -59,7 +94,18 @@ function CityRow({ c, units }: { c: CityForecast; units: UnitSystem }) {
         </span>
         <span className="text-paper-raised/70">{formatPrecip(c.precipMm, units)}</span>
         <span className="text-paper-raised/70">{formatWind(c.windMaxKmh, units)}</span>
+        {hasDaily && (
+          <button
+            className="font-mono text-[0.625rem] uppercase tracking-code text-paper-raised/50 underline-offset-2 hover:text-paper-raised hover:underline sm:ml-auto"
+            aria-expanded={open}
+            onClick={() => setOpen((v) => !v)}
+          >
+            {open ? 'Hide days' : 'Day by day'}
+          </button>
+        )}
       </div>
+      </div>
+      {hasDaily && open && <DayBreakdown days={c.daily!} units={units} />}
     </div>
   );
 }

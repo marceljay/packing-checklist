@@ -12,6 +12,9 @@ All notable changes to this project are documented here.
   removed built-ins back.
 
 ### Added
+- **Day-by-day forecast.** Each destination's forecast card now has a "Day by day"
+  expander showing every day's high/low, precipitation, and wind (in your chosen
+  units) — for live forecasts, historical "typical" windows, and offline normals.
 - **Adapter & voltage advice from your home country.** Set a home country (in a
   trip's Trip-type section) and international trips now tell you whether to bring
   a **plug adapter** (your plugs don't fit the destination's sockets) and/or a
