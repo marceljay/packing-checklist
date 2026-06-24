@@ -330,4 +330,56 @@ describe('lookupDestinationWeather', () => {
     );
     expect(res).toBeNull();
   });
+
+  it('falls back to bundled climate normals when the network fails', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        throw new Error('offline');
+      }),
+    );
+    // London is in the bundled climate set, so a far-future trip there resolves
+    // from normals instead of the (failed) archive lookup.
+    const res = await lookupDestinationWeather(
+      { label: 'London', lat: 51.51, lon: -0.13 },
+      '2026-12-01',
+      '2026-12-05',
+      '2026-06-20',
+    );
+    expect(res).not.toBeNull();
+    expect(res?.basis).toBe('typical');
+  });
+
+  it('returns null offline when no climate city is near', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        throw new Error('offline');
+      }),
+    );
+    const res = await lookupDestinationWeather(
+      { label: 'Open ocean', lat: -40, lon: -120 },
+      '2026-12-01',
+      '2026-12-05',
+      '2026-06-20',
+    );
+    expect(res).toBeNull();
+  });
+
+  it('keeps the live forecast and uses normals for the rest when the archive fails', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string) => {
+        if (String(url).includes('/forecast')) return { ok: true, json: async () => dailyJson(true) };
+        throw new Error('archive offline');
+      }),
+    );
+    const res = await lookupDestinationWeather(
+      { label: 'London', lat: 51.51, lon: -0.13 },
+      '2026-06-21',
+      '2026-08-15',
+      '2026-06-20',
+    );
+    expect(res?.basis).toBe('mixed');
+  });
 });

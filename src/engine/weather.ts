@@ -4,6 +4,7 @@
  * makes; failures fall back to manual tags.
  */
 import type { WeatherBasis } from '../types';
+import { nearestClimateCity, climateDailyForRange, localSearchCities } from './climate';
 
 /** Daily aggregates for the trip window. Temps °C, precip mm/day, wind km/h. */
 export interface DailyWeather {
@@ -233,10 +234,17 @@ export async function searchPlaces(
   const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(
     q,
   )}&count=${count}&language=en&format=json`;
-  const res = await fetch(url, { signal });
-  if (!res.ok) throw new Error(`Place search failed (${res.status})`);
-  const data = (await res.json()) as { results?: RawGeo[] };
-  return (data.results ?? []).map(toGeoResult);
+  try {
+    const res = await fetch(url, { signal });
+    if (!res.ok) throw new Error(`Place search failed (${res.status})`);
+    const data = (await res.json()) as { results?: RawGeo[] };
+    return (data.results ?? []).map(toGeoResult);
+  } catch (e) {
+    // A deliberate abort means a newer query is coming — don't mask it.
+    if ((e as Error).name === 'AbortError') throw e;
+    // Offline / file:// null origin: fall back to the bundled city list.
+    return localSearchCities(q, count);
+  }
 }
 
 const DAILY_VARS = 'temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max';
@@ -322,12 +330,39 @@ export async function lookupDestinationWeather(
       : await geocode(place.label);
   if (!geo) return null;
 
+  // When a network leg fails (offline, or the file:// null origin the archive
+  // API rejects), substitute bundled climate normals from the nearest city.
+  const climate = nearestClimateCity(geo.lat, geo.lon);
   const parts: DailyWeather[] = [];
-  if (forecast) parts.push(await fetchForecastDaily(geo.lat, geo.lon, forecast));
-  if (historical) parts.push(await fetchTypicalDaily(geo.lat, geo.lon, historical));
+  let hasForecast = false;
+  let hasTypical = false;
 
+  if (forecast) {
+    try {
+      parts.push(await fetchForecastDaily(geo.lat, geo.lon, forecast));
+      hasForecast = true;
+    } catch {
+      if (climate) {
+        parts.push(climateDailyForRange(climate, forecast));
+        hasTypical = true;
+      }
+    }
+  }
+  if (historical) {
+    try {
+      parts.push(await fetchTypicalDaily(geo.lat, geo.lon, historical));
+      hasTypical = true;
+    } catch {
+      if (climate) {
+        parts.push(climateDailyForRange(climate, historical));
+        hasTypical = true;
+      }
+    }
+  }
+
+  if (parts.length === 0) return null;
   const daily = mergeDaily(parts);
-  const basis: WeatherBasis = forecast && historical ? 'mixed' : forecast ? 'forecast' : 'typical';
+  const basis: WeatherBasis = hasForecast && hasTypical ? 'mixed' : hasForecast ? 'forecast' : 'typical';
   return { place: geo, tags: deriveWeatherTags(daily), summary: summarizeWeather(daily), basis };
 }
 
