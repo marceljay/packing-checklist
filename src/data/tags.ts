@@ -33,4 +33,5 @@ export const BUILTIN_TAGS: BuiltinTag[] = [
   { key: 'rainy', type: 'weather' },
   { key: 'sunny', type: 'weather' },
   { key: 'windy', type: 'weather' },
+  { key: 'tropical', type: 'weather' },
 ];

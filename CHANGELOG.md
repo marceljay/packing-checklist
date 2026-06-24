@@ -12,6 +12,9 @@ All notable changes to this project are documented here.
   removed built-ins back.
 
 ### Added
+- **Tropical trips.** A new **tropical** weather tag suggests insect repellent, a
+  mosquito net, rehydration salts, a light long-sleeve top, and a reminder to
+  check vaccinations / a travel clinic. Add it from the Weather quick-tags.
 - **Documents match the trip.** Suggestions now adapt to whether a trip is
   international: a **passport** and a **visa & entry-rules check** are suggested
   only on international trips, and an **ID / driving licence** only on domestic

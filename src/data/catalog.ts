@@ -121,4 +121,11 @@ export const CATALOG: CatalogItem[] = [
   { id: 'rain-jacket', name: 'Rain jacket', category: 'Clothing', tagKeys: [t('rainy', 2), t('hiking', 1)], quantity: perTrip(1) },
   { id: 'umbrella', name: 'Umbrella', category: 'Comfort & Misc', tagKeys: [t('rainy', 1)], quantity: perTrip(1) },
   { id: 'windbreaker', name: 'Windbreaker', category: 'Clothing', tagKeys: [t('windy', 2), t('cycling', 1)], quantity: perTrip(1) },
+
+  // Tropical — insect protection, heat & health (manual "tropical" tag)
+  { id: 'insect-repellent', name: 'Insect repellent', category: 'Toiletries & Health', tagKeys: [t('tropical', 2), t('camping', 1), t('hiking', 1)], quantity: perTrip(1) },
+  { id: 'mosquito-net', name: 'Mosquito net', category: 'Gear & Equipment', tagKeys: [t('tropical', 1), t('camping', 1)], quantity: perTrip(1) },
+  { id: 'rehydration-salts', name: 'Rehydration salts', category: 'Toiletries & Health', tagKeys: [t('tropical', 1), t('hot', 1)], quantity: none() },
+  { id: 'light-long-sleeve', name: 'Light long-sleeve top', category: 'Clothing', tagKeys: [t('tropical', 1)], quantity: bucket(1, 2, 3) },
+  { id: 'vaccination-check', name: 'Check vaccinations & travel clinic', category: 'Documents', tagKeys: [t('tropical', 1)], quantity: none() },
 ];
