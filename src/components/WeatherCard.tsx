@@ -1,4 +1,5 @@
-import type { CityForecast, TripWeather, WeatherBasis } from '../types';
+import type { CityForecast, Destination, TripWeather, WeatherBasis } from '../types';
+import { cityMatchesDestination } from '../engine/weatherSync';
 import {
   useUnits,
   setUnits,
@@ -9,7 +10,12 @@ import {
 } from '../lib/units';
 
 interface Props {
-  weather: TripWeather;
+  weather?: TripWeather;
+  /** A forecast lookup is in flight — show "Updating…" and skeleton rows for any
+   *  destination that doesn't have data yet. */
+  loading?: boolean;
+  /** Current destinations, so a just-added place gets a placeholder row. */
+  destinations: Destination[];
 }
 
 const BASIS_LABEL: Record<WeatherBasis, string> = {
@@ -58,6 +64,29 @@ function CityRow({ c, units }: { c: CityForecast; units: UnitSystem }) {
   );
 }
 
+/** Placeholder row for a destination whose forecast is still loading. */
+function SkeletonRow({ label }: { label: string }) {
+  return (
+    <div
+      className="flex animate-pulse flex-col gap-1 px-5 py-3 sm:flex-row sm:items-center sm:gap-4"
+      aria-hidden
+    >
+      <div className="min-w-0 sm:w-40">
+        <p className="truncate font-display font-bold text-paper-raised/70">{label}</p>
+        <p className="font-mono text-[0.625rem] uppercase tracking-code text-paper-raised/40">
+          Loading…
+        </p>
+      </div>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+        <span className="h-3 w-16 rounded bg-paper-raised/15" />
+        <span className="h-3 w-12 rounded bg-paper-raised/15" />
+        <span className="h-3 w-10 rounded bg-paper-raised/15" />
+        <span className="h-3 w-10 rounded bg-paper-raised/15" />
+      </div>
+    </div>
+  );
+}
+
 /** Compact °C/°F segmented toggle (switches the whole metric/imperial system). */
 function UnitToggle({ units }: { units: UnitSystem }) {
   return (
@@ -80,24 +109,34 @@ function UnitToggle({ units }: { units: UnitSystem }) {
   );
 }
 
-/** Cached forecast for each of the trip's destinations. */
-export default function WeatherCard({ weather: w }: Props) {
+/** Cached forecast for each of the trip's destinations. While a lookup is in
+ *  flight the card appears immediately with skeleton rows for any destination
+ *  that doesn't have data yet, so adding a place gives instant feedback. */
+export default function WeatherCard({ weather: w, loading = false, destinations }: Props) {
   const units = useUnits();
-  if (w.cities.length === 0) return null;
+  const cities = w?.cities ?? [];
+  // Destinations still awaiting data — shown as skeletons during a lookup.
+  const pending = loading
+    ? destinations.filter((d) => !cities.some((c) => cityMatchesDestination(c, d)))
+    : [];
+  if (cities.length === 0 && pending.length === 0) return null;
   return (
     <section className="card overflow-hidden bg-ink text-paper-raised shadow-pass">
       <div className="flex items-center gap-2.5 border-b border-paper-raised/15 px-5 py-3">
         <span aria-hidden>☀</span>
         <h2 className="font-display text-base font-bold">Forecast</h2>
         <span className="ml-auto font-mono text-[0.625rem] uppercase tracking-code text-paper-raised/50">
-          Updated {relativeTime(w.fetchedAt)}
+          {loading ? 'Updating…' : w ? `Updated ${relativeTime(w.fetchedAt)}` : ''}
         </span>
         <UnitToggle units={units} />
       </div>
 
       <div className="divide-y divide-paper-raised/10">
-        {w.cities.map((c) => (
+        {cities.map((c) => (
           <CityRow key={c.place} c={c} units={units} />
+        ))}
+        {pending.map((d) => (
+          <SkeletonRow key={d.id} label={d.label.split(',')[0]} />
         ))}
       </div>
     </section>

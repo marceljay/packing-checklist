@@ -23,6 +23,7 @@ import {
   applyWeather,
   recomputeWeatherAfterRemoval,
   type WeatherDest,
+  type WeatherStatus,
 } from "../engine/weatherSync";
 import DateRangeField from "./DateRangeField";
 import PlaceSearch from "./PlaceSearch";
@@ -33,6 +34,12 @@ interface Props {
   update: (mutator: (draft: Trip) => void) => void;
   /** Library rows by id, to resolve item tags when pruning after a destination removal. */
   library: Map<string, LibraryItem>;
+  /** Forecast-lookup status, lifted to the editor so the WeatherCard can show a
+   *  loading placeholder the moment a destination is added. */
+  weatherStatus: WeatherStatus;
+  setWeatherStatus: (s: WeatherStatus) => void;
+  weatherMsg: string;
+  setWeatherMsg: (m: string) => void;
 }
 
 const TAG_TYPE_STYLES: Record<TagType, string> = {
@@ -76,12 +83,16 @@ function TagPalette({
   );
 }
 
-export default function ContextPanel({ trip, update, library }: Props) {
+export default function ContextPanel({
+  trip,
+  update,
+  library,
+  weatherStatus,
+  setWeatherStatus,
+  weatherMsg,
+  setWeatherMsg,
+}: Props) {
   const [tagLabel, setTagLabel] = useState("");
-  const [weatherStatus, setWeatherStatus] = useState<
-    "idle" | "loading" | "done" | "error"
-  >("idle");
-  const [weatherMsg, setWeatherMsg] = useState("");
   // Pending destination-removal confirmation (in-app dialog).
   const [pendingRemoval, setPendingRemoval] = useState<{
     dest: Destination;

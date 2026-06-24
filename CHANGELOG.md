@@ -12,6 +12,10 @@ All notable changes to this project are documented here.
   removed built-ins back.
 
 ### Added
+- **Instant forecast feedback.** Adding a destination now shows the Forecast card
+  right away with a skeleton/“Updating…” placeholder row for the new place, instead
+  of nothing until the async lookup returns. Refreshing an existing forecast shows
+  the same updating state while keeping the current rows.
 - **Edit an item's notes from the trip page.** The "Add item" card and the
   inline item editor on a trip now include a notes/description field, so you can
   capture an item's info without detouring to the Item Library. Notes show under

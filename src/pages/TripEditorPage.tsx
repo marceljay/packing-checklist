@@ -10,6 +10,7 @@ import AddItemCard from '../components/AddItemCard';
 import PrintSheet from '../components/PrintSheet';
 import { tripDurationDays, destinationCode } from '../types';
 import type { Trip } from '../types';
+import type { WeatherStatus } from '../engine/weatherSync';
 
 type EditorMode = 'plan' | 'checklist';
 
@@ -122,6 +123,10 @@ export default function TripEditorPage() {
   const isNew = (location.state as { isNew?: boolean } | null)?.isNew === true;
   const { trip, status, update } = useTripEditor(tripId);
   const [mode, setMode] = useState<EditorMode>('plan');
+  // Lifted from ContextPanel so the WeatherCard can show a loading placeholder
+  // the instant a destination is added (the lookup is async).
+  const [weatherStatus, setWeatherStatus] = useState<WeatherStatus>('idle');
+  const [weatherMsg, setWeatherMsg] = useState('');
 
   // Library is the source of truth for item display fields; join live so edits
   // (here or on the Item Library page) reflect immediately.
@@ -192,9 +197,23 @@ export default function TripEditorPage() {
 
         {mode === 'plan' ? (
           <div className="grid gap-5 lg:grid-cols-[20rem_1fr]">
-            <ContextPanel trip={trip} update={update} library={library} />
+            <ContextPanel
+              trip={trip}
+              update={update}
+              library={library}
+              weatherStatus={weatherStatus}
+              setWeatherStatus={setWeatherStatus}
+              weatherMsg={weatherMsg}
+              setWeatherMsg={setWeatherMsg}
+            />
             <div className="flex flex-col gap-5">
-              {trip.weather && <WeatherCard weather={trip.weather} />}
+              {(trip.weather || weatherStatus === 'loading') && (
+                <WeatherCard
+                  weather={trip.weather}
+                  loading={weatherStatus === 'loading'}
+                  destinations={trip.destinations}
+                />
+              )}
               <AddItemCard update={update} tagSuggestions={tagSuggestions} />
               <SuggestionsTray trip={trip} update={update} library={library} />
               <Checklist trip={trip} update={update} library={library} mode="plan" />

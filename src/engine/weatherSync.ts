@@ -10,6 +10,10 @@ import type { CityForecast, Tag, Trip } from '../types';
 
 export type WeatherDest = { label: string; lat?: number; lon?: number };
 
+/** UI lifecycle of a forecast lookup, shared between the panel that triggers it
+ *  and the card that shows the result (so the card can render a loading state). */
+export type WeatherStatus = 'idle' | 'loading' | 'done' | 'error';
+
 export type RefreshOutcome =
   | { status: 'done'; result: TripWeatherResult }
   | { status: 'empty' } //   no destinations to look up
