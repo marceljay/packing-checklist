@@ -9,7 +9,7 @@ import {
   type LibraryImportPlan,
   type ConflictResolution,
 } from '../db/libraryTransfer';
-import { downloadText, pickTextFile } from '../lib/file';
+import { downloadText, downloadBlob, pickTextFile } from '../lib/file';
 import ExportDialog from './ExportDialog';
 import ImportLibraryDialog from './ImportLibraryDialog';
 
@@ -41,6 +41,22 @@ export default function SettingsMenu() {
       document.removeEventListener('keydown', onKey);
     };
   }, [open]);
+
+  // The self-contained offline copy is bundled into the hosting build as
+  // packing-checklist.html. Offer it only in the served app — never in dev (no
+  // artifact) or in the downloaded file:// copy itself (can't re-fetch offline).
+  const canDownloadApp = import.meta.env.PROD && window.location.protocol !== 'file:';
+
+  async function downloadApp() {
+    setOpen(false);
+    try {
+      const res = await fetch(import.meta.env.BASE_URL + 'packing-checklist.html');
+      if (!res.ok) throw new Error();
+      downloadBlob('packing-checklist.html', await res.blob());
+    } catch {
+      alert('The offline app file isn’t available here.');
+    }
+  }
 
   async function importTrip() {
     setOpen(false);
@@ -126,6 +142,9 @@ export default function SettingsMenu() {
           >
             Export…
           </MenuItem>
+          {canDownloadApp && (
+            <MenuItem onClick={downloadApp}>Download app for offline use…</MenuItem>
+          )}
 
           <div className="border-t border-line" />
           <MenuLabel>Import</MenuLabel>

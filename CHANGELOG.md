@@ -15,10 +15,16 @@ All notable changes to this project are documented here.
 - **Forecast on the printed list.** The print / PDF packing sheet now includes a
   compact forecast section (per destination: high/low, range, precipitation, wind)
   when a trip has cached weather, honouring the °C/°F preference.
+- **Download the app for offline use.** The header menu (in the hosted app) has a
+  **Download app for offline use…** entry that saves a single, self-contained
+  `packing-checklist.html` you can keep on disk and open by double-clicking — no
+  server, no network. The entry is hidden in that offline copy itself.
 - **Single-file build.** `npm run build:single` emits one self-contained
   `dist-single/index.html` with all JS, CSS, and fonts inlined as data URIs — it
   runs by double-clicking from `file://`, no web server needed. A fully-offline,
-  copy-anywhere artifact. The normal `npm run build` stays code-split for hosting.
+  copy-anywhere artifact. The normal `npm run build` now also bundles this file
+  into `dist/` (as `packing-checklist.html`) for the download button; the hosted
+  page itself stays code-split.
 - **Collapsible checklist categories + per-category progress.** Each category (or
   tag) group can be collapsed, and in the Checklist view each group header shows a
   small packed bar and count, so you can see what's left per category at a glance.

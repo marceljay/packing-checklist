@@ -1,8 +1,7 @@
 /** Browser file helpers for local-only JSON import/export. */
 
-/** Trigger a download of text content as a file. */
-export function downloadText(filename: string, text: string, type = 'application/json'): void {
-  const blob = new Blob([text], { type });
+/** Trigger a download of a Blob as a file. */
+export function downloadBlob(filename: string, blob: Blob): void {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -11,6 +10,11 @@ export function downloadText(filename: string, text: string, type = 'application
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
+}
+
+/** Trigger a download of text content as a file. */
+export function downloadText(filename: string, text: string, type = 'application/json'): void {
+  downloadBlob(filename, new Blob([text], { type }));
 }
 
 /** Open a file picker and resolve the chosen file's text (null if cancelled). */
