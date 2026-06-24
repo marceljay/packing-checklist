@@ -12,6 +12,9 @@ All notable changes to this project are documented here.
   removed built-ins back.
 
 ### Added
+- **Forecast on the printed list.** The print / PDF packing sheet now includes a
+  compact forecast section (per destination: high/low, range, precipitation, wind)
+  when a trip has cached weather, honouring the °C/°F preference.
 - **Single-file build.** `npm run build:single` emits one self-contained
   `dist-single/index.html` with all JS, CSS, and fonts inlined as data URIs — it
   runs by double-clicking from `file://`, no web server needed. A fully-offline,
@@ -21,6 +24,9 @@ All notable changes to this project are documented here.
   small packed bar and count, so you can see what's left per category at a glance.
 
 ### Changed
+- **Trip export moved to one place.** The redundant **Export trip** button on the
+  trip page is gone — export any trip (or all of them, plus the library) from the
+  header's **Export…** dialog.
 - **Name a trip right on the ticket.** The trip name is now edited inline in the
   boarding-pass header (and focused, ready to type, the moment you create a trip);
   the separate "Trip name" field in the details panel is gone.

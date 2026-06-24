@@ -1,10 +1,17 @@
-import type { Trip, LibraryItem } from '../types';
+import type { Trip, LibraryItem, CityForecast, WeatherBasis } from '../types';
 import { resolveItems, resolvedByCategory, tripDurationDays, destinationCode } from '../types';
+import { useUnits, convTemp, formatPrecip, formatWind } from '../lib/units';
 
 interface Props {
   trip: Trip;
   library: Map<string, LibraryItem>;
 }
+
+const BASIS_LABEL: Record<WeatherBasis, string> = {
+  forecast: 'Forecast',
+  typical: 'Typical',
+  mixed: 'Forecast + typical',
+};
 
 function fmt(d?: string): string {
   if (!d) return '—';
@@ -22,9 +29,12 @@ function fmt(d?: string): string {
  * browser's print dialog — outputs just this clean, hand-checkable sheet.
  */
 export default function PrintSheet({ trip, library }: Props) {
+  const units = useUnits();
   const groups = resolvedByCategory(resolveItems(trip.items, library));
   const days = tripDurationDays(trip);
   const dateLine = [fmt(trip.startDate), fmt(trip.endDate)].join(' → ');
+  const cities = trip.weather?.cities ?? [];
+  const t = (celsius: number) => convTemp(celsius, units);
 
   return (
     <div className="hidden print:block">
@@ -48,6 +58,31 @@ export default function PrintSheet({ trip, library }: Props) {
           </p>
         )}
       </header>
+
+      {cities.length > 0 && (
+        <section className="mb-5 break-inside-avoid">
+          <h2 className="mb-1.5 font-mono text-[0.6875rem] font-bold uppercase tracking-code text-ink">
+            Forecast
+          </h2>
+          <ul className="space-y-1">
+            {cities.map((c: CityForecast) => (
+              <li
+                key={c.place}
+                className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-sm"
+              >
+                <span className="font-display font-bold">{c.place}</span>
+                <span className="font-mono text-[0.625rem] uppercase tracking-wide text-ink-soft">
+                  {BASIS_LABEL[c.basis]} · {c.days}d
+                </span>
+                <span className="font-mono tabular-nums text-ink-soft">
+                  ↑ {t(c.highC)}° ↓ {t(c.lowC)}° · {t(c.minC)}–{t(c.maxC)}° ·{' '}
+                  {formatPrecip(c.precipMm, units)} · {formatWind(c.windMaxKmh, units)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {groups.length === 0 ? (
         <p className="text-sm text-ink-soft">No items on this list yet.</p>

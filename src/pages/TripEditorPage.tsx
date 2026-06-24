@@ -10,8 +10,6 @@ import AddItemCard from '../components/AddItemCard';
 import PrintSheet from '../components/PrintSheet';
 import { tripDurationDays, destinationCode } from '../types';
 import type { Trip } from '../types';
-import { serializeTrip } from '../db/transfer';
-import { downloadText, slugify } from '../lib/file';
 
 type EditorMode = 'plan' | 'checklist';
 
@@ -180,25 +178,14 @@ export default function TripEditorPage() {
             ))}
           </div>
 
-          <div className="flex gap-2">
-            <button
-              className="btn-secondary text-xs"
-              onClick={() =>
-                downloadText(`${slugify(trip.name)}.json`, serializeTrip(trip, [...library.values()]))
-              }
-              title="Download this trip as a .json file (re-importable)"
-            >
-              Export trip
-            </button>
-            <button
-              className="btn-secondary text-xs"
-              onClick={() => window.print()}
-              disabled={trip.items.length === 0}
-              title={trip.items.length === 0 ? 'Add items first' : undefined}
-            >
-              Print / Save as PDF
-            </button>
-          </div>
+          <button
+            className="btn-secondary text-xs"
+            onClick={() => window.print()}
+            disabled={trip.items.length === 0}
+            title={trip.items.length === 0 ? 'Add items first' : undefined}
+          >
+            Print / Save as PDF
+          </button>
         </div>
 
         <PassHeader trip={trip} update={update} autoFocusName={isNew} />
