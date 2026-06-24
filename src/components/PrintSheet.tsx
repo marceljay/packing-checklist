@@ -73,6 +73,7 @@ export default function PrintSheet({ trip, library }: Props) {
                 <span className="font-display font-bold">{c.place}</span>
                 <span className="font-mono text-[0.625rem] uppercase tracking-wide text-ink-soft">
                   {BASIS_LABEL[c.basis]} · {c.days}d
+                  {c.offline && ` · offline${c.approxFrom ? ` ≈ ${c.approxFrom}` : ''}`}
                 </span>
                 <span className="font-mono tabular-nums text-ink-soft">
                   ↑ {t(c.highC)}° ↓ {t(c.lowC)}° · {t(c.minC)}–{t(c.maxC)}° ·{' '}

@@ -308,6 +308,10 @@ export interface DestinationWeather {
   tags: WeatherTagKey[];
   summary: WeatherSummary;
   basis: WeatherBasis;
+  /** True when any part came from bundled climate normals (a network leg failed). */
+  offline?: boolean;
+  /** Name of the nearest bundled climate city the normals came from, when offline. */
+  approxFrom?: string;
 }
 
 /**
@@ -336,6 +340,7 @@ export async function lookupDestinationWeather(
   const parts: DailyWeather[] = [];
   let hasForecast = false;
   let hasTypical = false;
+  let offline = false;
 
   if (forecast) {
     try {
@@ -345,6 +350,7 @@ export async function lookupDestinationWeather(
       if (climate) {
         parts.push(climateDailyForRange(climate, forecast));
         hasTypical = true;
+        offline = true;
       }
     }
   }
@@ -356,6 +362,7 @@ export async function lookupDestinationWeather(
       if (climate) {
         parts.push(climateDailyForRange(climate, historical));
         hasTypical = true;
+        offline = true;
       }
     }
   }
@@ -363,7 +370,13 @@ export async function lookupDestinationWeather(
   if (parts.length === 0) return null;
   const daily = mergeDaily(parts);
   const basis: WeatherBasis = hasForecast && hasTypical ? 'mixed' : hasForecast ? 'forecast' : 'typical';
-  return { place: geo, tags: deriveWeatherTags(daily), summary: summarizeWeather(daily), basis };
+  return {
+    place: geo,
+    tags: deriveWeatherTags(daily),
+    summary: summarizeWeather(daily),
+    basis,
+    ...(offline && climate ? { offline: true, approxFrom: climate.name } : {}),
+  };
 }
 
 export interface TripWeatherResult {

@@ -78,6 +78,10 @@ export type WeatherBasis = 'forecast' | 'typical' | 'mixed';
 export interface CityForecast {
   place: string;
   basis: WeatherBasis;
+  /** Set when this city's data came from bundled offline climate normals. */
+  offline?: boolean;
+  /** Nearest bundled climate city the offline normals came from. */
+  approxFrom?: string;
   /** Weather tag keys this city contributed (e.g. ['cold','rainy']). Lets a
    *  destination's tags be recomputed locally when another is removed. */
   tags?: string[];

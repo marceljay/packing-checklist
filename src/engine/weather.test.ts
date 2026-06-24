@@ -273,6 +273,7 @@ describe('lookupDestinationWeather', () => {
 
     expect(res?.tags).toContain('hot');
     expect(res?.basis).toBe('forecast');
+    expect(res?.offline).toBeFalsy();
     for (const call of fetchMock.mock.calls) expect(String(call[0])).toContain('forecast');
   });
 
@@ -348,6 +349,8 @@ describe('lookupDestinationWeather', () => {
     );
     expect(res).not.toBeNull();
     expect(res?.basis).toBe('typical');
+    expect(res?.offline).toBe(true);
+    expect(res?.approxFrom).toBe('London');
   });
 
   it('returns null offline when no climate city is near', async () => {
@@ -381,5 +384,7 @@ describe('lookupDestinationWeather', () => {
       '2026-06-20',
     );
     expect(res?.basis).toBe('mixed');
+    expect(res?.offline).toBe(true);
+    expect(res?.approxFrom).toBe('London');
   });
 });

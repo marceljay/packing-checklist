@@ -91,6 +91,8 @@ export function applyWeather(
     cities: result.cities.map((c) => ({
       place: c.place.name,
       basis: c.basis,
+      offline: c.offline,
+      approxFrom: c.approxFrom,
       tags: c.tags,
       days: c.summary.days,
       highC: c.summary.highC,

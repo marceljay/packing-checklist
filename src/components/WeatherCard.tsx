@@ -35,6 +35,12 @@ function CityRow({ c, units }: { c: CityForecast; units: UnitSystem }) {
         <p className="truncate font-display font-bold">{c.place}</p>
         <p className="font-mono text-[0.625rem] uppercase tracking-code text-paper-raised/50">
           {BASIS_LABEL[c.basis]} · {c.days}d
+          {c.offline && (
+            <span className="text-vermilion">
+              {' · offline'}
+              {c.approxFrom ? ` ≈ ${c.approxFrom}` : ''}
+            </span>
+          )}
         </p>
       </div>
       <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 font-mono text-sm tabular-nums">
