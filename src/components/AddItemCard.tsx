@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { Trip, Category } from '../types';
 import { CATEGORIES, computeQuantity } from '../types';
-import { rememberItem } from '../db/library';
+import { rememberItem, editLibraryItem } from '../db/library';
 import TagEditor from './TagEditor';
 
 interface Props {
@@ -20,23 +20,28 @@ export default function AddItemCard({ update, tagSuggestions = [] }: Props) {
   const [name, setName] = useState('');
   const [category, setCategory] = useState<Category>('Comfort & Misc');
   const [tags, setTags] = useState<string[]>([]);
+  const [notes, setNotes] = useState('');
 
   function add() {
     const clean = name.trim();
     if (!clean) return;
     const row = rememberItem(clean, category, tags);
+    // Notes are a shared library field; persist them on the resolved row. May fork
+    // a built-in default into a custom (editLibraryItem returns the effective id).
+    const id = notes.trim() ? editLibraryItem(row.id, { notes }).id : row.id;
     // Start at the item's remembered default quantity (1 when it has none).
     const qty = computeQuantity(row.quantity ?? { kind: 'none' }, null, false);
     update((d) => {
-      const existing = d.items.find((i) => i.libraryId === row.id);
+      const existing = d.items.find((i) => i.libraryId === id);
       if (existing) {
         existing.quantityTaken += 1;
       } else {
-        d.items.push({ libraryId: row.id, quantitySuggested: null, quantityTaken: qty, packed: false });
+        d.items.push({ libraryId: id, quantitySuggested: null, quantityTaken: qty, packed: false });
       }
     });
     setName('');
     setTags([]);
+    setNotes('');
     // category stays sticky for the next add
   }
 
@@ -77,6 +82,13 @@ export default function AddItemCard({ update, tagSuggestions = [] }: Props) {
             Add item
           </button>
         </div>
+        <textarea
+          className="input min-h-[3rem] resize-y"
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Notes / description (optional)"
+          aria-label="Notes for new item"
+        />
         <p className="font-mono text-[0.625rem] text-ink-faint">
           Saved to your item library and reusable on future trips.
         </p>

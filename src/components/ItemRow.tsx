@@ -118,6 +118,11 @@ export default function ItemRow({ item, update, showCategory = false, mode = 'pl
             ))}
           </div>
         )}
+
+        {/* Line 3: notes / info (when present) */}
+        {item.notes && (
+          <p className="whitespace-pre-wrap text-xs text-ink-soft">{item.notes}</p>
+        )}
       </div>
 
       {/* Actions: edit (pencil) + remove */}
@@ -155,12 +160,13 @@ function EditForm({ item, onDone }: { item: ResolvedItem; onDone: () => void }) 
   const [name, setName] = useState(item.name);
   const [category, setCategory] = useState<Category>(item.category);
   const [tags, setTags] = useState<string[]>(item.tagKeys);
+  const [notes, setNotes] = useState(item.notes ?? '');
   const [essential, setEssential] = useState(item.essential);
   const [error, setError] = useState('');
 
   function save() {
     if (!name.trim()) return;
-    const res = editLibraryItem(item.libraryId, { name, category, tagKeys: tags, essential });
+    const res = editLibraryItem(item.libraryId, { name, category, tagKeys: tags, notes, essential });
     if (!res.ok) {
       setError('Another item already has that name.');
       return;
@@ -192,6 +198,13 @@ function EditForm({ item, onDone }: { item: ResolvedItem; onDone: () => void }) 
         </select>
       </div>
       <TagEditor value={tags} onChange={setTags} ariaLabel={`Tags for ${item.name}`} />
+      <textarea
+        className="input min-h-[3rem] resize-y"
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+        placeholder="Notes / description (optional)"
+        aria-label={`Notes for ${item.name}`}
+      />
       <label className="flex items-center gap-2 text-sm">
         <input
           type="checkbox"

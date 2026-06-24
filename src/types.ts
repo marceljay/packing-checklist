@@ -60,6 +60,8 @@ export interface ResolvedItem {
   packed: boolean;
   /** Whether the library row is flagged essential (suggested on every trip). */
   essential: boolean;
+  /** Free-text note / longer description carried from the library row. */
+  notes?: string;
   /** true when the referenced library row no longer exists. */
   missing: boolean;
 }
@@ -286,6 +288,7 @@ export function resolveItems(items: Item[], libById: Map<ID, LibraryItem>): Reso
       quantityTaken: it.quantityTaken,
       packed: it.packed,
       essential: lib?.essential === true,
+      notes: lib?.notes,
       missing: lib === undefined,
     };
   });

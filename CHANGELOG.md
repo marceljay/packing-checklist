@@ -12,6 +12,11 @@ All notable changes to this project are documented here.
   removed built-ins back.
 
 ### Added
+- **Edit an item's notes from the trip page.** The "Add item" card and the
+  inline item editor on a trip now include a notes/description field, so you can
+  capture an item's info without detouring to the Item Library. Notes show under
+  the item in the plan view, and (being a shared library field) carry across
+  every trip that uses the item.
 - **Works offline: bundled cities + climate.** The app now ships ~1,000 major
   world cities and monthly climate normals for 104 of them, so it keeps working
   with no network (and from the double-clicked `file://` copy). **Destination
