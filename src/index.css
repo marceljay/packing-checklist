@@ -44,6 +44,10 @@
   }
   html {
     @apply antialiased;
+    /* Don't let mobile browsers inflate text on reflow (preflight sets the
+       -webkit- form; this is the standardised companion). */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
   body {
     @apply bg-paper font-sans text-ink;
@@ -139,6 +143,20 @@
       #1f5673 18px 27px,
       transparent 27px 36px
     );
+  }
+}
+
+/* iOS Safari zooms the whole page in when you focus a form control whose text
+   is smaller than 16px — and on reload it restores focus and re-zooms, so a
+   refresh lands magnified with the right edge pushed off-screen. Keep the
+   compact 14px fields on pointer-precise screens; force 16px on small touch
+   screens so focusing (or reloading) never triggers the zoom. */
+@media (max-width: 640px) {
+  input,
+  select,
+  textarea,
+  .input {
+    font-size: 16px !important;
   }
 }
 

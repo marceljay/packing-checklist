@@ -196,7 +196,7 @@ export default function TripEditorPage() {
         <PassHeader trip={trip} update={update} autoFocusName={isNew} />
 
         {mode === 'plan' ? (
-          <div className="grid gap-5 lg:grid-cols-[20rem_1fr]">
+          <div className="grid gap-5 lg:grid-cols-[20rem_minmax(0,1fr)]">
             <ContextPanel
               trip={trip}
               update={update}
@@ -206,7 +206,7 @@ export default function TripEditorPage() {
               weatherMsg={weatherMsg}
               setWeatherMsg={setWeatherMsg}
             />
-            <div className="flex flex-col gap-5">
+            <div className="flex min-w-0 flex-col gap-5">
               {(trip.weather || weatherStatus === 'loading') && (
                 <WeatherCard
                   weather={trip.weather}
