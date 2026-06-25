@@ -1,18 +1,10 @@
-import {
-  TICKET_DESIGNS,
-  setTicketDesign,
-  useTicketDesign,
-  FIELD_STYLES,
-  setFieldStyle,
-  useFieldStyle,
-} from '../lib/devMode';
+import { TICKET_DESIGNS, setTicketDesign, useTicketDesign } from '../lib/devMode';
 
 /** Dev-only strip (shown when dev mode is on) for trying designs live: the
- *  boarding-pass "ticket" stock and the form-field background style. Rendered in
- *  the app shell, so it appears on every page for consistent theme testing. */
+ *  boarding-pass "ticket" stock. Rendered in the app shell, so it appears on
+ *  every page for consistent theme testing. */
 export default function DevBar() {
   const ticket = useTicketDesign();
-  const field = useFieldStyle();
   return (
     <div className="mb-5 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-lg border border-dashed border-vermilion/40 bg-vermilion-soft/40 px-4 py-2.5 print:hidden">
       <Group label="Ticket" legend="Ticket design">
@@ -23,17 +15,6 @@ export default function DevBar() {
             label={d.label}
             checked={ticket === d.value}
             onChange={() => setTicketDesign(d.value)}
-          />
-        ))}
-      </Group>
-      <Group label="Fields" legend="Form-field style">
-        {FIELD_STYLES.map((f) => (
-          <Swatch
-            key={f.value}
-            name="field-style"
-            label={f.label}
-            checked={field === f.value}
-            onChange={() => setFieldStyle(f.value)}
           />
         ))}
       </Group>

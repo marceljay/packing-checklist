@@ -14,18 +14,8 @@ export const TICKET_DESIGNS: { value: TicketDesign; label: string }[] = [
   { value: 'bone', label: 'Bone' },
 ];
 
-/** Form-field background: 'original' = card-relative (darker by day, lighter at
- *  night); 'darker' = the card colour, just 5% darker, in both themes. */
-export type FieldStyle = 'original' | 'darker';
-
-export const FIELD_STYLES: { value: FieldStyle; label: string }[] = [
-  { value: 'original', label: 'Original' },
-  { value: 'darker', label: '5% darker' },
-];
-
 const DEV_KEY = 'packing-checklist-devmode';
 const TICKET_KEY = 'packing-checklist-ticket';
-const FIELD_KEY = 'packing-checklist-fieldstyle';
 
 function loadDev(): boolean {
   try {
@@ -44,27 +34,9 @@ function loadTicket(): TicketDesign {
   }
 }
 
-function loadField(): FieldStyle {
-  try {
-    return localStorage.getItem(FIELD_KEY) === 'darker' ? 'darker' : 'original';
-  } catch {
-    return 'original';
-  }
-}
-
 let devMode = loadDev();
 let ticket: TicketDesign = loadTicket();
-let fieldStyle: FieldStyle = loadField();
 const listeners = new Set<() => void>();
-
-/** The field style is a global CSS-var override, so it's a class on <html>
- *  (reaching portaled dialogs too), not a per-component className like the ticket. */
-function applyFieldStyle(): void {
-  if (typeof document !== 'undefined') {
-    document.documentElement.classList.toggle('field-darker', fieldStyle === 'darker');
-  }
-}
-applyFieldStyle();
 
 function emit(): void {
   for (const l of listeners) l();
@@ -113,24 +85,4 @@ export function useDevMode(): boolean {
 /** Reactive read of the chosen ticket design. */
 export function useTicketDesign(): TicketDesign {
   return useSyncExternalStore(subscribe, getTicketDesign, getTicketDesign);
-}
-
-export function getFieldStyle(): FieldStyle {
-  return fieldStyle;
-}
-
-export function setFieldStyle(next: FieldStyle): void {
-  fieldStyle = next;
-  try {
-    localStorage.setItem(FIELD_KEY, next);
-  } catch {
-    // storage unavailable — keep the in-memory choice
-  }
-  applyFieldStyle();
-  emit();
-}
-
-/** Reactive read of the chosen form-field style. */
-export function useFieldStyle(): FieldStyle {
-  return useSyncExternalStore(subscribe, getFieldStyle, getFieldStyle);
 }
