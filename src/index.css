@@ -133,21 +133,14 @@
      Colour comes from the active `.ticket--*` design class. */
   .ticket-stock {
     @apply bg-ticket text-ticket-ink;
+    /* Aged-paper feel like a vintage customs tag: smooth, uneven tonal mottling
+       with softly browned/darkened edges. No repeating grain or hatch — those
+       read as noise; real aged stock varies in broad, gentle washes. */
     background-image:
-      /* aged-stock sheen in the top corner */
-      radial-gradient(130% 95% at 88% -25%, rgb(var(--ticket-ink) / 0.12), transparent 55%),
-      /* fine engraved security hatch */
-      repeating-linear-gradient(
-        -45deg,
-        rgb(var(--ticket-ink) / 0.05) 0 1px,
-        transparent 1px 7px
-      ),
-      /* printed-dot grain */
-      radial-gradient(rgb(var(--ticket-ink) / 0.07) 1px, transparent 1px);
-    background-size:
-      100% 100%,
-      auto,
-      15px 15px;
+      radial-gradient(55% 60% at 22% 18%, rgb(var(--ticket-ink) / 0.05), transparent 60%),
+      radial-gradient(50% 55% at 84% 26%, rgb(var(--ticket-ink) / 0.04), transparent 60%),
+      radial-gradient(65% 70% at 75% 95%, rgb(var(--ticket-ink) / 0.055), transparent 65%),
+      radial-gradient(135% 125% at 50% 42%, transparent 60%, rgb(var(--ticket-ink) / 0.1));
   }
   .chip {
     @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-mono
