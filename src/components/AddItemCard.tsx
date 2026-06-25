@@ -83,7 +83,8 @@ export default function AddItemCard({ update, tagSuggestions = [] }: Props) {
           </button>
         </div>
         <textarea
-          className="input min-h-[3rem] resize-y"
+          rows={1}
+          className="input h-10 resize-none transition-[height] focus:h-24"
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           placeholder="Notes / description (optional)"

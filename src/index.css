@@ -25,6 +25,9 @@
     /* Ticket stock defaults to the Airblue design; .ticket--* override these. */
     --ticket: 23 67 89;
     --ticket-ink: 248 247 242;
+    /* Form fields sit just off the card surface — a nuance *darker* in daylight
+       so they read as a recess. */
+    --field: 244 242 234;
   }
   html.dark {
     --paper: 19 25 33; /* ground */
@@ -44,6 +47,9 @@
     --stamp-soft: 29 44 36;
     --grain: 255 255 255;
     --grain-opacity: 0.02;
+    /* At night, a nuance *lighter* than the card so the field lifts off the dark
+       surface instead of disappearing into it. */
+    --field: 33 42 53;
     --ticket: 18 50 66;
     --ticket-ink: 232 230 223;
   }
@@ -115,7 +121,7 @@
 
   /* ---- Forms ------------------------------------------------------------ */
   .input {
-    @apply w-full rounded-md border border-line bg-paper-sunk px-3 py-2 text-sm
+    @apply w-full rounded-md border border-line bg-field px-3 py-2 text-sm
            text-ink placeholder:text-ink-faint focus:border-vermilion focus:outline-none
            focus:ring-1 focus:ring-vermilion;
   }

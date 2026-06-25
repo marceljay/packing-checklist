@@ -5,6 +5,11 @@ All notable changes to this project are documented here.
 ## [Unreleased]
 
 ### Changed
+- **Form fields track the card.** Inputs now use a dedicated `--field` surface
+  that's a nuance darker than the card in daylight and a nuance lighter at night,
+  so a field reads as a recess in light mode and lifts off the dark card at night.
+- **Notes field expands on focus.** The item Notes field shows as a single line
+  and grows to a few lines only when you click into it (Add item + item editor).
 - **Dev mode shows on every page.** The design switcher strip now lives in the
   app shell (was trip-page only), so the ticket stock can be compared on the
   trips list and item library too.

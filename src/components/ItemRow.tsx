@@ -199,7 +199,8 @@ function EditForm({ item, onDone }: { item: ResolvedItem; onDone: () => void }) 
       </div>
       <TagEditor value={tags} onChange={setTags} ariaLabel={`Tags for ${item.name}`} />
       <textarea
-        className="input min-h-[3rem] resize-y"
+        rows={1}
+        className="input h-10 resize-none transition-[height] focus:h-24"
         value={notes}
         onChange={(e) => setNotes(e.target.value)}
         placeholder="Notes / description (optional)"

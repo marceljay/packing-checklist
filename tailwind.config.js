@@ -19,6 +19,7 @@ export default {
           faint: 'rgb(var(--ink-faint) / <alpha-value>)', // tertiary / placeholder
         },
         line: 'rgb(var(--line) / <alpha-value>)', // hairline
+        field: 'rgb(var(--field) / <alpha-value>)', // form-field surface (offset from the card)
         vermilion: {
           DEFAULT: 'rgb(var(--vermilion) / <alpha-value>)', // the one accent
           deep: 'rgb(var(--vermilion-deep) / <alpha-value>)',
