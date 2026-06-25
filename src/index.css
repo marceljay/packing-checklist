@@ -25,9 +25,9 @@
     /* Ticket stock defaults to the Airblue design; .ticket--* override these. */
     --ticket: 23 67 89;
     --ticket-ink: 248 247 242;
-    /* Form fields sit just off the card surface — the card colour, 3% darker, so
-       they read as a slight recess. */
-    --field: 247 246 243;
+    /* Default = field option B (more contrast): the field sits a touch off the
+       card so it reads as a recess (option A makes it match the card — html.field-a). */
+    --field: 244 242 234;
   }
   html.dark {
     --paper: 19 25 33; /* ground */
@@ -48,8 +48,8 @@
     --stamp-soft: 29 44 36;
     --grain: 255 255 255;
     --grain-opacity: 0.02;
-    /* Same rule at night: the card colour, 3% darker. */
-    --field: 23 30 39;
+    /* Option B at night: lighter than the card so the field lifts off it. */
+    --field: 33 42 53;
     --ticket: 18 50 66;
     --ticket-ink: 232 230 223;
   }
@@ -174,15 +174,12 @@
   }
 }
 
-/* Dev field-style switcher (lib/devMode): option B (the default base --field
-   above — card colour 3% darker, low contrast) vs option A — MORE contrast, so
-   the field lifts off the card (darker by day, lighter at night). Class on
-   <html> so portaled dialogs inherit it too. */
+/* Dev field-style switcher (lib/devMode): the default base --field above is
+   option B (more contrast — the field lifts off the card). Option A makes the
+   field exactly the surrounding card colour in both modes (tracks --paper-raised),
+   so fields blend in. Class on <html> so portaled dialogs inherit it too. */
 html.field-a {
-  --field: 244 242 234;
-}
-html.field-a.dark {
-  --field: 33 42 53;
+  --field: var(--paper-raised);
 }
 
 /* Ticket-stock designs — each sets the stock + print colour for both themes.

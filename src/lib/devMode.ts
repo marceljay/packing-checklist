@@ -14,9 +14,9 @@ export const TICKET_DESIGNS: { value: TicketDesign; label: string }[] = [
   { value: 'bone', label: 'Bone' },
 ];
 
-/** Form-field background contrast against the card. 'a' = more contrast (the
- *  field lifts off the card; darker by day, lighter at night). 'b' = less
- *  contrast (the card colour just 3% darker — the default, the original mock). */
+/** Form-field background vs the surrounding card. 'a' = no contrast: the field
+ *  is exactly the card colour in both modes. 'b' = more contrast: the field lifts
+ *  off the card (darker by day, lighter at night) — the default. */
 export type FieldStyle = 'a' | 'b';
 
 export const FIELD_STYLES: { value: FieldStyle; label: string }[] = [
@@ -60,7 +60,7 @@ const listeners = new Set<() => void>();
 
 /** The field style is a global CSS-var override, so it's a class on <html>
  *  (reaching portaled dialogs too), not a per-component className like the ticket.
- *  'b' (less contrast) is the default base, so only 'a' needs an override class. */
+ *  'b' (more contrast) is the default base, so only 'a' (match card) needs a class. */
 function applyFieldStyle(): void {
   if (typeof document !== 'undefined') {
     document.documentElement.classList.toggle('field-a', fieldStyle === 'a');
