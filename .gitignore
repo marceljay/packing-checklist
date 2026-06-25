@@ -16,11 +16,10 @@ dist-single/
 .vite/
 *.tsbuildinfo
 
-# Claude Code per-developer local overrides — not part of the template
-.claude/settings.local.json
-
-# Raw session transcripts — host-disk backup only, may contain tool output/secrets
-_planning/transcripts-backup/
-
-# subagent-driven-development scratch
+# Local-only working dirs: agent/dev tooling and planning artifacts. Kept on
+# disk for local use but deliberately out of git (purged from history too).
+.claude/
+.devcontainer/
 .superpowers/
+_planning/
+BOILERPLATE.md
