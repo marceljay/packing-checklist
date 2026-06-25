@@ -173,13 +173,14 @@
   }
 }
 
-/* Dev field-style switcher (lib/devMode): 'darker' (default base above) vs
-   'original' — the earlier card-relative field colour, darker by day and lighter
-   at night. Class on <html> so portaled dialogs inherit it too. */
-html.field-original {
+/* Dev field-style switcher (lib/devMode): option B (the default base --field
+   above — card colour 3% darker, low contrast) vs option A — MORE contrast, so
+   the field lifts off the card (darker by day, lighter at night). Class on
+   <html> so portaled dialogs inherit it too. */
+html.field-a {
   --field: 244 242 234;
 }
-html.field-original.dark {
+html.field-a.dark {
   --field: 33 42 53;
 }
 

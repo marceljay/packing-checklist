@@ -14,14 +14,14 @@ export const TICKET_DESIGNS: { value: TicketDesign; label: string }[] = [
   { value: 'bone', label: 'Bone' },
 ];
 
-/** Form-field background: 'darker' = the card colour 3% darker (the default,
- *  plus a slight inset shadow); 'original' = the earlier card-relative look
- *  (darker by day, lighter at night). */
-export type FieldStyle = 'darker' | 'original';
+/** Form-field background contrast against the card. 'a' = more contrast (the
+ *  field lifts off the card; darker by day, lighter at night). 'b' = less
+ *  contrast (the card colour just 3% darker — the default, the original mock). */
+export type FieldStyle = 'a' | 'b';
 
 export const FIELD_STYLES: { value: FieldStyle; label: string }[] = [
-  { value: 'darker', label: '3% darker' },
-  { value: 'original', label: 'Original' },
+  { value: 'a', label: 'A' },
+  { value: 'b', label: 'B' },
 ];
 
 const DEV_KEY = 'packing-checklist-devmode';
@@ -47,9 +47,9 @@ function loadTicket(): TicketDesign {
 
 function loadField(): FieldStyle {
   try {
-    return localStorage.getItem(FIELD_KEY) === 'original' ? 'original' : 'darker';
+    return localStorage.getItem(FIELD_KEY) === 'a' ? 'a' : 'b';
   } catch {
-    return 'darker';
+    return 'b';
   }
 }
 
@@ -60,10 +60,10 @@ const listeners = new Set<() => void>();
 
 /** The field style is a global CSS-var override, so it's a class on <html>
  *  (reaching portaled dialogs too), not a per-component className like the ticket.
- *  'darker' is the default base, so only 'original' needs an override class. */
+ *  'b' (less contrast) is the default base, so only 'a' needs an override class. */
 function applyFieldStyle(): void {
   if (typeof document !== 'undefined') {
-    document.documentElement.classList.toggle('field-original', fieldStyle === 'original');
+    document.documentElement.classList.toggle('field-a', fieldStyle === 'a');
   }
 }
 applyFieldStyle();
