@@ -186,16 +186,30 @@ html.dark .ticket--ink {
   --ticket-ink: 232 230 223;
 }
 /* Bone is a light stock (warm off-white) with dark print — the texture reads as
-   dark engraving on pale card, so it inverts the others. */
+   dark engraving on pale card, so it inverts the others. Unlike the others, Bone
+   uses a real scanned-parchment image (see .ticket-stock.ticket--bone below). */
 .ticket--bone {
   --ticket: 233 227 211;
   --ticket-ink: 22 32 46;
+  --ticket-veil: 0.32; /* light tint over the parchment so dark print stays crisp */
 }
 html.dark .ticket--bone {
   /* Night = dark leather: a deep, rich brown stock with bone-coloured print, so
      it stays warm but doesn't glare like the pale daytime card. */
   --ticket: 38 27 18;
   --ticket-ink: 222 211 189;
+  --ticket-veil: 0.84; /* heavy tint turns the parchment into dark leather */
+}
+
+/* Bone swaps the CSS-gradient mottle for an actual aged-paper photo, veiled with
+   the stock colour so it reads as parchment by day and dark leather by night. */
+.ticket-stock.ticket--bone {
+  background-image:
+    linear-gradient(rgb(var(--ticket) / var(--ticket-veil)), rgb(var(--ticket) / var(--ticket-veil))),
+    url('./assets/ticket-bone.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 @layer utilities {

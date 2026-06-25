@@ -5,6 +5,10 @@ All notable changes to this project are documented here.
 ## [Unreleased]
 
 ### Changed
+- **Bone ticket uses a real parchment texture.** The Bone design now renders an
+  aged-paper photo (optimised, inlined for offline use) veiled with the stock
+  colour — warm parchment by day, dark leather by night. Other designs keep the
+  CSS-gradient mottle.
 - **Form fields track the card.** Inputs now use a dedicated `--field` surface
   that's a nuance darker than the card in daylight and a nuance lighter at night,
   so a field reads as a recess in light mode and lifts off the dark card at night.
