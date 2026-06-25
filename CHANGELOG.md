@@ -5,6 +5,9 @@ All notable changes to this project are documented here.
 ## [Unreleased]
 
 ### Changed
+- **Dev field-style switcher.** Dev mode now also toggles the form-field
+  background between the card-relative default and "the card colour, 5% darker"
+  in both themes, for side-by-side comparison.
 - **Bone ticket uses a real parchment texture.** The Bone design now renders an
   aged-paper photo (optimised, inlined for offline use) veiled with the stock
   colour — warm parchment by day, dark leather by night. Other designs keep the
