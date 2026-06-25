@@ -14,8 +14,19 @@ export const TICKET_DESIGNS: { value: TicketDesign; label: string }[] = [
   { value: 'bone', label: 'Bone' },
 ];
 
+/** Form-field background: 'darker' = the card colour 3% darker (the default,
+ *  plus a slight inset shadow); 'original' = the earlier card-relative look
+ *  (darker by day, lighter at night). */
+export type FieldStyle = 'darker' | 'original';
+
+export const FIELD_STYLES: { value: FieldStyle; label: string }[] = [
+  { value: 'darker', label: '3% darker' },
+  { value: 'original', label: 'Original' },
+];
+
 const DEV_KEY = 'packing-checklist-devmode';
 const TICKET_KEY = 'packing-checklist-ticket';
+const FIELD_KEY = 'packing-checklist-fieldstyle';
 
 function loadDev(): boolean {
   try {
@@ -34,9 +45,28 @@ function loadTicket(): TicketDesign {
   }
 }
 
+function loadField(): FieldStyle {
+  try {
+    return localStorage.getItem(FIELD_KEY) === 'original' ? 'original' : 'darker';
+  } catch {
+    return 'darker';
+  }
+}
+
 let devMode = loadDev();
 let ticket: TicketDesign = loadTicket();
+let fieldStyle: FieldStyle = loadField();
 const listeners = new Set<() => void>();
+
+/** The field style is a global CSS-var override, so it's a class on <html>
+ *  (reaching portaled dialogs too), not a per-component className like the ticket.
+ *  'darker' is the default base, so only 'original' needs an override class. */
+function applyFieldStyle(): void {
+  if (typeof document !== 'undefined') {
+    document.documentElement.classList.toggle('field-original', fieldStyle === 'original');
+  }
+}
+applyFieldStyle();
 
 function emit(): void {
   for (const l of listeners) l();
@@ -85,4 +115,24 @@ export function useDevMode(): boolean {
 /** Reactive read of the chosen ticket design. */
 export function useTicketDesign(): TicketDesign {
   return useSyncExternalStore(subscribe, getTicketDesign, getTicketDesign);
+}
+
+export function getFieldStyle(): FieldStyle {
+  return fieldStyle;
+}
+
+export function setFieldStyle(next: FieldStyle): void {
+  fieldStyle = next;
+  try {
+    localStorage.setItem(FIELD_KEY, next);
+  } catch {
+    // storage unavailable — keep the in-memory choice
+  }
+  applyFieldStyle();
+  emit();
+}
+
+/** Reactive read of the chosen form-field style. */
+export function useFieldStyle(): FieldStyle {
+  return useSyncExternalStore(subscribe, getFieldStyle, getFieldStyle);
 }

@@ -173,6 +173,16 @@
   }
 }
 
+/* Dev field-style switcher (lib/devMode): 'darker' (default base above) vs
+   'original' — the earlier card-relative field colour, darker by day and lighter
+   at night. Class on <html> so portaled dialogs inherit it too. */
+html.field-original {
+  --field: 244 242 234;
+}
+html.field-original.dark {
+  --field: 33 42 53;
+}
+
 /* Ticket-stock designs — each sets the stock + print colour for both themes.
    Airblue (air-travel blue) is the default; Kraft (luggage-tag tan) and Ink
    (neutral deep navy) are the alternatives compared via the dev switcher. */

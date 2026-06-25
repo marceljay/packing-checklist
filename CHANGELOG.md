@@ -11,6 +11,8 @@ All notable changes to this project are documented here.
   CSS-gradient mottle.
 - **Form fields read as a recess.** Inputs use a dedicated `--field` surface —
   the card colour 3% darker in both themes — with a very slight inset shadow.
+  Dev mode keeps a Fields switcher to compare this against the earlier
+  card-relative "Original" look.
 - **Notes field expands on focus.** The item Notes field shows as a single line
   and grows to a few lines only when you click into it (Add item + item editor).
 - **Dev mode shows on every page.** The design switcher strip now lives in the
