@@ -34,7 +34,8 @@
     --paper-raised: 24 31 40; /* cards / tags — only a touch above ground so they
                                   don't glare in the dark */
     --paper-sunk: 14 19 26; /* wells, grouped headers */
-    --ink: 232 230 223; /* primary text */
+    --ink: 221 219 211; /* primary text — eased down from near-white so it doesn't
+                           glare on the dark ground, kept warm like aged ink */
     --ink-soft: 164 173 184;
     --ink-faint: 108 119 133;
     --line: 43 54 67;
