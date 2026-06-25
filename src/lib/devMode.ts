@@ -5,12 +5,13 @@ import { useSyncExternalStore } from 'react';
  * theme/units). Dev mode reveals an in-app design switcher so the boarding-pass
  * "ticket" stock can be compared live; the chosen design persists too.
  */
-export type TicketDesign = 'airblue' | 'kraft' | 'ink';
+export type TicketDesign = 'airblue' | 'kraft' | 'ink' | 'bone';
 
 export const TICKET_DESIGNS: { value: TicketDesign; label: string }[] = [
   { value: 'airblue', label: 'Airblue' },
   { value: 'kraft', label: 'Kraft' },
   { value: 'ink', label: 'Ink' },
+  { value: 'bone', label: 'Bone' },
 ];
 
 const DEV_KEY = 'packing-checklist-devmode';
@@ -27,7 +28,7 @@ function loadDev(): boolean {
 function loadTicket(): TicketDesign {
   try {
     const v = localStorage.getItem(TICKET_KEY);
-    return v === 'kraft' || v === 'ink' ? v : 'airblue';
+    return v === 'kraft' || v === 'ink' || v === 'bone' ? v : 'airblue';
   } catch {
     return 'airblue';
   }

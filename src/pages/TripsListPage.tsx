@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { useAppData } from '../db/store';
 import { createTrip, cloneTrip, deleteTrip, pruneEmptyTrips } from '../db/trips';
+import { useTicketDesign } from '../lib/devMode';
 import { tripDurationDays, destinationCode } from '../types';
 
 function formatDateRange(start?: string, end?: string): string {
@@ -19,6 +20,7 @@ function formatDateRange(start?: string, end?: string): string {
 export default function TripsListPage() {
   const navigate = useNavigate();
   const data = useAppData();
+  const design = useTicketDesign();
   const trips = useMemo(() => [...data.trips].sort((a, b) => b.updatedAt - a.updatedAt), [data.trips]);
 
   // Drop "New trip" stubs the user created but never edited.
@@ -75,19 +77,22 @@ export default function TripsListPage() {
                   aria-hidden
                   className="absolute left-4 top-4 h-3 w-3 rounded-full border border-line bg-paper"
                 />
-                <Link to={`/trip/${trip.id}`} className="flex flex-1 flex-col gap-4 p-4 pl-10">
+                <Link
+                  to={`/trip/${trip.id}`}
+                  className={`ticket-stock ticket--${design} flex flex-1 flex-col gap-4 p-4 pl-10`}
+                >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <h2 className="truncate font-display text-lg font-bold leading-tight group-hover:text-vermilion">
                         {trip.name}
                       </h2>
-                      <p className="mt-1 font-mono text-xs uppercase tracking-wide text-ink-soft">
+                      <p className="mt-1 font-mono text-xs uppercase tracking-wide text-ticket-ink/70">
                         {formatDateRange(trip.startDate, trip.endDate)}
                         {days ? ` · ${days}d` : ''}
                       </p>
                     </div>
                     <span
-                      className="code shrink-0 text-2xl leading-none text-ink"
+                      className="code shrink-0 text-2xl leading-none"
                       title={primary?.label ?? trip.name}
                     >
                       {code}
@@ -96,13 +101,13 @@ export default function TripsListPage() {
 
                   {/* Packed meter — the load gauge */}
                   <div className="mt-auto">
-                    <div className="mb-1 flex items-center justify-between font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">
+                    <div className="mb-1 flex items-center justify-between font-mono text-[0.625rem] uppercase tracking-code text-ticket-ink/60">
                       <span>Packed</span>
                       <span className="tabular-nums">
                         {packed}/{total || 0}
                       </span>
                     </div>
-                    <div className="h-1.5 overflow-hidden rounded-full bg-paper-sunk">
+                    <div className="h-1.5 overflow-hidden rounded-full bg-ticket-ink/20">
                       <div
                         className="h-full rounded-full bg-vermilion transition-[width]"
                         style={{ width: `${pct}%` }}

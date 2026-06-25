@@ -134,11 +134,20 @@
   .ticket-stock {
     @apply bg-ticket text-ticket-ink;
     background-image:
-      radial-gradient(125% 90% at 88% -20%, rgb(var(--ticket-ink) / 0.07), transparent 55%),
-      radial-gradient(rgb(var(--ticket-ink) / 0.05) 1px, transparent 1px);
+      /* aged-stock sheen in the top corner */
+      radial-gradient(130% 95% at 88% -25%, rgb(var(--ticket-ink) / 0.12), transparent 55%),
+      /* fine engraved security hatch */
+      repeating-linear-gradient(
+        -45deg,
+        rgb(var(--ticket-ink) / 0.05) 0 1px,
+        transparent 1px 7px
+      ),
+      /* printed-dot grain */
+      radial-gradient(rgb(var(--ticket-ink) / 0.07) 1px, transparent 1px);
     background-size:
       100% 100%,
-      18px 18px;
+      auto,
+      15px 15px;
   }
   .chip {
     @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-mono
@@ -176,6 +185,16 @@ html.dark .ticket--kraft {
 html.dark .ticket--ink {
   --ticket: 14 22 32;
   --ticket-ink: 232 230 223;
+}
+/* Bone is a light stock (warm off-white) with dark print — the texture reads as
+   dark engraving on pale card, so it inverts the others. */
+.ticket--bone {
+  --ticket: 233 227 211;
+  --ticket-ink: 22 32 46;
+}
+html.dark .ticket--bone {
+  --ticket: 218 211 191;
+  --ticket-ink: 26 32 44;
 }
 
 @layer utilities {

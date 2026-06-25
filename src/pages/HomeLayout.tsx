@@ -32,7 +32,7 @@ function TabLink({
       end={end}
       className={({ isActive }) =>
         [
-          'flex flex-col gap-0.5 rounded border px-5 py-3.5 transition-colors',
+          'flex flex-col items-center gap-0.5 rounded border px-5 py-3.5 text-center transition-colors',
           isActive
             ? 'border-ink bg-ink text-paper-raised shadow-pass'
             : 'border-line bg-paper-raised text-ink hover:border-ink/40 hover:bg-paper-sunk',
