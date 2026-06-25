@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useAppData } from '../db/store';
 import { CATEGORIES, type Category, type LibraryItem } from '../types';
 import { searchLibrary } from '../types';
-import { rememberItem, editLibraryItem, forgetItemById, restoreDefaults } from '../db/library';
+import { rememberItem, editLibraryItem, forgetItemById } from '../db/library';
 import TagEditor from '../components/TagEditor';
 import { InfoIcon, EditIcon, DeleteIcon } from '../components/icons';
 
@@ -358,7 +358,7 @@ export default function ItemsPage() {
     <div className="flex flex-col gap-5 print:hidden">
       <AddItemForm suggestions={tagKeys} />
 
-      {/* Search + restore defaults */}
+      {/* Search */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative min-w-0 flex-1 sm:max-w-xs">
           <input
@@ -376,13 +376,6 @@ export default function ItemsPage() {
             ⌕
           </span>
         </div>
-        <button
-          className="btn-secondary text-xs"
-          onClick={() => void restoreDefaults()}
-          title="Re-add any built-in default items you removed or edited (your custom items are untouched)"
-        >
-          Restore defaults
-        </button>
       </div>
 
       {/* Tag filter — plus a special "essentials" chip (essential is a property,

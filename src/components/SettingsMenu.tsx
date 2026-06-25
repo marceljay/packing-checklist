@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { importTripFromText, exportTrips, importAllTripsFromText, listTrips } from '../db/trips';
-import { listLibrary, replaceLibrary, applyLibraryImport } from '../db/library';
+import { listLibrary, replaceLibrary, applyLibraryImport, restoreDefaults } from '../db/library';
 import {
   serializeLibrary,
   parseLibrary,
@@ -13,6 +13,7 @@ import { downloadText, downloadBlob, pickTextFile } from '../lib/file';
 import { useDevMode, setDevMode } from '../lib/devMode';
 import ExportDialog from './ExportDialog';
 import ImportLibraryDialog from './ImportLibraryDialog';
+import ConfirmDialog from './ConfirmDialog';
 
 /** Header menu (hidden until opened) for backup/transfer actions: import a trip,
  *  and export / import the whole item library. */
@@ -21,6 +22,7 @@ export default function SettingsMenu() {
   const devMode = useDevMode();
   const [open, setOpen] = useState(false);
   const [showExport, setShowExport] = useState(false);
+  const [showRestore, setShowRestore] = useState(false);
   // Pending library import: parsed file + its plan against the current library.
   const [libImport, setLibImport] = useState<{
     plan: LibraryImportPlan;
@@ -157,6 +159,16 @@ export default function SettingsMenu() {
           <div className="border-t border-line" />
           <MenuItem
             onClick={() => {
+              setOpen(false);
+              setShowRestore(true);
+            }}
+          >
+            Restore default items…
+          </MenuItem>
+
+          <div className="border-t border-line" />
+          <MenuItem
+            onClick={() => {
               setDevMode(!devMode);
               setOpen(false);
             }}
@@ -186,6 +198,23 @@ export default function SettingsMenu() {
           onCancel={() => setLibImport(null)}
           onApply={applyLibImport}
         />
+      )}
+
+      {showRestore && (
+        <ConfirmDialog
+          title="Restore default items?"
+          confirmLabel="Restore defaults"
+          onConfirm={() => {
+            restoreDefaults();
+            setShowRestore(false);
+          }}
+          onCancel={() => setShowRestore(false)}
+        >
+          <p>
+            Re-adds any built-in items you removed or edited, in their original form.
+            Your own custom items are left untouched.
+          </p>
+        </ConfirmDialog>
       )}
     </div>
   );

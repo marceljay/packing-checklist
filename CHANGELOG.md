@@ -5,6 +5,9 @@ All notable changes to this project are documented here.
 ## [Unreleased]
 
 ### Changed
+- **Restore defaults moved to the menu.** "Restore default items" now lives in
+  the header ⋯ menu (was a button on the Item Library page, which read as a
+  primary action) and asks for confirmation before re-adding the built-ins.
 - **Bone ticket uses a real parchment texture.** The Bone design now renders an
   aged-paper photo (optimised, inlined for offline use) veiled with the stock
   colour — warm parchment by day, dark leather by night. Other designs keep the
