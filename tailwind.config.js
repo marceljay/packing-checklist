@@ -32,6 +32,12 @@ export default {
           DEFAULT: 'rgb(var(--stamp) / <alpha-value>)',
           soft: 'rgb(var(--stamp-soft) / <alpha-value>)',
         },
+        // Boarding-pass "ticket" stock + its print colour. Swappable per design
+        // (see `.ticket--*` in index.css); both themes resolve via CSS vars.
+        ticket: {
+          DEFAULT: 'rgb(var(--ticket) / <alpha-value>)',
+          ink: 'rgb(var(--ticket-ink) / <alpha-value>)',
+        },
       },
       fontFamily: {
         display: ['"Space Grotesk"', 'system-ui', 'sans-serif'],

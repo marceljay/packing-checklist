@@ -9,6 +9,8 @@ import WeatherCard from '../components/WeatherCard';
 import AddItemCard from '../components/AddItemCard';
 import PrintMenu from '../components/PrintMenu';
 import PrintSheet from '../components/PrintSheet';
+import DevBar from '../components/DevBar';
+import { useDevMode, useTicketDesign } from '../lib/devMode';
 import { tripDurationDays, destinationCode } from '../types';
 import type { Trip } from '../types';
 import type { WeatherStatus } from '../engine/weatherSync';
@@ -43,6 +45,7 @@ function PassHeader({
   const total = trip.items.length;
   const packed = trip.items.filter((i) => i.packed).length;
   const pct = total > 0 ? Math.round((packed / total) * 100) : 0;
+  const design = useTicketDesign();
 
   // On a freshly created trip, focus the name and select the placeholder text so
   // the user can type straight over it.
@@ -55,7 +58,7 @@ function PassHeader({
   }, [autoFocusName]);
 
   return (
-    <div className="card overflow-hidden bg-ink text-paper-raised shadow-pass">
+    <div className={`card overflow-hidden shadow-pass ticket-stock ticket--${design}`}>
       <div className="flex flex-col gap-5 p-5 sm:flex-row sm:items-center">
         {/* Route */}
         <div className="flex min-w-0 items-center gap-4">
@@ -63,7 +66,7 @@ function PassHeader({
           <div className="min-w-0 flex-1">
             <label
               htmlFor="pass-trip-name"
-              className="font-mono text-[0.625rem] uppercase tracking-code text-paper-raised/50"
+              className="font-mono text-[0.625rem] uppercase tracking-code text-ticket-ink/50"
             >
               Packing list
             </label>
@@ -74,7 +77,7 @@ function PassHeader({
               onChange={(e) => update((d) => void (d.name = e.target.value))}
               placeholder="Name this trip"
               aria-label="Trip name"
-              className="w-full truncate rounded bg-transparent font-display text-xl font-bold leading-tight text-paper-raised placeholder:text-paper-raised/40 hover:bg-paper-raised/5 focus:bg-paper-raised/10 focus:outline-none"
+              className="w-full truncate rounded bg-transparent font-display text-xl font-bold leading-tight text-ticket-ink placeholder:text-ticket-ink/40 hover:bg-ticket-ink/5 focus:bg-ticket-ink/10 focus:outline-none"
             />
           </div>
         </div>
@@ -82,7 +85,7 @@ function PassHeader({
         {/* Perforated divider */}
         <div
           aria-hidden
-          className="hidden border-l border-dashed border-paper-raised/25 sm:block sm:self-stretch"
+          className="hidden border-l border-dashed border-ticket-ink/25 sm:block sm:self-stretch"
         />
 
         {/* Stats — boarding-pass field grid */}
@@ -94,17 +97,17 @@ function PassHeader({
       </div>
 
       {/* Packed gauge along the stub edge */}
-      <div className="flex items-center gap-3 border-t border-paper-raised/15 px-5 py-2.5">
-        <span className="font-mono text-[0.625rem] uppercase tracking-code text-paper-raised/50">
+      <div className="flex items-center gap-3 border-t border-ticket-ink/15 px-5 py-2.5">
+        <span className="font-mono text-[0.625rem] uppercase tracking-code text-ticket-ink/50">
           Packed
         </span>
-        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-paper-raised/15">
+        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-ticket-ink/15">
           <div
             className="h-full rounded-full bg-vermilion transition-[width]"
             style={{ width: `${pct}%` }}
           />
         </div>
-        <span className="font-mono text-xs tabular-nums text-paper-raised/80">
+        <span className="font-mono text-xs tabular-nums text-ticket-ink/80">
           {packed}/{total || 0}
         </span>
       </div>
@@ -115,7 +118,7 @@ function PassHeader({
 function Field({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="font-mono text-[0.625rem] uppercase tracking-code text-paper-raised/50">
+      <p className="font-mono text-[0.625rem] uppercase tracking-code text-ticket-ink/50">
         {label}
       </p>
       <p className="mt-0.5 font-mono text-sm font-bold tabular-nums">{value}</p>
@@ -133,6 +136,7 @@ export default function TripEditorPage() {
   // the instant a destination is added (the lookup is async).
   const [weatherStatus, setWeatherStatus] = useState<WeatherStatus>('idle');
   const [weatherMsg, setWeatherMsg] = useState('');
+  const devMode = useDevMode();
 
   // Print and "Save as PDF" are the same browser action — the print dialog is
   // where the PDF destination lives. Shared by the nav menu and the checklist footer.
@@ -163,6 +167,7 @@ export default function TripEditorPage() {
 
   return (
     <>
+      {devMode && <DevBar />}
       <div className="flex flex-col gap-5 print:hidden">
         {/* Unified nav bar: back · Plan/Checklist tabs · Print menu — equal segments. */}
         <div className="flex items-stretch rounded-lg border border-line bg-paper-sunk shadow-tag">

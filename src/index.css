@@ -22,6 +22,9 @@
     --stamp-soft: 221 233 225;
     --grain: 22 32 46; /* document-grain dot tint */
     --grain-opacity: 0.025;
+    /* Ticket stock defaults to the Airblue design; .ticket--* override these. */
+    --ticket: 23 67 89;
+    --ticket-ink: 248 247 242;
   }
   html.dark {
     --paper: 19 25 33; /* ground */
@@ -41,6 +44,8 @@
     --stamp-soft: 29 44 36;
     --grain: 255 255 255;
     --grain-opacity: 0.02;
+    --ticket: 18 50 66;
+    --ticket-ink: 232 230 223;
   }
   html {
     @apply antialiased;
@@ -123,6 +128,18 @@
   .card {
     @apply rounded-xl border border-line bg-paper-raised shadow-tag;
   }
+  /* Boarding-pass stock: a deep printed surface with a faint aged-paper sheen
+     and a fine printed-dot grain, so it reads as a real ticket, not flat fill.
+     Colour comes from the active `.ticket--*` design class. */
+  .ticket-stock {
+    @apply bg-ticket text-ticket-ink;
+    background-image:
+      radial-gradient(125% 90% at 88% -20%, rgb(var(--ticket-ink) / 0.07), transparent 55%),
+      radial-gradient(rgb(var(--ticket-ink) / 0.05) 1px, transparent 1px);
+    background-size:
+      100% 100%,
+      18px 18px;
+  }
   .chip {
     @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-mono
            text-[0.6875rem] font-bold uppercase tracking-wide;
@@ -131,6 +148,34 @@
   .code {
     @apply font-mono font-bold uppercase tracking-code;
   }
+}
+
+/* Ticket-stock designs — each sets the stock + print colour for both themes.
+   Airblue (air-travel blue) is the default; Kraft (luggage-tag tan) and Ink
+   (neutral deep navy) are the alternatives compared via the dev switcher. */
+.ticket--airblue {
+  --ticket: 23 67 89;
+  --ticket-ink: 248 247 242;
+}
+html.dark .ticket--airblue {
+  --ticket: 18 50 66;
+  --ticket-ink: 232 230 223;
+}
+.ticket--kraft {
+  --ticket: 138 106 69;
+  --ticket-ink: 251 247 239;
+}
+html.dark .ticket--kraft {
+  --ticket: 74 58 40;
+  --ticket-ink: 236 230 218;
+}
+.ticket--ink {
+  --ticket: 22 32 46;
+  --ticket-ink: 255 254 251;
+}
+html.dark .ticket--ink {
+  --ticket: 14 22 32;
+  --ticket-ink: 232 230 223;
 }
 
 @layer utilities {

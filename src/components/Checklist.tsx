@@ -1,8 +1,8 @@
-import { useMemo, useState } from 'react';
-import type { ResolvedItem, Trip, LibraryItem } from '../types';
-import { resolveItems, resolvedByCategory, resolvedByTag } from '../types';
-import ItemRow from './ItemRow';
-import type { ItemRowMode } from './ItemRow';
+import { useMemo, useState } from "react";
+import type { ResolvedItem, Trip, LibraryItem } from "../types";
+import { resolveItems, resolvedByCategory, resolvedByTag } from "../types";
+import ItemRow from "./ItemRow";
+import type { ItemRowMode } from "./ItemRow";
 
 interface Props {
   trip: Trip;
@@ -13,7 +13,7 @@ interface Props {
   mode?: ItemRowMode;
 }
 
-type GroupBy = 'category' | 'tag';
+type GroupBy = "category" | "tag";
 
 interface Group {
   key: string;
@@ -21,8 +21,13 @@ interface Group {
   items: ResolvedItem[];
 }
 
-export default function Checklist({ trip, update, library, mode = 'plan' }: Props) {
-  const [groupBy, setGroupBy] = useState<GroupBy>('category');
+export default function Checklist({
+  trip,
+  update,
+  library,
+  mode = "plan",
+}: Props) {
+  const [groupBy, setGroupBy] = useState<GroupBy>("category");
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
 
   function toggleGroup(key: string) {
@@ -34,10 +39,13 @@ export default function Checklist({ trip, update, library, mode = 'plan' }: Prop
     });
   }
 
-  const resolved = useMemo(() => resolveItems(trip.items, library), [trip.items, library]);
+  const resolved = useMemo(
+    () => resolveItems(trip.items, library),
+    [trip.items, library],
+  );
 
   const groups = useMemo<Group[]>(() => {
-    if (groupBy === 'category') {
+    if (groupBy === "category") {
       return resolvedByCategory(resolved).map((g) => ({
         key: g.category,
         label: g.category,
@@ -45,8 +53,8 @@ export default function Checklist({ trip, update, library, mode = 'plan' }: Prop
       }));
     }
     return resolvedByTag(resolved).map((g) => ({
-      key: g.tag || '__untagged',
-      label: g.tag || 'Untagged',
+      key: g.tag || "__untagged",
+      label: g.tag || "Untagged",
       items: g.items,
     }));
   }, [resolved, groupBy]);
@@ -66,14 +74,14 @@ export default function Checklist({ trip, update, library, mode = 'plan' }: Prop
           </span>
         )}
         <div className="ml-auto flex items-center gap-1">
-          <span className="label mr-1">Group</span>
-          {(['category', 'tag'] as GroupBy[]).map((g) => (
+          <span className="label mr-1">Group by</span>
+          {(["category", "tag"] as GroupBy[]).map((g) => (
             <button
               key={g}
               className={`rounded px-2 py-1 font-mono text-[0.6875rem] uppercase tracking-wide transition-colors ${
                 groupBy === g
-                  ? 'bg-ink text-paper-raised'
-                  : 'text-ink-faint hover:bg-paper-sunk hover:text-ink'
+                  ? "bg-ink text-paper-raised"
+                  : "text-ink-faint hover:bg-paper-sunk hover:text-ink"
               }`}
               onClick={() => setGroupBy(g)}
             >
@@ -84,7 +92,7 @@ export default function Checklist({ trip, update, library, mode = 'plan' }: Prop
       </div>
 
       {/* Checklist mode: prominent progress bar */}
-      {mode === 'checklist' && total > 0 && (
+      {mode === "checklist" && total > 0 && (
         <div className="flex items-center gap-3 border-b border-line px-4 py-3">
           <div className="h-3 flex-1 overflow-hidden rounded-full bg-paper-sunk">
             <div
@@ -100,7 +108,9 @@ export default function Checklist({ trip, update, library, mode = 'plan' }: Prop
           <span className="shrink-0 font-mono text-sm tabular-nums text-ink">
             {packedCount}/{total}
           </span>
-          <span className="shrink-0 font-mono text-xs tabular-nums text-ink-faint">{pct}%</span>
+          <span className="shrink-0 font-mono text-xs tabular-nums text-ink-faint">
+            {pct}%
+          </span>
         </div>
       )}
 
@@ -108,7 +118,7 @@ export default function Checklist({ trip, update, library, mode = 'plan' }: Prop
       {total === 0 ? (
         <div className="px-4 py-12 text-center">
           <p className="text-sm text-ink-soft">Your packing list is empty.</p>
-          {mode === 'plan' && (
+          {mode === "plan" && (
             <p className="mt-1 font-mono text-xs text-ink-faint">
               Add items above or pull from suggestions.
             </p>
@@ -120,7 +130,8 @@ export default function Checklist({ trip, update, library, mode = 'plan' }: Prop
             const isCollapsed = collapsed.has(group.key);
             const groupPacked = group.items.filter((i) => i.packed).length;
             const groupTotal = group.items.length;
-            const groupPct = groupTotal > 0 ? Math.round((groupPacked / groupTotal) * 100) : 0;
+            const groupPct =
+              groupTotal > 0 ? Math.round((groupPacked / groupTotal) * 100) : 0;
             return (
               <div key={group.key}>
                 <h3>
@@ -130,13 +141,16 @@ export default function Checklist({ trip, update, library, mode = 'plan' }: Prop
                     onClick={() => toggleGroup(group.key)}
                     className="flex w-full items-center gap-2 bg-paper-sunk px-4 py-1.5 text-left transition-colors hover:bg-line/60"
                   >
-                    <span aria-hidden className="font-mono text-[0.625rem] text-ink-faint">
-                      {isCollapsed ? '▸' : '▾'}
+                    <span
+                      aria-hidden
+                      className="font-mono text-[0.625rem] text-ink-faint"
+                    >
+                      {isCollapsed ? "▸" : "▾"}
                     </span>
                     <span className="font-mono text-[0.6875rem] font-bold uppercase tracking-code text-ink-soft">
                       {group.label}
                     </span>
-                    {mode === 'checklist' ? (
+                    {mode === "checklist" ? (
                       <span className="ml-auto flex items-center gap-2">
                         <span className="h-1 w-12 overflow-hidden rounded-full bg-paper">
                           <span
@@ -162,7 +176,7 @@ export default function Checklist({ trip, update, library, mode = 'plan' }: Prop
                         key={item.libraryId}
                         item={item}
                         update={update}
-                        showCategory={groupBy !== 'category'}
+                        showCategory={groupBy !== "category"}
                         mode={mode}
                       />
                     ))}

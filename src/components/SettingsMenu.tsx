@@ -10,6 +10,7 @@ import {
   type ConflictResolution,
 } from '../db/libraryTransfer';
 import { downloadText, downloadBlob, pickTextFile } from '../lib/file';
+import { useDevMode, setDevMode } from '../lib/devMode';
 import ExportDialog from './ExportDialog';
 import ImportLibraryDialog from './ImportLibraryDialog';
 
@@ -17,6 +18,7 @@ import ImportLibraryDialog from './ImportLibraryDialog';
  *  and export / import the whole item library. */
 export default function SettingsMenu() {
   const navigate = useNavigate();
+  const devMode = useDevMode();
   const [open, setOpen] = useState(false);
   const [showExport, setShowExport] = useState(false);
   // Pending library import: parsed file + its plan against the current library.
@@ -151,6 +153,21 @@ export default function SettingsMenu() {
           <MenuItem onClick={importTrip}>Import trip…</MenuItem>
           <MenuItem onClick={importTrips}>Import trips…</MenuItem>
           <MenuItem onClick={importLibrary}>Import library…</MenuItem>
+
+          <div className="border-t border-line" />
+          <MenuItem
+            onClick={() => {
+              setDevMode(!devMode);
+              setOpen(false);
+            }}
+          >
+            <span className="flex items-center justify-between">
+              Dev mode
+              <span className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">
+                {devMode ? 'On' : 'Off'}
+              </span>
+            </span>
+          </MenuItem>
         </div>
       )}
 
