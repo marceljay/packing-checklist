@@ -116,8 +116,8 @@
   /* ---- Forms ------------------------------------------------------------ */
   .input {
     @apply w-full rounded-md border border-line bg-paper-sunk px-3 py-2 text-sm
-           text-ink placeholder:text-ink-faint shadow-[inset_0_1px_2px_rgb(var(--ink)/0.08)]
-           focus:border-vermilion focus:outline-none focus:ring-1 focus:ring-vermilion;
+           text-ink placeholder:text-ink-faint focus:border-vermilion focus:outline-none
+           focus:ring-1 focus:ring-vermilion;
   }
   /* Mono eyebrow label — the "field code" voice of a boarding pass. */
   .label {
@@ -133,17 +133,14 @@
      Colour comes from the active `.ticket--*` design class. */
   .ticket-stock {
     @apply bg-ticket text-ticket-ink;
-    /* Aged-stock feel like a vintage customs tag: organic low-frequency mottling
-       (soft clouds, not grain) — darkened foxing that shows on pale stocks plus
-       lightened mottle for dark stocks — finished with browned, worn edges. */
+    /* Aged-paper feel like a vintage customs tag: smooth, uneven tonal mottling
+       with softly browned/darkened edges. No repeating grain or hatch — those
+       read as noise; real aged stock varies in broad, gentle washes. */
     background-image:
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='d'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.013' numOctaves='2' seed='8' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.5 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23d)'/%3E%3C/svg%3E"),
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cfilter id='l'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.011' numOctaves='2' seed='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.4 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23l)'/%3E%3C/svg%3E"),
-      radial-gradient(140% 130% at 50% 40%, transparent 56%, rgb(var(--ticket-ink) / 0.14));
-    background-size:
-      220px 220px,
-      260px 260px,
-      100% 100%;
+      radial-gradient(55% 60% at 22% 18%, rgb(var(--ticket-ink) / 0.05), transparent 60%),
+      radial-gradient(50% 55% at 84% 26%, rgb(var(--ticket-ink) / 0.04), transparent 60%),
+      radial-gradient(65% 70% at 75% 95%, rgb(var(--ticket-ink) / 0.055), transparent 65%),
+      radial-gradient(135% 125% at 50% 42%, transparent 60%, rgb(var(--ticket-ink) / 0.1));
   }
   .chip {
     @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-mono
