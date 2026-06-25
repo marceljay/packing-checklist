@@ -41,7 +41,7 @@ export default function TagEditor({ value, onChange, suggestions = [], ariaLabel
   const open = suggestions.filter((s) => !value.includes(s));
 
   return (
-    <div className="input flex flex-wrap items-center gap-1.5 py-1.5">
+    <div className="input flex flex-wrap items-center gap-1.5">
       {value.map((k) => (
         <span key={k} className="chip bg-airblue-soft text-airblue">
           {k}

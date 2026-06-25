@@ -1,10 +1,11 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { useAppData } from '../db/store';
 import { createTrip, cloneTrip, deleteTrip, pruneEmptyTrips } from '../db/trips';
 import { useTicketDesign } from '../lib/devMode';
 import { tripDurationDays, destinationCode } from '../types';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 function formatDateRange(start?: string, end?: string): string {
   if (!start && !end) return 'No dates set';
@@ -21,6 +22,7 @@ export default function TripsListPage() {
   const navigate = useNavigate();
   const data = useAppData();
   const design = useTicketDesign();
+  const [pendingDelete, setPendingDelete] = useState<{ id: string; name: string } | null>(null);
   const trips = useMemo(() => [...data.trips].sort((a, b) => b.updatedAt - a.updatedAt), [data.trips]);
 
   // Drop "New trip" stubs the user created but never edited.
@@ -37,8 +39,9 @@ export default function TripsListPage() {
     if (newId) navigate(`/trip/${newId}`);
   }
 
-  function handleDelete(id: string, name: string) {
-    if (confirm(`Delete "${name}"? This can't be undone.`)) deleteTrip(id);
+  function confirmDelete() {
+    if (pendingDelete) deleteTrip(pendingDelete.id);
+    setPendingDelete(null);
   }
 
   return (
@@ -128,7 +131,7 @@ export default function TripsListPage() {
                   </button>
                   <button
                     className="btn-danger ml-auto px-2 py-1.5 text-xs"
-                    onClick={() => handleDelete(trip.id, trip.name)}
+                    onClick={() => setPendingDelete({ id: trip.id, name: trip.name })}
                   >
                     Delete
                   </button>
@@ -137,6 +140,18 @@ export default function TripsListPage() {
             );
           })}
         </ul>
+      )}
+
+      {pendingDelete && (
+        <ConfirmDialog
+          title={`Delete "${pendingDelete.name || 'this trip'}"?`}
+          confirmLabel="Delete trip"
+          tone="danger"
+          onConfirm={confirmDelete}
+          onCancel={() => setPendingDelete(null)}
+        >
+          <p>This removes the trip and its packing list. It can't be undone.</p>
+        </ConfirmDialog>
       )}
     </div>
   );

@@ -115,9 +115,9 @@
 
   /* ---- Forms ------------------------------------------------------------ */
   .input {
-    @apply w-full rounded-md border border-line bg-paper-raised px-3 py-2 text-sm
-           text-ink placeholder:text-ink-faint focus:border-vermilion focus:outline-none
-           focus:ring-1 focus:ring-vermilion;
+    @apply w-full rounded-md border border-line bg-paper-sunk px-3 py-2 text-sm
+           text-ink placeholder:text-ink-faint shadow-[inset_0_1px_2px_rgb(var(--ink)/0.08)]
+           focus:border-vermilion focus:outline-none focus:ring-1 focus:ring-vermilion;
   }
   /* Mono eyebrow label — the "field code" voice of a boarding pass. */
   .label {

@@ -11,7 +11,7 @@ import PrintMenu from '../components/PrintMenu';
 import PrintSheet from '../components/PrintSheet';
 import DevBar from '../components/DevBar';
 import { useDevMode, useTicketDesign } from '../lib/devMode';
-import { tripDurationDays, destinationCode } from '../types';
+import { tripDurationDays, destinationCode, isInternationalTrip } from '../types';
 import type { Trip } from '../types';
 import type { WeatherStatus } from '../engine/weatherSync';
 
@@ -46,6 +46,7 @@ function PassHeader({
   const packed = trip.items.filter((i) => i.packed).length;
   const pct = total > 0 ? Math.round((packed / total) * 100) : 0;
   const design = useTicketDesign();
+  const intl = isInternationalTrip(trip);
 
   // On a freshly created trip, focus the name and select the placeholder text so
   // the user can type straight over it.
@@ -64,12 +65,19 @@ function PassHeader({
         <div className="flex min-w-0 items-center gap-4">
           <span className="code text-5xl leading-none">{code}</span>
           <div className="min-w-0 flex-1">
-            <label
-              htmlFor="pass-trip-name"
-              className="font-mono text-[0.625rem] uppercase tracking-code text-ticket-ink/50"
-            >
-              Packing list
-            </label>
+            <div className="flex items-center gap-1.5">
+              <label
+                htmlFor="pass-trip-name"
+                className="font-mono text-[0.625rem] uppercase tracking-code text-ticket-ink/50"
+              >
+                Packing list
+              </label>
+              {intl && (
+                <span className="inline-flex items-center gap-0.5 rounded-sm border border-ticket-ink/40 px-1 font-mono text-[0.5625rem] font-bold uppercase tracking-code text-ticket-ink/75">
+                  <span aria-hidden>✈</span> International
+                </span>
+              )}
+            </div>
             <input
               id="pass-trip-name"
               ref={nameRef}

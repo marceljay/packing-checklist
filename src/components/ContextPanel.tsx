@@ -372,7 +372,7 @@ export default function ContextPanel({
             <li key={dest.id} className="flex items-center gap-2 text-sm">
               <span className="min-w-0 flex-1 truncate">{dest.label}</span>
               <button
-                className={`chip ${dest.isPrimary ? "bg-vermilion-soft text-vermilion-deep" : "bg-paper-sunk text-ink-faint hover:text-ink"}`}
+                className={`chip shrink-0 ${dest.isPrimary ? "bg-vermilion-soft text-vermilion-deep" : "bg-paper-sunk text-ink-faint hover:text-ink"}`}
                 title="Set as primary destination"
                 onClick={() =>
                   update((d) => {
@@ -385,7 +385,7 @@ export default function ContextPanel({
                 {dest.isPrimary ? "Primary" : "Set primary"}
               </button>
               <button
-                className="btn-ghost px-1.5 py-0.5"
+                className="btn-ghost shrink-0 px-1.5 py-0.5"
                 aria-label={`Remove ${dest.label}`}
                 onClick={() => removeDestination(dest)}
               >

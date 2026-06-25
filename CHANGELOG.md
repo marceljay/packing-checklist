@@ -5,6 +5,15 @@ All notable changes to this project are documented here.
 ## [Unreleased]
 
 ### Fixed
+- **Delete works on mobile.** The trips list now confirms deletion with the
+  in-app dialog instead of the browser's blocking `confirm()`, which some mobile
+  browsers and the offline copy suppress. Added `db/trips` unit tests.
+- **Mobile overflow from long destination names.** The destination row's chips
+  no longer shrink, so a long place name truncates instead of pushing the row
+  past the screen edge.
+- **Tidier forms.** Inputs sit in a slightly darker well with a soft inset
+  shadow, and the tag field matches input/button height (the "Add item" button
+  no longer towers over the field beside it).
 - **Edited or removed built-in items now stick.** Deleting a default item, or
   editing one (which forks it into your own copy), survives a reload — the boot
   seeder no longer resurrects it, so trip-page edits show correctly in the Item
@@ -12,6 +21,8 @@ All notable changes to this project are documented here.
   removed built-ins back.
 
 ### Added
+- **International marker on the ticket.** When a trip spans countries (or is
+  marked international), the boarding-pass header shows an "✈ International" tag.
 - **Day-by-day forecast.** Each destination's forecast card now has a "Day by day"
   expander showing every day's high/low, precipitation, and wind (in your chosen
   units) — for live forecasts, historical "typical" windows, and offline normals.
