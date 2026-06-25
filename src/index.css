@@ -186,8 +186,10 @@ html.dark .ticket--ink {
   --ticket-ink: 22 32 46;
 }
 html.dark .ticket--bone {
-  --ticket: 218 211 191;
-  --ticket-ink: 26 32 44;
+  /* Don't glare at night: develop bone on a deep warm stock with bone-coloured
+     print, matching the other dark stocks instead of a bright pale card. */
+  --ticket: 38 33 24;
+  --ticket-ink: 224 216 197;
 }
 
 @layer utilities {
