@@ -9,8 +9,7 @@ import WeatherCard from '../components/WeatherCard';
 import AddItemCard from '../components/AddItemCard';
 import PrintMenu from '../components/PrintMenu';
 import PrintSheet from '../components/PrintSheet';
-import DevBar from '../components/DevBar';
-import { useDevMode, useTicketDesign } from '../lib/devMode';
+import { useTicketDesign } from '../lib/devMode';
 import { tripDurationDays, destinationCode, isInternationalTrip } from '../types';
 import type { Trip } from '../types';
 import type { WeatherStatus } from '../engine/weatherSync';
@@ -144,7 +143,6 @@ export default function TripEditorPage() {
   // the instant a destination is added (the lookup is async).
   const [weatherStatus, setWeatherStatus] = useState<WeatherStatus>('idle');
   const [weatherMsg, setWeatherMsg] = useState('');
-  const devMode = useDevMode();
 
   // Print and "Save as PDF" are the same browser action — the print dialog is
   // where the PDF destination lives. Shared by the nav menu and the checklist footer.
@@ -175,7 +173,6 @@ export default function TripEditorPage() {
 
   return (
     <>
-      {devMode && <DevBar />}
       <div className="flex flex-col gap-5 print:hidden">
         {/* Unified nav bar: back · Plan/Checklist tabs · Print menu — equal segments. */}
         <div className="flex items-stretch rounded-lg border border-line bg-paper-sunk shadow-tag">

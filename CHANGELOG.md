@@ -4,6 +4,13 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+### Changed
+- **Dev mode shows on every page.** The design switcher strip now lives in the
+  app shell (was trip-page only), so the ticket stock can be compared on the
+  trips list and item library too.
+- **Cleaner empty state.** The top "New trip" button is hidden until at least
+  one trip exists — the empty-state card's "Start your first trip" stands alone.
+
 ### Fixed
 - **Delete works on mobile.** The trips list now confirms deletion with the
   in-app dialog instead of the browser's blocking `confirm()`, which some mobile

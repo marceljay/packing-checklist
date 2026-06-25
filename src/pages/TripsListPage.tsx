@@ -46,11 +46,13 @@ export default function TripsListPage() {
 
   return (
     <div>
-      <div className="mb-5 flex items-center justify-end">
-        <button className="btn-primary" onClick={handleNew}>
-          + New trip
-        </button>
-      </div>
+      {trips.length > 0 && (
+        <div className="mb-5 flex items-center justify-end">
+          <button className="btn-primary" onClick={handleNew}>
+            + New trip
+          </button>
+        </div>
+      )}
 
       {trips.length === 0 ? (
         <div className="card flex flex-col items-center gap-4 px-6 py-16 text-center">

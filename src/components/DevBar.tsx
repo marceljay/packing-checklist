@@ -1,7 +1,8 @@
 import { TICKET_DESIGNS, setTicketDesign, useTicketDesign } from '../lib/devMode';
 
 /** Dev-only strip (shown when dev mode is on) for trying designs live.
- *  Currently: the boarding-pass "ticket" stock. Visible on the trip page. */
+ *  Currently: the boarding-pass "ticket" stock. Rendered in the app shell, so
+ *  it appears on every page for consistent theme testing. */
 export default function DevBar() {
   const ticket = useTicketDesign();
   return (

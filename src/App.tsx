@@ -1,6 +1,8 @@
 import { Link, Outlet } from 'react-router-dom';
 import SettingsMenu from './components/SettingsMenu';
 import ThemeToggle from './components/ThemeToggle';
+import DevBar from './components/DevBar';
+import { useDevMode } from './lib/devMode';
 
 /** Luggage-tag mark — crisp ink shape with a punched eyelet. */
 function TagMark() {
@@ -16,6 +18,7 @@ function TagMark() {
 }
 
 export default function App() {
+  const devMode = useDevMode();
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-10 border-b border-line bg-paper/85 backdrop-blur print:hidden">
@@ -42,6 +45,7 @@ export default function App() {
         <div aria-hidden className="airmail h-1 w-full opacity-90" />
       </header>
       <main className="mx-auto max-w-5xl px-4 py-8">
+        {devMode && <DevBar />}
         <Outlet />
       </main>
     </div>
