@@ -111,12 +111,14 @@ export default function SettingsMenu() {
   function applyLibImport(mode: 'merge' | 'replace', resolutions: ConflictResolution[]) {
     if (!libImport) return;
     const { plan, incoming } = libImport;
+    const newCatsLine = (cats: string[]) =>
+      cats.length > 0 ? `\n\n➕ New categories created: ${cats.join(', ')}` : '';
     if (mode === 'replace') {
-      replaceLibrary(incoming);
-      alert(`Replaced your library with ${incoming.length} item${incoming.length === 1 ? '' : 's'}.`);
+      const { count, newCategories } = replaceLibrary(incoming);
+      alert(`Replaced your library with ${count} item${count === 1 ? '' : 's'}.${newCatsLine(newCategories)}`);
     } else {
-      const { added, replaced, skipped } = applyLibraryImport(plan, resolutions);
-      alert(`Imported: ${added} added, ${replaced} replaced, ${skipped} skipped.`);
+      const { added, replaced, skipped, newCategories } = applyLibraryImport(plan, resolutions);
+      alert(`Imported: ${added} added, ${replaced} replaced, ${skipped} skipped.${newCatsLine(newCategories)}`);
     }
     setLibImport(null);
   }

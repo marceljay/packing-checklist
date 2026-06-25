@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import type { ResolvedItem, Trip, LibraryItem } from "../types";
-import { resolveItems, resolvedByCategory, resolvedByTag } from "../types";
+import { orderedCategories, resolveItems, resolvedByCategory, resolvedByTag } from "../types";
 import ItemRow from "./ItemRow";
 import type { ItemRowMode } from "./ItemRow";
 
@@ -29,6 +29,12 @@ export default function Checklist({
 }: Props) {
   const [groupBy, setGroupBy] = useState<GroupBy>("category");
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
+
+  // Built-ins plus any custom categories in the library, for the edit dropdowns.
+  const categoryOptions = useMemo(
+    () => orderedCategories([...library.values()].map((i) => i.category)),
+    [library],
+  );
 
   function toggleGroup(key: string) {
     setCollapsed((cur) => {
@@ -177,6 +183,7 @@ export default function Checklist({
                         item={item}
                         update={update}
                         showCategory={groupBy !== "category"}
+                        categories={categoryOptions}
                         mode={mode}
                       />
                     ))}

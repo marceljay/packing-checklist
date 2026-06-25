@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useAppData } from '../db/store';
-import { CATEGORIES, type Category, type LibraryItem } from '../types';
+import { orderedCategories, type Category, type LibraryItem } from '../types';
 import { searchLibrary } from '../types';
 import { rememberItem, editLibraryItem, forgetItemById } from '../db/library';
 import TagEditor from '../components/TagEditor';
@@ -17,13 +17,26 @@ function allTagKeys(library: LibraryItem[]): string[] {
 // Item row (read-only) + inline info / edit panels
 // ---------------------------------------------------------------------------
 
-function LibraryItemRow({ item, suggestions }: { item: LibraryItem; suggestions: string[] }) {
+function LibraryItemRow({
+  item,
+  suggestions,
+  categories,
+}: {
+  item: LibraryItem;
+  suggestions: string[];
+  categories: Category[];
+}) {
   const [panel, setPanel] = useState<'none' | 'info' | 'edit'>('none');
 
   if (panel === 'edit') {
     return (
       <li>
-        <LibraryItemEdit item={item} suggestions={suggestions} onDone={() => setPanel('none')} />
+        <LibraryItemEdit
+          item={item}
+          suggestions={suggestions}
+          categories={categories}
+          onDone={() => setPanel('none')}
+        />
       </li>
     );
   }
@@ -106,10 +119,12 @@ function LibraryItemRow({ item, suggestions }: { item: LibraryItem; suggestions:
 function LibraryItemEdit({
   item,
   suggestions,
+  categories,
   onDone,
 }: {
   item: LibraryItem;
   suggestions: string[];
+  categories: Category[];
   onDone: () => void;
 }) {
   const [name, setName] = useState(item.name);
@@ -160,7 +175,7 @@ function LibraryItemEdit({
           onChange={(e) => setCategory(e.target.value as Category)}
           aria-label="Category"
         >
-          {CATEGORIES.map((cat) => (
+          {categories.map((cat) => (
             <option key={cat} value={cat}>
               {cat}
             </option>
@@ -252,9 +267,9 @@ function Section({
 // Add custom item
 // ---------------------------------------------------------------------------
 
-function AddItemForm({ suggestions }: { suggestions: string[] }) {
+function AddItemForm({ suggestions, categories }: { suggestions: string[]; categories: Category[] }) {
   const [name, setName] = useState('');
-  const [category, setCategory] = useState<Category>(CATEGORIES[0]);
+  const [category, setCategory] = useState<Category>(categories[0]);
   const [tags, setTags] = useState<string[]>([]);
 
   function handleSubmit(e: React.FormEvent) {
@@ -264,7 +279,7 @@ function AddItemForm({ suggestions }: { suggestions: string[] }) {
     void rememberItem(trimmed, category, tags);
     setName('');
     setTags([]);
-    setCategory(CATEGORIES[0]);
+    setCategory(categories[0]);
   }
 
   return (
@@ -300,7 +315,7 @@ function AddItemForm({ suggestions }: { suggestions: string[] }) {
             value={category}
             onChange={(e) => setCategory(e.target.value as Category)}
           >
-            {CATEGORIES.map((cat) => (
+            {categories.map((cat) => (
               <option key={cat} value={cat}>
                 {cat}
               </option>
@@ -334,6 +349,9 @@ export default function ItemsPage() {
   const [essentialOnly, setEssentialOnly] = useState(false);
 
   const tagKeys = useMemo(() => allTagKeys(library), [library]);
+  // Built-in categories plus any custom ones already in the library, so imported
+  // categories are pickable in the add/edit forms.
+  const categoryOptions = useMemo(() => orderedCategories(library.map((i) => i.category)), [library]);
   const hasEssentials = useMemo(() => library.some((i) => i.essential), [library]);
 
   const results = useMemo(() => {
@@ -345,10 +363,12 @@ export default function ItemsPage() {
 
   const filtering = query.trim() !== '' || selectedTags.length > 0 || essentialOnly;
 
-  const categoryGroups = CATEGORIES.map((category) => ({
-    category,
-    items: results.filter((i) => i.category === category),
-  })).filter((g) => g.items.length > 0);
+  const categoryGroups = orderedCategories(results.map((i) => i.category))
+    .map((category) => ({
+      category,
+      items: results.filter((i) => i.category === category),
+    }))
+    .filter((g) => g.items.length > 0);
 
   function toggleTag(t: string) {
     setSelectedTags((cur) => (cur.includes(t) ? cur.filter((x) => x !== t) : [...cur, t]));
@@ -356,7 +376,7 @@ export default function ItemsPage() {
 
   return (
     <div className="flex flex-col gap-5 print:hidden">
-      <AddItemForm suggestions={tagKeys} />
+      <AddItemForm suggestions={tagKeys} categories={categoryOptions} />
 
       {/* Search */}
       <div className="flex flex-wrap items-center gap-3">
@@ -436,7 +456,12 @@ export default function ItemsPage() {
           {categoryGroups.map((g) => (
             <Section key={g.category} title={g.category} count={g.items.length} forceOpen={filtering}>
               {[...g.items].sort(byName).map((item) => (
-                <LibraryItemRow key={item.id} item={item} suggestions={tagKeys} />
+                <LibraryItemRow
+                  key={item.id}
+                  item={item}
+                  suggestions={tagKeys}
+                  categories={categoryOptions}
+                />
               ))}
             </Section>
           ))}

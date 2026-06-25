@@ -299,6 +299,16 @@ describe('resolvedByCategory', () => {
   it('returns nothing for an empty list', () => {
     expect(resolvedByCategory([])).toEqual([]);
   });
+
+  it('appends non-built-in categories after the canonical ones', () => {
+    const groups = resolvedByCategory([
+      resolved('Tent', 'Camping'),
+      resolved('Passport', 'Documents'),
+      resolved('Climbing rope', 'Camping'),
+    ]);
+    expect(groups.map((g) => g.category)).toEqual(['Documents', 'Camping']);
+    expect(groups[1].items.map((i) => i.name)).toEqual(['Tent', 'Climbing rope']);
+  });
 });
 
 describe('resolvedByTag', () => {

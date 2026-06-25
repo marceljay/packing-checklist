@@ -31,10 +31,13 @@ describe('serializeLibrary / parseLibrary', () => {
     expect(parsed[0]).toMatchObject({ nameKey: 'sun hat', name: 'Sun Hat', tagKeys: ['beach'], count: 0 });
   });
 
-  it('defaults a bad category and drops blank-named rows', () => {
-    const parsed = parseLibrary(JSON.stringify({ items: [{ name: 'X', category: 'Nope' }, { name: '   ' }] }));
-    expect(parsed).toHaveLength(1);
-    expect(parsed[0].category).toBe('Comfort & Misc');
+  it('preserves an unknown category, defaults a blank one, and drops blank-named rows', () => {
+    const parsed = parseLibrary(
+      JSON.stringify({ items: [{ name: 'X', category: 'Camping' }, { name: 'Y' }, { name: '   ' }] }),
+    );
+    expect(parsed).toHaveLength(2);
+    expect(parsed[0].category).toBe('Camping'); // new category kept, not coerced
+    expect(parsed[1].category).toBe('Comfort & Misc'); // missing → fallback
   });
 
   it('accepts a bare items array', () => {

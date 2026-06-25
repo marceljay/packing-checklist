@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Trip, Category } from '../types';
-import { CATEGORIES, computeQuantity } from '../types';
+import { computeQuantity, orderedCategories } from '../types';
 import { rememberItem, editLibraryItem } from '../db/library';
 import TagEditor from './TagEditor';
 
@@ -8,6 +8,8 @@ interface Props {
   update: (mutator: (draft: Trip) => void) => void;
   /** Known tag keys for autocomplete in the tag editor. */
   tagSuggestions?: string[];
+  /** Category options (built-ins + any custom categories already in the library). */
+  categories?: Category[];
 }
 
 /**
@@ -16,10 +18,11 @@ interface Props {
  * trip stores only a reference. Re-adding an item already on the trip bumps its
  * quantity instead of duplicating.
  */
-export default function AddItemCard({ update, tagSuggestions = [] }: Props) {
+export default function AddItemCard({ update, tagSuggestions = [], categories }: Props) {
   const [name, setName] = useState('');
   const [category, setCategory] = useState<Category>('Comfort & Misc');
   const [tags, setTags] = useState<string[]>([]);
+  const options = orderedCategories(categories ?? []);
   const [notes, setNotes] = useState('');
 
   function add() {
@@ -67,7 +70,7 @@ export default function AddItemCard({ update, tagSuggestions = [] }: Props) {
             onChange={(e) => setCategory(e.target.value as Category)}
             aria-label="Category"
           >
-            {CATEGORIES.map((c) => (
+            {options.map((c) => (
               <option key={c} value={c}>
                 {c}
               </option>

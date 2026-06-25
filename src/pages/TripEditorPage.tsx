@@ -10,7 +10,7 @@ import AddItemCard from '../components/AddItemCard';
 import PrintMenu from '../components/PrintMenu';
 import PrintSheet from '../components/PrintSheet';
 import { useTicketDesign } from '../lib/devMode';
-import { tripDurationDays, destinationCode, isInternationalTrip } from '../types';
+import { tripDurationDays, destinationCode, isInternationalTrip, orderedCategories } from '../types';
 import type { Trip } from '../types';
 import type { WeatherStatus } from '../engine/weatherSync';
 
@@ -159,6 +159,10 @@ export default function TripEditorPage() {
     () => [...new Set(appData.library.flatMap((i) => i.tagKeys ?? []))].sort(),
     [appData.library],
   );
+  const categoryOptions = useMemo(
+    () => orderedCategories(appData.library.map((i) => i.category)),
+    [appData.library],
+  );
 
   if (status === 'not-found' || !trip) {
     return (
@@ -227,7 +231,7 @@ export default function TripEditorPage() {
                   destinations={trip.destinations}
                 />
               )}
-              <AddItemCard update={update} tagSuggestions={tagSuggestions} />
+              <AddItemCard update={update} tagSuggestions={tagSuggestions} categories={categoryOptions} />
               <SuggestionsTray trip={trip} update={update} library={library} />
               <Checklist trip={trip} update={update} library={library} mode="plan" />
             </div>

@@ -1,4 +1,4 @@
-import { CATEGORIES, tagKey, type Category, type LibraryItem, type QuantityRule } from '../types';
+import { tagKey, type Category, type LibraryItem, type QuantityRule } from '../types';
 
 /**
  * JSON export/import for the whole item library (backup / move between devices).
@@ -80,8 +80,10 @@ function asString(v: unknown, fallback = ''): string {
   return typeof v === 'string' ? v : fallback;
 }
 
+// Preserve whatever category the file carries (custom categories are allowed and
+// surfaced as their own sections); only an absent/blank one falls back.
 function asCategory(v: unknown): Category {
-  return CATEGORIES.includes(v as Category) ? (v as Category) : 'Comfort & Misc';
+  return asString(v).trim() || 'Comfort & Misc';
 }
 
 /**

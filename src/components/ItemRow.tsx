@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Item, ResolvedItem, Trip, Category } from '../types';
-import { CATEGORIES } from '../types';
+import { orderedCategories } from '../types';
 import { editLibraryItem } from '../db/library';
 import TagEditor from './TagEditor';
 import { EditIcon, DeleteIcon } from './icons';
@@ -13,11 +13,19 @@ interface Props {
   update: (mutator: (draft: Trip) => void) => void;
   /** Show the category chip (hidden when the list is already grouped by category). */
   showCategory?: boolean;
+  /** Category options for the edit dropdown (built-ins + any custom categories). */
+  categories?: Category[];
   /** plan = display + pencil-edit; checklist = read-only check-off view. */
   mode?: ItemRowMode;
 }
 
-export default function ItemRow({ item, update, showCategory = false, mode = 'plan' }: Props) {
+export default function ItemRow({
+  item,
+  update,
+  showCategory = false,
+  categories,
+  mode = 'plan',
+}: Props) {
   const [editing, setEditing] = useState(false);
 
   /** Patch this trip's reference (per-trip state: quantity / packed). */
@@ -73,7 +81,7 @@ export default function ItemRow({ item, update, showCategory = false, mode = 'pl
 
   // plan mode
   if (editing) {
-    return <EditForm item={item} onDone={() => setEditing(false)} />;
+    return <EditForm item={item} categories={categories} onDone={() => setEditing(false)} />;
   }
 
   return (
@@ -156,9 +164,19 @@ export default function ItemRow({ item, update, showCategory = false, mode = 'pl
  * every trip that references it. Quantity / packed are per-trip and edited
  * outside this form.
  */
-function EditForm({ item, onDone }: { item: ResolvedItem; onDone: () => void }) {
+function EditForm({
+  item,
+  categories,
+  onDone,
+}: {
+  item: ResolvedItem;
+  categories?: Category[];
+  onDone: () => void;
+}) {
   const [name, setName] = useState(item.name);
   const [category, setCategory] = useState<Category>(item.category);
+  // Always include the item's own category so a custom one survives editing.
+  const options = orderedCategories([...(categories ?? []), item.category]);
   const [tags, setTags] = useState<string[]>(item.tagKeys);
   const [notes, setNotes] = useState(item.notes ?? '');
   const [essential, setEssential] = useState(item.essential);
@@ -190,7 +208,7 @@ function EditForm({ item, onDone }: { item: ResolvedItem; onDone: () => void }) 
           onChange={(e) => setCategory(e.target.value as Category)}
           aria-label="Category"
         >
-          {CATEGORIES.map((c) => (
+          {options.map((c) => (
             <option key={c} value={c}>
               {c}
             </option>

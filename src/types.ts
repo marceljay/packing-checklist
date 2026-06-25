@@ -4,7 +4,9 @@
 export type ID = string;
 export type ISODate = string; // 'YYYY-MM-DD'
 
-/** Fixed categories used for grouping and print order (SPEC §4.5). */
+/** Built-in categories used for grouping and print order (SPEC §4.5). These come
+ *  first in every grouped view; imported items may carry their own categories,
+ *  which appear after these (see {@link orderedCategories}). */
 export const CATEGORIES = [
   'Documents',
   'Clothing',
@@ -15,7 +17,28 @@ export const CATEGORIES = [
   'Money & Cards',
   'Comfort & Misc',
 ] as const;
-export type Category = (typeof CATEGORIES)[number];
+/** A category is open-ended: any of the built-ins, or a custom string carried in
+ *  from an import. The literal union keeps autocomplete for the built-ins. */
+export type Category = (typeof CATEGORIES)[number] | (string & NonNullable<unknown>);
+
+/** Whether a category string is one of the built-in {@link CATEGORIES}. */
+export function isBuiltinCategory(c: string): boolean {
+  return (CATEGORIES as readonly string[]).includes(c);
+}
+
+/** The categories to render, in order: the built-in {@link CATEGORIES} first (in
+ *  canonical order), then any other categories present in `used`, de-duplicated in
+ *  first-seen order. Drives every category-grouped view and the category pickers. */
+export function orderedCategories(used: Iterable<string>): Category[] {
+  const extras: string[] = [];
+  const seen = new Set<string>();
+  for (const c of used) {
+    if (!c || seen.has(c) || isBuiltinCategory(c)) continue;
+    seen.add(c);
+    extras.push(c);
+  }
+  return [...CATEGORIES, ...extras];
+}
 
 /** Typed tags drive suggestions and filtering (SPEC §4.4). */
 export type TagType = 'activity' | 'weather' | 'destination' | 'custom';
@@ -308,15 +331,18 @@ export function resolveItems(items: Item[], libById: Map<ID, LibraryItem>): Reso
   });
 }
 
-/** Group resolved items under their category in canonical {@link CATEGORIES}
- *  order, dropping empty categories. Used by the checklist and the print sheet. */
+/** Group resolved items by category — built-in {@link CATEGORIES} first in
+ *  canonical order, then any custom categories the items carry — dropping empty
+ *  ones. Used by the checklist and the print sheet. */
 export function resolvedByCategory(
   items: ResolvedItem[],
 ): { category: Category; items: ResolvedItem[] }[] {
-  return CATEGORIES.map((category) => ({
-    category,
-    items: items.filter((i) => i.category === category),
-  })).filter((g) => g.items.length > 0);
+  return orderedCategories(items.map((i) => i.category))
+    .map((category) => ({
+      category,
+      items: items.filter((i) => i.category === category),
+    }))
+    .filter((g) => g.items.length > 0);
 }
 
 /** Group resolved items by tag key (each item under every tag it carries), named

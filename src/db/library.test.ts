@@ -150,6 +150,14 @@ describe('library import modes', () => {
       expect(ids).toHaveLength(3);
       expect(new Set(ids).size).toBe(3); // all unique
     });
+
+    it('reports the count and any new non-built-in categories', () => {
+      const r = replaceLibrary([
+        parsed({ id: 'c:a', name: 'Tent', category: 'Camping' }),
+        parsed({ id: 'c:b', name: 'Shirt', category: 'Clothing' }),
+      ]);
+      expect(r).toEqual({ count: 2, newCategories: ['Camping'] });
+    });
   });
 
   describe('applyLibraryImport', () => {
@@ -166,7 +174,7 @@ describe('library import modes', () => {
       const incoming = [parsed({ id: 'c:mine', name: 'Gloves' }), parsed({ id: 'c:new', name: 'Crampons' })];
       const plan = planLibraryImport(incoming, listLibrary());
       const r = applyLibraryImport(plan, []);
-      expect(r).toEqual({ added: 1, replaced: 0, skipped: 1 });
+      expect(r).toEqual({ added: 1, replaced: 0, skipped: 1, newCategories: [] });
       expect(getLibraryItem('c:new')?.name).toBe('Crampons');
     });
 
@@ -176,11 +184,11 @@ describe('library import modes', () => {
       const plan = planLibraryImport(incoming, listLibrary());
 
       const mine = applyLibraryImport(plan, ['mine']);
-      expect(mine).toEqual({ added: 0, replaced: 0, skipped: 1 });
+      expect(mine).toEqual({ added: 0, replaced: 0, skipped: 1, newCategories: [] });
       expect(getLibraryItem('c:mine')?.category).toBe('Clothing');
 
       const theirs = applyLibraryImport(plan, ['theirs']);
-      expect(theirs).toEqual({ added: 0, replaced: 1, skipped: 0 });
+      expect(theirs).toEqual({ added: 0, replaced: 1, skipped: 0, newCategories: [] });
       const row = getLibraryItem('c:mine'); // id kept, content overwritten
       expect(row?.category).toBe('Gear & Equipment');
       expect(row?.tagKeys).toEqual(['surf']);
@@ -192,8 +200,20 @@ describe('library import modes', () => {
       const incoming = [parsed({ id: 'c:theirs', name: 'Gloves', tagKeys: ['surf'] })];
       const plan = planLibraryImport(incoming, listLibrary());
       const r = applyLibraryImport(plan, ['both']);
-      expect(r).toEqual({ added: 1, replaced: 0, skipped: 0 });
+      expect(r).toEqual({ added: 1, replaced: 0, skipped: 0, newCategories: [] });
       expect(listLibrary().filter((i) => i.nameKey === 'gloves')).toHaveLength(2);
+    });
+
+    it('reports new non-built-in categories among added/changed items', () => {
+      setup();
+      const incoming = [
+        parsed({ id: 'c:new', name: 'Tent', category: 'Camping' }),
+        parsed({ id: 'c:new2', name: 'Socks', category: 'Clothing' }),
+      ];
+      const plan = planLibraryImport(incoming, listLibrary());
+      const r = applyLibraryImport(plan, []);
+      expect(r.added).toBe(2);
+      expect(r.newCategories).toEqual(['Camping']); // 'Clothing' is built-in
     });
   });
 });

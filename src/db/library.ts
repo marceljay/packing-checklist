@@ -1,5 +1,12 @@
 import { getData, setData } from './store';
-import { customId, tagKey, type Category, type LibraryItem, type QuantityRule } from '../types';
+import {
+  customId,
+  isBuiltinCategory,
+  tagKey,
+  type Category,
+  type LibraryItem,
+  type QuantityRule,
+} from '../types';
 import { forkDefault } from './appData';
 import { CATALOG } from '../data/catalog';
 import { catalogToLibraryItems } from '../data/seed';
@@ -168,6 +175,20 @@ export function restoreDefaults(): void {
   });
 }
 
+/** Categories carried by `cats` that are neither built-in nor already present in
+ *  `prior` — i.e. the brand-new sections an import introduces. First-seen order. */
+function newCategoriesFrom(cats: Iterable<string>, prior: LibraryItem[]): string[] {
+  const known = new Set<string>(prior.map((i) => i.category));
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const c of cats) {
+    if (!c || isBuiltinCategory(c) || known.has(c) || seen.has(c)) continue;
+    seen.add(c);
+    out.push(c);
+  }
+  return out;
+}
+
 /** Build a full library row from a parsed import item under a given id. */
 function rowFromParsed(p: ParsedLibraryItem, id: string): LibraryItem {
   return {
@@ -188,8 +209,15 @@ function rowFromParsed(p: ParsedLibraryItem, id: string): LibraryItem {
  * Replace-all import: wipe the library and load the parsed items as-is (ids
  * preserved; clashing/absent ids get a fresh `c:` id). Clears the removed-default
  * tombstones, so built-ins missing from the file reappear on the next load.
+ * Returns the count plus any new (non-built-in) categories the file introduces.
  */
-export function replaceLibrary(incoming: ParsedLibraryItem[]): number {
+export function replaceLibrary(
+  incoming: ParsedLibraryItem[],
+): { count: number; newCategories: string[] } {
+  const newCategories = newCategoriesFrom(
+    incoming.map((p) => p.category),
+    getData().library,
+  );
   setData((d) => {
     const rows: LibraryItem[] = [];
     const used = new Set<string>();
@@ -201,7 +229,7 @@ export function replaceLibrary(incoming: ParsedLibraryItem[]): number {
     d.library = rows;
     d.removedDefaultIds = [];
   });
-  return incoming.length;
+  return { count: incoming.length, newCategories };
 }
 
 /**
@@ -214,7 +242,10 @@ export function replaceLibrary(incoming: ParsedLibraryItem[]): number {
 export function applyLibraryImport(
   plan: LibraryImportPlan,
   resolutions: ConflictResolution[],
-): { added: number; replaced: number; skipped: number } {
+): { added: number; replaced: number; skipped: number; newCategories: string[] } {
+  const prior = getData().library;
+  // Categories of items actually added or overwritten — the import's footprint.
+  const affectedCats: string[] = plan.fresh.map((p) => p.category);
   let added = 0;
   let replaced = 0;
   let skipped = plan.idMatches.length;
@@ -233,10 +264,12 @@ export function applyLibraryImport(
         skipped += 1;
       } else if (r === 'both') {
         insert(c.incoming);
+        affectedCats.push(c.incoming.category);
         added += 1;
       } else {
         const row = d.library.find((x) => x.id === c.existing.id);
         if (row) {
+          affectedCats.push(c.incoming.category);
           // Overwrite in place, keeping the existing id so trip refs survive.
           const p = c.incoming;
           row.name = p.name;
@@ -253,5 +286,5 @@ export function applyLibraryImport(
       }
     });
   });
-  return { added, replaced, skipped };
+  return { added, replaced, skipped, newCategories: newCategoriesFrom(affectedCats, prior) };
 }

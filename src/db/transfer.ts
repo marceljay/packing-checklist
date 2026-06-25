@@ -1,5 +1,4 @@
 import {
-  CATEGORIES,
   tagKey,
   type Category,
   type Item,
@@ -95,8 +94,9 @@ function asTagType(v: unknown): TagType {
     : 'custom';
 }
 
+// Preserve a custom category as-is; only an absent/blank one falls back.
 function asCategory(v: unknown): Category {
-  return CATEGORIES.includes(v as Category) ? (v as Category) : 'Comfort & Misc';
+  return asString(v).trim() || 'Comfort & Misc';
 }
 
 /**
