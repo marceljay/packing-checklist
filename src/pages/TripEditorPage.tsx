@@ -7,12 +7,18 @@ import Checklist from '../components/Checklist';
 import SuggestionsTray from '../components/SuggestionsTray';
 import WeatherCard from '../components/WeatherCard';
 import AddItemCard from '../components/AddItemCard';
+import PrintMenu from '../components/PrintMenu';
 import PrintSheet from '../components/PrintSheet';
 import { tripDurationDays, destinationCode } from '../types';
 import type { Trip } from '../types';
 import type { WeatherStatus } from '../engine/weatherSync';
 
 type EditorMode = 'plan' | 'checklist';
+
+// Shared styling for the four equal-width nav segments (back · Plan · Checklist · Print).
+const SEG_BASE =
+  'flex flex-1 items-center justify-center gap-1.5 px-4 py-2.5 font-mono text-xs uppercase tracking-wide transition-colors';
+const SEG_IDLE = 'text-ink-soft hover:bg-paper-raised hover:text-ink';
 
 function formatDate(d?: string): string {
   if (!d) return '— — —';
@@ -128,6 +134,10 @@ export default function TripEditorPage() {
   const [weatherStatus, setWeatherStatus] = useState<WeatherStatus>('idle');
   const [weatherMsg, setWeatherMsg] = useState('');
 
+  // Print and "Save as PDF" are the same browser action — the print dialog is
+  // where the PDF destination lives. Shared by the nav menu and the checklist footer.
+  const printTrip = () => window.print();
+
   // Library is the source of truth for item display fields; join live so edits
   // (here or on the Item Library page) reflect immediately.
   const appData = useAppData();
@@ -154,27 +164,21 @@ export default function TripEditorPage() {
   return (
     <>
       <div className="flex flex-col gap-5 print:hidden">
-        {/* Top bar: back link + tab switcher + actions */}
-        <div className="flex items-center justify-between gap-2">
-          <Link to="/" className="btn-ghost -ml-3 px-3 py-1.5 text-xs">
-            ← All trips
+        {/* Unified nav bar: back · Plan/Checklist tabs · Print menu — equal segments. */}
+        <div className="flex items-stretch rounded-lg border border-line bg-paper-sunk shadow-tag">
+          <Link to="/" className={`${SEG_BASE} ${SEG_IDLE} rounded-l-lg`}>
+            <span aria-hidden>←</span>
+            <span className="hidden sm:inline">All trips</span>
           </Link>
 
-          {/* Segmented tab control */}
-          <div
-            className="flex items-center gap-1 rounded bg-paper-sunk p-0.5"
-            role="tablist"
-            aria-label="Editor mode"
-          >
+          <div role="tablist" aria-label="Editor mode" className="contents">
             {(['plan', 'checklist'] as EditorMode[]).map((m) => (
               <button
                 key={m}
                 role="tab"
                 aria-selected={mode === m}
-                className={`rounded px-3 py-1 font-mono text-[0.6875rem] uppercase tracking-wide transition-colors ${
-                  mode === m
-                    ? 'bg-ink text-paper-raised'
-                    : 'text-ink-faint hover:bg-paper-sunk hover:text-ink'
+                className={`${SEG_BASE} border-l border-line ${
+                  mode === m ? 'bg-ink text-paper-raised' : SEG_IDLE
                 }`}
                 onClick={() => setMode(m)}
               >
@@ -183,14 +187,13 @@ export default function TripEditorPage() {
             ))}
           </div>
 
-          <button
-            className="btn-secondary text-xs"
-            onClick={() => window.print()}
+          <PrintMenu
+            onPrint={printTrip}
             disabled={trip.items.length === 0}
-            title={trip.items.length === 0 ? 'Add items first' : undefined}
-          >
-            Print / Save as PDF
-          </button>
+            triggerClassName={`${SEG_BASE} border-l border-line rounded-r-lg ${
+              trip.items.length === 0 ? 'cursor-not-allowed text-ink-faint' : SEG_IDLE
+            }`}
+          />
         </div>
 
         <PassHeader trip={trip} update={update} autoFocusName={isNew} />
@@ -220,7 +223,19 @@ export default function TripEditorPage() {
             </div>
           </div>
         ) : (
-          <Checklist trip={trip} update={update} library={library} mode="checklist" />
+          <>
+            <Checklist trip={trip} update={update} library={library} mode="checklist" />
+            {trip.items.length > 0 && (
+              <div className="flex flex-wrap justify-end gap-2">
+                <button className="btn-secondary" onClick={printTrip}>
+                  Print
+                </button>
+                <button className="btn-secondary" onClick={printTrip}>
+                  Save as PDF
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
 
