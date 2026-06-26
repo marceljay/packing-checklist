@@ -2,7 +2,10 @@ import { Link, Outlet } from 'react-router-dom';
 import SettingsMenu from './components/SettingsMenu';
 import ThemeToggle from './components/ThemeToggle';
 import DevBar from './components/DevBar';
+import { GithubIcon } from './components/icons';
 import { useDevMode } from './lib/devMode';
+
+const REPO_URL = 'https://github.com/marceljay/packing-checklist';
 
 /** Luggage-tag mark — crisp ink shape with a punched eyelet. */
 function TagMark() {
@@ -39,6 +42,16 @@ export default function App() {
           </span>
           <div className="ml-auto flex items-center gap-1 sm:ml-3">
             <ThemeToggle />
+            <a
+              href={REPO_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="btn-ghost px-2 py-1.5"
+              aria-label="View source on GitHub"
+              title="View source on GitHub"
+            >
+              <GithubIcon />
+            </a>
             <SettingsMenu />
           </div>
         </div>
