@@ -4,6 +4,7 @@ import { orderedCategories, type Category, type LibraryItem } from '../types';
 import { searchLibrary } from '../types';
 import { rememberItem, editLibraryItem, forgetItemById } from '../db/library';
 import TagEditor from '../components/TagEditor';
+import Select from '../components/Select';
 import { InfoIcon, EditIcon, DeleteIcon } from '../components/icons';
 
 const byName = (a: LibraryItem, b: LibraryItem) => a.name.localeCompare(b.name);
@@ -169,18 +170,13 @@ function LibraryItemEdit({
           aria-label="Item name"
           autoFocus
         />
-        <select
-          className="input min-w-0"
+        <Select
+          className="min-w-0"
           value={category}
-          onChange={(e) => setCategory(e.target.value as Category)}
-          aria-label="Category"
-        >
-          {categories.map((cat) => (
-            <option key={cat} value={cat}>
-              {cat}
-            </option>
-          ))}
-        </select>
+          onChange={(v) => setCategory(v as Category)}
+          options={categories}
+          ariaLabel="Category"
+        />
         <input
           type="number"
           min="1"
@@ -309,18 +305,13 @@ function AddItemForm({ suggestions, categories }: { suggestions: string[]; categ
           <label className="label mb-1" htmlFor="add-item-category">
             Category
           </label>
-          <select
+          <Select
             id="add-item-category"
-            className="input"
             value={category}
-            onChange={(e) => setCategory(e.target.value as Category)}
-          >
-            {categories.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
-              </option>
-            ))}
-          </select>
+            onChange={(v) => setCategory(v as Category)}
+            options={categories}
+            ariaLabel="Category"
+          />
         </div>
         <div>
           <span className="label mb-1 block">Tags</span>

@@ -3,6 +3,7 @@ import type { Trip, Category } from '../types';
 import { computeQuantity, orderedCategories } from '../types';
 import { rememberItem, editLibraryItem } from '../db/library';
 import TagEditor from './TagEditor';
+import Select from './Select';
 
 interface Props {
   update: (mutator: (draft: Trip) => void) => void;
@@ -64,18 +65,13 @@ export default function AddItemCard({ update, tagSuggestions = [], categories }:
             placeholder="Item name"
             aria-label="Item name"
           />
-          <select
-            className="input min-w-0"
+          <Select
+            className="min-w-0"
             value={category}
-            onChange={(e) => setCategory(e.target.value as Category)}
-            aria-label="Category"
-          >
-            {options.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
+            onChange={(v) => setCategory(v as Category)}
+            options={options}
+            ariaLabel="Category"
+          />
         </div>
         <div className="flex items-start gap-2">
           <div className="min-w-0 flex-1">

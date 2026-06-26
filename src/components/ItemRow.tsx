@@ -3,6 +3,7 @@ import type { Item, ResolvedItem, Trip, Category } from '../types';
 import { orderedCategories } from '../types';
 import { editLibraryItem } from '../db/library';
 import TagEditor from './TagEditor';
+import Select from './Select';
 import { EditIcon, DeleteIcon } from './icons';
 
 export type ItemRowMode = 'plan' | 'checklist';
@@ -202,18 +203,13 @@ function EditForm({
           aria-label="Item name"
           autoFocus
         />
-        <select
-          className="input min-w-0"
+        <Select
+          className="min-w-0"
           value={category}
-          onChange={(e) => setCategory(e.target.value as Category)}
-          aria-label="Category"
-        >
-          {options.map((c) => (
-            <option key={c} value={c}>
-              {c}
-            </option>
-          ))}
-        </select>
+          onChange={(v) => setCategory(v as Category)}
+          options={options}
+          ariaLabel="Category"
+        />
       </div>
       <TagEditor value={tags} onChange={setTags} ariaLabel={`Tags for ${item.name}`} />
       <textarea
