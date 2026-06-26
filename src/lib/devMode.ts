@@ -14,9 +14,9 @@ export const TICKET_DESIGNS: { value: TicketDesign; label: string }[] = [
   { value: 'bone', label: 'Bone' },
 ];
 
-/** Form-field background vs the surrounding card. 'a' = no contrast: the field
- *  is exactly the card colour in both modes. 'b' = more contrast: the field lifts
- *  off the card (darker by day, lighter at night) — the default. */
+/** Form-field background vs the surrounding card. 'b' (default) = the card colour
+ *  3% darker. 'a' = a stronger recess (the card colour 5% darker — `html.field-darker`).
+ *  Both keep the field hue identical to the card; only the depth differs. */
 export type FieldStyle = 'a' | 'b';
 
 export const FIELD_STYLES: { value: FieldStyle; label: string }[] = [
@@ -60,10 +60,10 @@ const listeners = new Set<() => void>();
 
 /** The field style is a global CSS-var override, so it's a class on <html>
  *  (reaching portaled dialogs too), not a per-component className like the ticket.
- *  'b' (more contrast) is the default base, so only 'a' (match card) needs a class. */
+ *  'b' is the default base (no class); 'a' adds `html.field-darker` for the deeper recess. */
 function applyFieldStyle(): void {
   if (typeof document !== 'undefined') {
-    document.documentElement.classList.toggle('field-a', fieldStyle === 'a');
+    document.documentElement.classList.toggle('field-darker', fieldStyle === 'a');
   }
 }
 applyFieldStyle();

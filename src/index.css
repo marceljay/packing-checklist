@@ -25,17 +25,16 @@
     /* Ticket stock defaults to the Airblue design; .ticket--* override these. */
     --ticket: 23 67 89;
     --ticket-ink: 248 247 242;
-    /* Default = field option B (more contrast): the field sits a touch off the
-       card so it reads as a recess (option A makes it match the card — html.field-a). */
-    --field: 244 242 234;
+    /* Form fields sit just off the card surface — the card colour, 3% darker, so
+       they read as a slight recess. */
+    --field: 247 246 243;
   }
   html.dark {
     --paper: 19 25 33; /* ground */
     --paper-raised: 24 31 40; /* cards / tags — only a touch above ground so they
                                   don't glare in the dark */
     --paper-sunk: 14 19 26; /* wells, grouped headers */
-    --ink: 221 219 211; /* primary text — eased down from near-white so it doesn't
-                           glare on the dark ground, kept warm like aged ink */
+    --ink: 232 230 223; /* primary text */
     --ink-soft: 164 173 184;
     --ink-faint: 108 119 133;
     --line: 43 54 67;
@@ -48,7 +47,8 @@
     --stamp-soft: 29 44 36;
     --grain: 255 255 255;
     --grain-opacity: 0.02;
-    /* Option B at night: lighter than the card so the field lifts off it. */
+    /* At night, a nuance *lighter* than the card so the field lifts off the dark
+       surface instead of disappearing into it. */
     --field: 33 42 53;
     --ticket: 18 50 66;
     --ticket-ink: 232 230 223;
@@ -121,9 +121,9 @@
 
   /* ---- Forms ------------------------------------------------------------ */
   .input {
-    @apply w-full rounded-md border border-line bg-field px-3 py-2 text-sm text-ink
-           placeholder:text-ink-faint shadow-[inset_0_1px_2px_rgba(0,0,0,0.06)]
-           focus:border-vermilion focus:outline-none focus:ring-1 focus:ring-vermilion;
+    @apply w-full rounded-md border border-line bg-field px-3 py-2 text-sm
+           text-ink placeholder:text-ink-faint focus:border-vermilion focus:outline-none
+           focus:ring-1 focus:ring-vermilion;
   }
   /* Mono eyebrow label — the "field code" voice of a boarding pass. */
   .label {
@@ -174,12 +174,14 @@
   }
 }
 
-/* Dev field-style switcher (lib/devMode): the default base --field above is
-   option B (more contrast — the field lifts off the card). Option A makes the
-   field exactly the surrounding card colour in both modes (tracks --paper-raised),
-   so fields blend in. Class on <html> so portaled dialogs inherit it too. */
-html.field-a {
-  --field: var(--paper-raised);
+/* Dev field-style switcher (lib/devMode): make form fields the card colour just
+   5% darker in both themes, vs the default card-relative --field (darker by day,
+   lighter at night). Class lives on <html> so portaled dialogs inherit it too. */
+html.field-darker {
+  --field: 242 241 238; /* paper-raised × 0.95 */
+}
+html.field-darker.dark {
+  --field: 23 29 38; /* dark paper-raised × 0.95 */
 }
 
 /* Ticket-stock designs — each sets the stock + print colour for both themes.
@@ -215,7 +217,7 @@ html.dark .ticket--ink {
 .ticket--bone {
   --ticket: 233 227 211;
   --ticket-ink: 22 32 46;
-  --ticket-img: 0.2; /* parchment visibility 0–1 — tweak this to taste */
+  --ticket-img: 0.25; /* parchment visibility 0–1 — tweak this to taste */
 }
 html.dark .ticket--bone {
   /* Night = dark leather: a deep, rich brown stock with bone-coloured print, so
@@ -233,11 +235,7 @@ html.dark .ticket--bone {
    vignette would lighten the edges at night). */
 .ticket-stock.ticket--bone {
   background-image:
-    radial-gradient(
-      120% 125% at 47% 48%,
-      transparent 48%,
-      rgb(28 20 12 / 0.99)
-    ),
+    radial-gradient(110% 125% at 47% 48%, transparent 48%, rgb(28 20 12 / 0.9)),
     linear-gradient(
       rgb(var(--ticket) / calc(1 - var(--ticket-img))),
       rgb(var(--ticket) / calc(1 - var(--ticket-img)))
