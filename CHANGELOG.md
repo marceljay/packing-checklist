@@ -13,9 +13,8 @@ All notable changes to this project are documented here.
   colour — warm parchment by day, dark leather by night. Other designs keep the
   CSS-gradient mottle.
 - **Form fields read as a recess.** Inputs use a dedicated `--field` surface —
-  the card colour 3% darker in both themes — with a very slight inset shadow.
-  Dev mode keeps a Fields switcher to compare this against the earlier
-  card-relative "Original" look.
+  the card colour 3% darker in both themes, hue unchanged. Dev mode keeps a
+  Fields switcher to compare it against a deeper 5%-darker variant.
 - **Notes field expands on focus.** The item Notes field shows as a single line
   and grows to a few lines only when you click into it (Add item + item editor).
 - **Dev mode shows on every page.** The design switcher strip now lives in the
@@ -25,6 +24,9 @@ All notable changes to this project are documented here.
   one trip exists — the empty-state card's "Start your first trip" stands alone.
 
 ### Fixed
+- **Dev field switcher works again.** It toggled a stale `.field-a` class after
+  the CSS was renamed to `.field-darker`, so the switcher silently did nothing;
+  it now drives the renamed class.
 - **Delete works on mobile.** The trips list now confirms deletion with the
   in-app dialog instead of the browser's blocking `confirm()`, which some mobile
   browsers and the offline copy suppress. Added `db/trips` unit tests.
@@ -41,6 +43,15 @@ All notable changes to this project are documented here.
   removed built-ins back.
 
 ### Added
+- **Custom categories survive import.** Imported items keep their own category
+  instead of being silently folded into "Comfort & Misc"; unknown categories
+  appear as their own sections (built-ins first, custom ones after) across the
+  library, checklist, and print views, and are selectable in the add/edit
+  pickers. The import summary reports any new categories it created.
+- **GitHub link in the header.** A source-repo link (GitHub mark) sits in the
+  header next to the theme toggle.
+- **Suitcase favicon.** An inline SVG suitcase (airblue body, vermilion strap)
+  embedded as a data URI, so the offline single-file build stays self-contained.
 - **International marker on the ticket.** When a trip spans countries (or is
   marked international), the boarding-pass header shows an "✈ International" tag.
 - **Day-by-day forecast.** Each destination's forecast card now has a "Day by day"
