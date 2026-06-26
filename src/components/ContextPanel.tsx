@@ -93,7 +93,6 @@ export default function ContextPanel({
   weatherMsg,
   setWeatherMsg,
 }: Props) {
-  const [tagLabel, setTagLabel] = useState("");
   // Pending destination-removal confirmation (in-app dialog).
   const [pendingRemoval, setPendingRemoval] = useState<{
     dest: Destination;
@@ -207,11 +206,6 @@ export default function ContextPanel({
     update((d) => {
       d.tags.push({ id: uid(), label: clean, type });
     });
-  }
-
-  function addCustomTag() {
-    addTag(tagLabel, "custom");
-    setTagLabel("");
   }
 
   function addPlace(place: GeoResult) {
@@ -438,20 +432,6 @@ export default function ContextPanel({
         {quickWeather.length > 0 && (
           <TagPalette label="Weather" tags={quickWeather} onAdd={addTag} />
         )}
-
-        {/* Custom tag — single shrink-safe row. */}
-        <div className="mt-3 flex gap-2">
-          <input
-            className="input min-w-0 flex-1"
-            value={tagLabel}
-            onChange={(e) => setTagLabel(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && addCustomTag()}
-            placeholder="Add your own tag…"
-          />
-          <button className="btn-secondary shrink-0" onClick={addCustomTag}>
-            Add
-          </button>
-        </div>
       </div>
 
       {/* Weather lookup (Open-Meteo, user-triggered) */}
