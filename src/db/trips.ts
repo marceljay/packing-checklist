@@ -2,6 +2,7 @@ import { getData, setData, uid } from './store';
 import { isEmptyTrip, type Trip } from '../types';
 import { parseImport, parseAllTrips, serializeAllTrips, type ImportResult } from './transfer';
 import { getLibraryItem, putWithId } from './library';
+import { mergeTagMeta } from './tags';
 import type { LibraryItem } from '../types';
 
 /** Trips live in the JSON document (`store.ts`); these are synchronous ops over it. */
@@ -81,22 +82,23 @@ export function cloneTrip(id: string): string | undefined {
 export function importTripFromText(text: string): string {
   const result = parseImport(text, uid, Date.now());
   const stored = storeImported(result); // resolves library rows (its own setData calls)
+  mergeTagMeta(result.tagMeta); // add new tags' grouping; keep local on conflict
   setData((d) => d.trips.push(stored));
   return result.trip.id;
 }
 
 /** Serialize every trip plus the library rows they reference — a full backup. */
 export function exportAllTrips(): string {
-  const { trips, library } = getData();
-  return serializeAllTrips(trips, library);
+  const { trips, library, tagMeta } = getData();
+  return serializeAllTrips(trips, library, tagMeta);
 }
 
 /** Serialize a chosen subset of trips (by id) plus their referenced library rows.
  *  An empty id list exports all trips. */
 export function exportTrips(ids: string[]): string {
-  const { trips, library } = getData();
+  const { trips, library, tagMeta } = getData();
   const selected = ids.length > 0 ? trips.filter((t) => ids.includes(t.id)) : trips;
-  return serializeAllTrips(selected, library);
+  return serializeAllTrips(selected, library, tagMeta);
 }
 
 /** Import a full-backup file: each trip is added as a new, independent trip with
@@ -105,6 +107,7 @@ export function importAllTripsFromText(text: string): number {
   const results = parseAllTrips(text, uid, Date.now());
   if (results.length === 0) return 0;
   const stored = results.map(storeImported); // resolves library rows first
+  for (const r of results) mergeTagMeta(r.tagMeta); // bundled registry is shared
   setData((d) => {
     for (const t of stored) d.trips.push(t);
   });

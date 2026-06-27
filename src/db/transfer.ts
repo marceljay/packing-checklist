@@ -4,9 +4,11 @@ import {
   type Item,
   type LibraryItem,
   type Tag,
+  type TagMeta,
   type TagType,
   type Trip,
 } from '../types';
+import { cleanTagMeta } from './appData';
 
 /**
  * JSON import/export for trips (SPEC §1 — local-only portability/backup). Because
@@ -39,6 +41,8 @@ export interface ImportResult {
    *  that the importer rewrites to a local id. */
   trip: Trip;
   libraryItems: ImportedLibraryItem[];
+  /** Tag registry entries the trip's items and selected tags reference. */
+  tagMeta: TagMeta[];
 }
 
 interface TripEnvelope {
@@ -47,6 +51,7 @@ interface TripEnvelope {
   exportedAt: number;
   trip: Trip;
   library: LibraryItem[];
+  tagMeta: TagMeta[];
 }
 
 interface TripsEnvelope {
@@ -55,10 +60,25 @@ interface TripsEnvelope {
   exportedAt: number;
   trips: Trip[];
   library: LibraryItem[];
+  tagMeta: TagMeta[];
 }
 
-/** Serialize a trip together with the library rows its items reference. */
-export function serializeTrip(trip: Trip, library: LibraryItem[]): string {
+/** The registry entries whose key a set of trips actually references — via the
+ *  bundled library rows' tags and the trips' own selected tags. Keeps an export
+ *  self-contained without dragging the whole registry along. */
+function referencedTagMeta(trips: Trip[], library: LibraryItem[], tagMeta: TagMeta[]): TagMeta[] {
+  const referencedIds = new Set(trips.flatMap((t) => t.items.map((i) => i.libraryId)));
+  const keys = new Set<string>();
+  for (const row of library) {
+    if (referencedIds.has(row.id)) for (const k of row.tagKeys ?? []) keys.add(k);
+  }
+  for (const t of trips) for (const tag of t.tags) keys.add(tagKey(tag.label));
+  return tagMeta.filter((m) => keys.has(m.key));
+}
+
+/** Serialize a trip together with the library rows its items reference and the
+ *  registry entries those rows + the trip's selected tags use. */
+export function serializeTrip(trip: Trip, library: LibraryItem[], tagMeta: TagMeta[] = []): string {
   const referenced = new Set(trip.items.map((i) => i.libraryId));
   const envelope: TripEnvelope = {
     kind: EXPORT_KIND,
@@ -66,13 +86,14 @@ export function serializeTrip(trip: Trip, library: LibraryItem[]): string {
     exportedAt: Date.now(),
     trip,
     library: library.filter((l) => referenced.has(l.id)),
+    tagMeta: referencedTagMeta([trip], library, tagMeta),
   };
   return JSON.stringify(envelope, null, 2);
 }
 
 /** Serialize every trip plus the union of library rows they reference — a full,
  *  self-contained backup that {@link parseAllTrips} restores. */
-export function serializeAllTrips(trips: Trip[], library: LibraryItem[]): string {
+export function serializeAllTrips(trips: Trip[], library: LibraryItem[], tagMeta: TagMeta[] = []): string {
   const referenced = new Set(trips.flatMap((t) => t.items.map((i) => i.libraryId)));
   const envelope: TripsEnvelope = {
     kind: TRIPS_EXPORT_KIND,
@@ -80,6 +101,7 @@ export function serializeAllTrips(trips: Trip[], library: LibraryItem[]): string
     exportedAt: Date.now(),
     trips,
     library: library.filter((l) => referenced.has(l.id)),
+    tagMeta: referencedTagMeta(trips, library, tagMeta),
   };
   return JSON.stringify(envelope, null, 2);
 }
@@ -108,6 +130,7 @@ function asCategory(v: unknown): Category {
 function buildTrip(
   raw: Partial<Trip>,
   bundledLibrary: LibraryItem[],
+  tagMeta: TagMeta[],
   genId: () => string,
   now: number,
 ): ImportResult {
@@ -177,7 +200,7 @@ function buildTrip(
     updatedAt: now,
   };
 
-  return { trip, libraryItems: [...libByKey.values()] };
+  return { trip, libraryItems: [...libByKey.values()], tagMeta };
 }
 
 function parseJson(text: string): unknown {
@@ -198,7 +221,7 @@ export function parseImport(text: string, genId: () => string, now: number): Imp
   if (!envelope || typeof envelope !== 'object' || !envelope.trip || !Array.isArray(envelope.library)) {
     throw new Error('That file isn’t a packing-checklist trip export.');
   }
-  return buildTrip(envelope.trip, envelope.library, genId, now);
+  return buildTrip(envelope.trip, envelope.library, cleanTagMeta(envelope.tagMeta), genId, now);
 }
 
 /**
@@ -212,5 +235,6 @@ export function parseAllTrips(text: string, genId: () => string, now: number): I
     throw new Error('That file isn’t a packing-checklist trips backup.');
   }
   const bundled = Array.isArray(envelope.library) ? envelope.library : [];
-  return envelope.trips.map((raw) => buildTrip(raw as Partial<Trip>, bundled, genId, now));
+  const tagMeta = cleanTagMeta(envelope.tagMeta);
+  return envelope.trips.map((raw) => buildTrip(raw as Partial<Trip>, bundled, tagMeta, genId, now));
 }

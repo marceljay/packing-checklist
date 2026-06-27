@@ -1,12 +1,16 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { getData, setData } from './store';
-import { createTrip, getTrip, deleteTrip, cloneTrip, listTrips, pruneEmptyTrips } from './trips';
+import { createTrip, getTrip, deleteTrip, cloneTrip, listTrips, pruneEmptyTrips, importTripFromText } from './trips';
+import { serializeTrip } from './transfer';
+import { listTagMeta, setTagGroup } from './tags';
+import type { LibraryItem, Trip } from '../types';
 
 /** The store is a module singleton; reset the document before each test. */
 beforeEach(() => {
   setData((d) => {
     d.trips = [];
     d.library = [];
+    d.tagMeta = [];
   });
 });
 
@@ -73,5 +77,23 @@ describe('pruneEmptyTrips', () => {
     const remaining = listTrips();
     expect(remaining).toHaveLength(1);
     expect(remaining[0].id).toBe(named);
+  });
+});
+
+describe('importTripFromText merges the bundled tag registry', () => {
+  const lib: LibraryItem[] = [
+    { id: 'boa42', nameKey: 'boardshorts', name: 'Boardshorts', category: 'Clothing', tagKeys: ['surfing'], custom: true, count: 0, lastUsed: 0 },
+  ];
+  const trip = (): Trip => ({
+    id: 'src', name: 'Surf', destinations: [], items: [{ libraryId: 'boa42', quantitySuggested: null, quantityTaken: 1, packed: false }],
+    tags: [{ id: 'g', label: 'surfing', type: 'activity' }],
+    settings: { laundryAvailable: false }, createdAt: 1, updatedAt: 1,
+  });
+
+  it('adds new tag entries but keeps local grouping on conflict', () => {
+    setTagGroup('surfing', 'other'); // local grouping to defend
+    const text = serializeTrip(trip(), lib, [{ key: 'surfing', group: 'activity', default: true }]);
+    importTripFromText(text);
+    expect(listTagMeta().find((m) => m.key === 'surfing')?.group).toBe('other');
   });
 });

@@ -100,6 +100,15 @@ describe('serializeTrip / parseImport (v2 bundle)', () => {
     expect(parsed.items.map((i) => i.libraryId)).toEqual(['boa42']);
   });
 
+  it('bundles only the registry entries the trip references, and round-trips them', () => {
+    const meta = [
+      { key: 'surfing', group: 'activity' as const, default: true }, // used by item + tag
+      { key: 'beach', group: 'weather' as const, default: true }, //   unreferenced → excluded
+    ];
+    const { tagMeta } = parseImport(serializeTrip(sampleTrip(), sampleLibrary(), meta), genId, NOW);
+    expect(tagMeta).toEqual([{ key: 'surfing', group: 'activity', default: true }]);
+  });
+
   it('throws on invalid JSON', () => {
     expect(() => parseImport('{not json', genId, NOW)).toThrow();
   });
