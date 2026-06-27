@@ -43,6 +43,15 @@ All notable changes to this project are documented here.
   removed built-ins back.
 
 ### Added
+- **Editable tags.** Tags now carry editable metadata (a group —
+  Activity / Weather / Other — and a "show on the trip page" default), kept in a
+  registry seeded from the built-ins plus your library's tags. Click a tag chip
+  on an item in the Item Library to change its group, pin/unpin it from the
+  trip-page quick-add, rename it everywhere, or delete it (items left with no
+  tags fall back to "misc"; nothing is lost). The trip-page quick-add is now
+  driven by this registry — default tags first, grouped, with a "more" toggle
+  for the rest — and the tag metadata travels with library and trip
+  export/import.
 - **Custom categories survive import.** Imported items keep their own category
   instead of being silently folded into "Comfort & Misc"; unknown categories
   appear as their own sections (built-ins first, custom ones after) across the
