@@ -177,7 +177,7 @@ export default function TagEditor({ value, onChange, suggestions = [], ariaLabel
                         onChange={() => toggle(s)}
                         className="h-4 w-4 shrink-0 rounded border-line text-vermilion focus:ring-vermilion"
                       />
-                      <span className="truncate text-ink">{s}</span>
+                      <span className="chip max-w-full truncate bg-airblue-soft text-airblue">{s}</span>
                     </label>
                   </li>
                 );

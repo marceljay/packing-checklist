@@ -4,6 +4,7 @@ import { orderedCategories, type Category, type LibraryItem } from '../types';
 import { searchLibrary } from '../types';
 import { rememberItem, editLibraryItem, forgetItemById } from '../db/library';
 import TagEditor from '../components/TagEditor';
+import TagEditorDialog from '../components/TagEditorDialog';
 import Select from '../components/Select';
 import { InfoIcon, EditIcon, DeleteIcon } from '../components/icons';
 
@@ -22,10 +23,13 @@ function LibraryItemRow({
   item,
   suggestions,
   categories,
+  onEditTag,
 }: {
   item: LibraryItem;
   suggestions: string[];
   categories: Category[];
+  /** Open the tag editor for a tag clicked on this row. */
+  onEditTag: (tag: string) => void;
 }) {
   const [panel, setPanel] = useState<'none' | 'info' | 'edit'>('none');
 
@@ -50,9 +54,15 @@ function LibraryItemRow({
           {item.tagKeys.length > 0 && (
             <div className="flex flex-wrap gap-1">
               {item.tagKeys.map((k) => (
-                <span key={k} className="chip bg-airblue-soft text-airblue">
+                <button
+                  key={k}
+                  type="button"
+                  onClick={() => onEditTag(k)}
+                  title={`Edit tag “${k}”`}
+                  className="chip bg-airblue-soft text-airblue transition-colors hover:bg-airblue/20"
+                >
                   {k}
-                </span>
+                </button>
               ))}
             </div>
           )}
@@ -338,6 +348,8 @@ export default function ItemsPage() {
   const [query, setQuery] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [essentialOnly, setEssentialOnly] = useState(false);
+  // The tag whose registry editor is open (clicked on an item row), if any.
+  const [editingTag, setEditingTag] = useState<string | null>(null);
 
   const tagKeys = useMemo(() => allTagKeys(library), [library]);
   // Built-in categories plus any custom ones already in the library, so imported
@@ -452,12 +464,15 @@ export default function ItemsPage() {
                   item={item}
                   suggestions={tagKeys}
                   categories={categoryOptions}
+                  onEditTag={setEditingTag}
                 />
               ))}
             </Section>
           ))}
         </div>
       )}
+
+      {editingTag && <TagEditorDialog tag={editingTag} onClose={() => setEditingTag(null)} />}
     </div>
   );
 }
