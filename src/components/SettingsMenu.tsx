@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { importTripFromText, exportTrips, importAllTripsFromText, listTrips } from '../db/trips';
 import { listLibrary, replaceLibrary, applyLibraryImport, restoreDefaults } from '../db/library';
+import { listTagMeta } from '../db/tags';
 import {
   serializeLibrary,
   parseLibrary,
@@ -79,7 +80,7 @@ export default function SettingsMenu() {
       downloadText('packing-checklist-trips.json', exportTrips(tripIds));
     }
     if (includeLibrary) {
-      downloadText('packing-checklist-library.json', serializeLibrary(listLibrary()));
+      downloadText('packing-checklist-library.json', serializeLibrary(listLibrary(), listTagMeta()));
     }
     setShowExport(false);
   }
@@ -102,7 +103,7 @@ export default function SettingsMenu() {
     if (text == null) return;
     try {
       const incoming = parseLibrary(text);
-      setLibImport({ plan: planLibraryImport(incoming, listLibrary()), incoming });
+      setLibImport({ plan: planLibraryImport(incoming.items, listLibrary()), incoming });
     } catch (e) {
       alert(e instanceof Error ? e.message : 'Could not import that file.');
     }
@@ -114,10 +115,10 @@ export default function SettingsMenu() {
     const newCatsLine = (cats: string[]) =>
       cats.length > 0 ? `\n\n➕ New categories created: ${cats.join(', ')}` : '';
     if (mode === 'replace') {
-      const { count, newCategories } = replaceLibrary(incoming);
+      const { count, newCategories } = replaceLibrary(incoming.items, incoming.tagMeta);
       alert(`Replaced your library with ${count} item${count === 1 ? '' : 's'}.${newCatsLine(newCategories)}`);
     } else {
-      const { added, replaced, skipped, newCategories } = applyLibraryImport(plan, resolutions);
+      const { added, replaced, skipped, newCategories } = applyLibraryImport(plan, resolutions, incoming.tagMeta);
       alert(`Imported: ${added} added, ${replaced} replaced, ${skipped} skipped.${newCatsLine(newCategories)}`);
     }
     setLibImport(null);
@@ -196,7 +197,7 @@ export default function SettingsMenu() {
       {libImport && (
         <ImportLibraryDialog
           plan={libImport.plan}
-          incomingCount={libImport.incoming.length}
+          incomingCount={libImport.incoming.items.length}
           onCancel={() => setLibImport(null)}
           onApply={applyLibImport}
         />

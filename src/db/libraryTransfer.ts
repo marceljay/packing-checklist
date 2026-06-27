@@ -1,4 +1,5 @@
-import { tagKey, type Category, type LibraryItem, type QuantityRule } from '../types';
+import { tagKey, type Category, type LibraryItem, type QuantityRule, type TagMeta } from '../types';
+import { cleanTagMeta } from './appData';
 
 /**
  * JSON export/import for the whole item library (backup / move between devices).
@@ -14,6 +15,14 @@ interface LibraryEnvelope {
   version: number;
   exportedAt: number;
   items: LibraryItem[];
+  /** The tag registry, so grouping/defaults survive a backup round-trip. */
+  tagMeta: TagMeta[];
+}
+
+/** A parsed library file: the rows plus the tag registry it carried. */
+export interface ParsedLibrary {
+  items: ParsedLibraryItem[];
+  tagMeta: TagMeta[];
 }
 
 /** A library row as carried in an import (id optional — absent → matched by name). */
@@ -66,12 +75,13 @@ export function planLibraryImport(
   return plan;
 }
 
-export function serializeLibrary(items: LibraryItem[]): string {
+export function serializeLibrary(items: LibraryItem[], tagMeta: TagMeta[] = []): string {
   const envelope: LibraryEnvelope = {
     kind: EXPORT_KIND,
     version: EXPORT_VERSION,
     exportedAt: Date.now(),
     items,
+    tagMeta,
   };
   return JSON.stringify(envelope, null, 2);
 }
@@ -88,9 +98,10 @@ function asCategory(v: unknown): Category {
 
 /**
  * Parse an exported library file (envelope or a bare items array) into normalized
- * rows. Blank-named rows are dropped. Throws on invalid input.
+ * rows plus the tag registry it carried (tolerant: a missing/invalid `tagMeta`
+ * yields `[]`). Blank-named rows are dropped. Throws on invalid input.
  */
-export function parseLibrary(text: string): ParsedLibraryItem[] {
+export function parseLibrary(text: string): ParsedLibrary {
   let data: unknown;
   try {
     data = JSON.parse(text);
@@ -102,6 +113,7 @@ export function parseLibrary(text: string): ParsedLibraryItem[] {
   if (!Array.isArray(rawItems)) {
     throw new Error('That file isn’t a packing-checklist item library.');
   }
+  const tagMeta = cleanTagMeta((data as { tagMeta?: unknown }).tagMeta);
 
   const out: ParsedLibraryItem[] = [];
   for (const raw of rawItems as Record<string, unknown>[]) {
@@ -120,5 +132,5 @@ export function parseLibrary(text: string): ParsedLibraryItem[] {
       lastUsed: typeof raw.lastUsed === 'number' ? raw.lastUsed : 0,
     });
   }
-  return out;
+  return { items: out, tagMeta };
 }

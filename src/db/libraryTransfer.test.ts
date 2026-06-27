@@ -20,19 +20,31 @@ function row(over: Partial<LibraryItem> = {}): LibraryItem {
 describe('serializeLibrary / parseLibrary', () => {
   it('round-trips every row with its id, tags and counts', () => {
     const items = [row(), row({ id: 'soc11', nameKey: 'socks', name: 'Socks', category: 'Clothing', tagKeys: [], custom: true, essential: undefined, count: 0, lastUsed: 0 })];
-    const parsed = parseLibrary(serializeLibrary(items));
+    const { items: parsed } = parseLibrary(serializeLibrary(items));
     expect(parsed.map((p) => p.id)).toEqual(['pas81', 'soc11']);
     expect(parsed[0]).toMatchObject({ name: 'Passport', category: 'Documents', tagKeys: ['intl'], essential: true, count: 3 });
     expect(parsed[1].custom).toBe(true);
   });
 
+  it('round-trips the tag registry, and tolerates a missing/garbage one', () => {
+    const meta = [
+      { key: 'intl', group: 'other' as const, default: false },
+      { key: 'beach', group: 'activity' as const, default: true },
+    ];
+    expect(parseLibrary(serializeLibrary([row()], meta)).tagMeta).toEqual(meta);
+    expect(parseLibrary(serializeLibrary([row()])).tagMeta).toEqual([]);
+    // garbage entries are dropped, well-formed ones kept
+    const dirty = JSON.stringify({ items: [{ name: 'X' }], tagMeta: [{ key: 'ok', group: 'weather', default: true }, { key: 5 }, 'nope'] });
+    expect(parseLibrary(dirty).tagMeta).toEqual([{ key: 'ok', group: 'weather', default: true }]);
+  });
+
   it('normalizes name into nameKey and lowercases tag keys', () => {
-    const parsed = parseLibrary(JSON.stringify({ items: [{ name: '  Sun Hat ', category: 'Clothing', tagKeys: ['Beach'] }] }));
+    const { items: parsed } = parseLibrary(JSON.stringify({ items: [{ name: '  Sun Hat ', category: 'Clothing', tagKeys: ['Beach'] }] }));
     expect(parsed[0]).toMatchObject({ nameKey: 'sun hat', name: 'Sun Hat', tagKeys: ['beach'], count: 0 });
   });
 
   it('preserves an unknown category, defaults a blank one, and drops blank-named rows', () => {
-    const parsed = parseLibrary(
+    const { items: parsed } = parseLibrary(
       JSON.stringify({ items: [{ name: 'X', category: 'Camping' }, { name: 'Y' }, { name: '   ' }] }),
     );
     expect(parsed).toHaveLength(2);
@@ -41,7 +53,7 @@ describe('serializeLibrary / parseLibrary', () => {
   });
 
   it('accepts a bare items array', () => {
-    const parsed = parseLibrary(JSON.stringify([{ name: 'Towel', category: 'Comfort & Misc' }]));
+    const { items: parsed } = parseLibrary(JSON.stringify([{ name: 'Towel', category: 'Comfort & Misc' }]));
     expect(parsed[0].name).toBe('Towel');
   });
 

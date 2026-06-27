@@ -11,6 +11,8 @@ import { forkDefault } from './appData';
 import { CATALOG } from '../data/catalog';
 import { catalogToLibraryItems } from '../data/seed';
 import type { ParsedLibraryItem, LibraryImportPlan, ConflictResolution } from './libraryTransfer';
+import { replaceTagMeta, mergeTagMeta } from './tags';
+import type { TagMeta } from '../types';
 
 /**
  * The item library lives in the JSON document (`store.ts`). Built-in defaults are
@@ -213,6 +215,7 @@ function rowFromParsed(p: ParsedLibraryItem, id: string): LibraryItem {
  */
 export function replaceLibrary(
   incoming: ParsedLibraryItem[],
+  tagMeta: TagMeta[] = [],
 ): { count: number; newCategories: string[] } {
   const newCategories = newCategoriesFrom(
     incoming.map((p) => p.category),
@@ -229,7 +232,28 @@ export function replaceLibrary(
     d.library = rows;
     d.removedDefaultIds = [];
   });
+  // Replace the registry with the file's, then backfill any tag the rows use
+  // but the file's registry omitted (so no imported item is left ungrouped).
+  replaceTagMeta(tagMeta);
+  mergeTagMeta(missingTagMeta(incoming, getData().tagMeta));
   return { count: incoming.length, newCategories };
+}
+
+/** Registry entries (group 'other', non-default) for every tag the parsed items
+ *  use that the given registry doesn't yet cover — keeps imports fully grouped. */
+function missingTagMeta(items: ParsedLibraryItem[], have: TagMeta[]): TagMeta[] {
+  const known = new Set(have.map((t) => t.key));
+  const out: TagMeta[] = [];
+  const seen = new Set<string>();
+  for (const it of items) {
+    for (const k of it.tagKeys) {
+      if (!known.has(k) && !seen.has(k)) {
+        seen.add(k);
+        out.push({ key: k, group: 'other', default: false });
+      }
+    }
+  }
+  return out;
 }
 
 /**
@@ -242,6 +266,7 @@ export function replaceLibrary(
 export function applyLibraryImport(
   plan: LibraryImportPlan,
   resolutions: ConflictResolution[],
+  tagMeta: TagMeta[] = [],
 ): { added: number; replaced: number; skipped: number; newCategories: string[] } {
   const prior = getData().library;
   // Categories of items actually added or overwritten — the import's footprint.
@@ -286,5 +311,10 @@ export function applyLibraryImport(
       }
     });
   });
+  // Add registry entries for keys the file introduces; keep local grouping on
+  // conflict. Then backfill any tag the items use that's still unregistered.
+  mergeTagMeta(tagMeta);
+  const added2 = [...plan.fresh, ...plan.conflicts.map((c) => c.incoming)];
+  mergeTagMeta(missingTagMeta(added2, getData().tagMeta));
   return { added, replaced, skipped, newCategories: newCategoriesFrom(affectedCats, prior) };
 }

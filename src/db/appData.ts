@@ -27,8 +27,9 @@ export function emptyData(): AppData {
 
 const TAG_GROUPS = new Set<TagGroup>(['activity', 'weather', 'other']);
 
-/** Keep only well-formed registry entries (tolerant of a hand-edited document). */
-function cleanTagMeta(raw: unknown): TagMeta[] {
+/** Keep only well-formed registry entries (tolerant of a hand-edited document or
+ *  an imported file). Shared by `migrate` and the export/import parsers. */
+export function cleanTagMeta(raw: unknown): TagMeta[] {
   if (!Array.isArray(raw)) return [];
   const out: TagMeta[] = [];
   for (const e of raw) {

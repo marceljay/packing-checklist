@@ -37,6 +37,30 @@ export function listTagMeta(): TagMeta[] {
   return getData().tagMeta;
 }
 
+/** Replace the whole registry (library replace-import). De-dups by key, last wins. */
+export function replaceTagMeta(meta: TagMeta[]): void {
+  setData((d) => {
+    const byKey = new Map<string, TagMeta>();
+    for (const m of meta) byKey.set(tagKey(m.key), { ...m, key: tagKey(m.key) });
+    d.tagMeta = [...byKey.values()];
+  });
+}
+
+/** Merge incoming entries in (library/trip merge-import): add entries for keys not
+ *  already present; keep the local entry on a key conflict so user grouping wins. */
+export function mergeTagMeta(meta: TagMeta[]): void {
+  setData((d) => {
+    const have = new Set(d.tagMeta.map((t) => t.key));
+    for (const m of meta) {
+      const k = tagKey(m.key);
+      if (!have.has(k)) {
+        d.tagMeta.push({ ...m, key: k });
+        have.add(k);
+      }
+    }
+  });
+}
+
 export function getTagGroup(key: string): TagGroup {
   return getData().tagMeta.find((t) => t.key === tagKey(key))?.group ?? 'other';
 }

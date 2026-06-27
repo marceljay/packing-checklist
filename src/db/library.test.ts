@@ -12,6 +12,7 @@ import {
   applyLibraryImport,
 } from './library';
 import { planLibraryImport, type ParsedLibraryItem } from './libraryTransfer';
+import { listTagMeta, setTagGroup } from './tags';
 import { getData, setData } from './store';
 
 const defaults = () => listLibrary().filter((i) => !i.custom);
@@ -22,6 +23,7 @@ beforeEach(() => {
     d.library = [];
     d.trips = [];
     d.removedDefaultIds = [];
+    d.tagMeta = [];
   });
 });
 
@@ -158,6 +160,19 @@ describe('library import modes', () => {
       ]);
       expect(r).toEqual({ count: 2, newCategories: ['Camping'] });
     });
+
+    it('replaces the tag registry, backfilling tags the file omitted', () => {
+      setTagGroup('old', 'activity'); // pre-existing local entry, should be wiped
+      replaceLibrary(
+        [parsed({ id: 'c:a', name: 'Tent', tagKeys: ['camp', 'rain'] })],
+        [{ key: 'camp', group: 'weather', default: true }],
+      );
+      const meta = listTagMeta();
+      expect(meta.find((m) => m.key === 'old')).toBeUndefined();
+      expect(meta.find((m) => m.key === 'camp')).toEqual({ key: 'camp', group: 'weather', default: true });
+      // 'rain' is used by an item but absent from the file → backfilled as other/non-default
+      expect(meta.find((m) => m.key === 'rain')).toEqual({ key: 'rain', group: 'other', default: false });
+    });
   });
 
   describe('applyLibraryImport', () => {
@@ -214,6 +229,22 @@ describe('library import modes', () => {
       const r = applyLibraryImport(plan, []);
       expect(r.added).toBe(2);
       expect(r.newCategories).toEqual(['Camping']); // 'Clothing' is built-in
+    });
+
+    it('merges tag registry entries: adds new keys, keeps local grouping', () => {
+      setup();
+      setTagGroup('snow', 'activity'); // local grouping the import must not clobber
+      const incoming = [parsed({ id: 'c:new', name: 'Crampons', tagKeys: ['ice'] })];
+      const plan = planLibraryImport(incoming, listLibrary());
+      applyLibraryImport(plan, [], [
+        { key: 'snow', group: 'weather', default: true }, // conflict → keep local
+        { key: 'climb', group: 'activity', default: true }, // new → added
+      ]);
+      const meta = listTagMeta();
+      expect(meta.find((m) => m.key === 'snow')).toEqual({ key: 'snow', group: 'activity', default: false });
+      expect(meta.find((m) => m.key === 'climb')).toEqual({ key: 'climb', group: 'activity', default: true });
+      // 'ice' used by an added item but absent from the file's registry → backfilled
+      expect(meta.find((m) => m.key === 'ice')).toEqual({ key: 'ice', group: 'other', default: false });
     });
   });
 });
