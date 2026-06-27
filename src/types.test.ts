@@ -18,6 +18,8 @@ import {
   removeLibraryTag,
   libraryByTag,
   searchLibrary,
+  selectQuickAddTags,
+  type TagMeta,
   type Item,
   type Tag,
   type Trip,
@@ -62,6 +64,31 @@ function resolved(name: string, category: Category, over: Partial<ResolvedItem> 
     ...over,
   };
 }
+
+describe('selectQuickAddTags', () => {
+  const meta = (key: string, group: TagMeta['group'], def: boolean): TagMeta => ({ key, group, default: def });
+
+  it('excludes active tags and shows defaults first', () => {
+    const m = [meta('hot', 'weather', true), meta('hiking', 'activity', true), meta('gadgets', 'other', false)];
+    const { visible, rest } = selectQuickAddTags(m, ['hot'], 20);
+    expect(visible.map((t) => t.key)).toEqual(['hiking', 'gadgets']); // hot excluded, fills to floor
+    expect(rest).toEqual([]);
+  });
+
+  it('fills to the floor with non-defaults, the remainder going to rest', () => {
+    const m = [meta('a', 'activity', true), meta('b', 'other', false), meta('c', 'other', false), meta('d', 'other', false)];
+    const { visible, rest } = selectQuickAddTags(m, [], 3);
+    expect(visible.map((t) => t.key)).toEqual(['a', 'b', 'c']); // 1 default + 2 fillers = floor 3
+    expect(rest.map((t) => t.key)).toEqual(['d']);
+  });
+
+  it('shows all defaults even when they exceed the floor', () => {
+    const m = [meta('a', 'activity', true), meta('b', 'weather', true), meta('c', 'other', false)];
+    const { visible, rest } = selectQuickAddTags(m, [], 1);
+    expect(visible.map((t) => t.key)).toEqual(['a', 'b']); // both defaults kept; floor is a minimum
+    expect(rest.map((t) => t.key)).toEqual(['c']);
+  });
+});
 
 describe('tagKey', () => {
   it('lowercases and trims a label', () => {

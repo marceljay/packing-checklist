@@ -6,18 +6,19 @@ import type {
   Destination,
   CityForecast,
 } from "../types";
+import type { TagGroup } from "../types";
 import {
   tagKey,
   tripDurationDays,
   isInternationalTrip,
   tripCountryCodes,
   tripItemsWithAnyTag,
+  selectQuickAddTags,
 } from "../types";
-import { uid } from "../db/store";
+import { uid, useAppData } from "../db/store";
 import { rememberItem } from "../db/library";
 import { PLUGS, powerSummary, travelPowerAdvice } from "../data/plugs";
 import { useHomeCountry, setHomeCountry } from "../lib/homeCountry";
-import { BUILTIN_TAGS } from "../data/tags";
 import { placeLabel, type GeoResult } from "../engine/weather";
 import {
   refreshWeather,
@@ -53,6 +54,17 @@ const TAG_TYPE_STYLES: Record<TagType, string> = {
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return <span className="label">{children}</span>;
 }
+
+/** A registry group maps to the trip Tag's type; 'other' has no own TagType. */
+function tagTypeForGroup(group: TagGroup): TagType {
+  return group === "other" ? "custom" : group;
+}
+
+const GROUP_LABELS: { group: TagGroup; label: string }[] = [
+  { group: "activity", label: "Activities" },
+  { group: "weather", label: "Weather" },
+  { group: "other", label: "Other" },
+];
 
 /** A labelled, wrapping palette of quick-add tag chips. */
 function TagPalette({
@@ -104,6 +116,8 @@ export default function ContextPanel({
   // Guards against stale results when several lookups overlap (e.g. adding two
   // cities quickly) — only the most recent request applies its outcome.
   const weatherReq = useRef(0);
+  // Whether the quick-add palette is showing the overflow (non-default) tags.
+  const [showMore, setShowMore] = useState(false);
 
   const days = tripDurationDays(trip);
   const hasDestinations = trip.destinations.length > 0;
@@ -195,10 +209,19 @@ export default function ContextPanel({
       })),
     );
   }
+  const { tagMeta } = useAppData();
   const activeKeys = new Set(trip.tags.map((t) => tagKey(t.label)));
-  const quickTags = BUILTIN_TAGS.filter((b) => !activeKeys.has(b.key));
-  const quickActivities = quickTags.filter((b) => b.type === "activity");
-  const quickWeather = quickTags.filter((b) => b.type === "weather");
+  // Quick-add palette is driven by the tag registry: defaults first, filled to a
+  // floor of 20, with the remainder behind a "more" toggle. Grouped for display.
+  const { visible, rest } = selectQuickAddTags(tagMeta, activeKeys);
+  const shown = showMore ? [...visible, ...rest] : visible;
+  const quickGroups = GROUP_LABELS.map(({ group, label }) => ({
+    label,
+    tags: shown
+      .filter((m) => m.group === group)
+      .map((m) => ({ key: m.key, type: tagTypeForGroup(m.group) }))
+      .sort((a, b) => a.key.localeCompare(b.key)),
+  })).filter((g) => g.tags.length > 0);
 
   function addTag(label: string, type: TagType) {
     const clean = label.trim();
@@ -422,15 +445,16 @@ export default function ContextPanel({
           ))}
         </div>
         {/* Quick-add palettes — grouped so the choice reads as intentional. */}
-        {quickActivities.length > 0 && (
-          <TagPalette
-            label="Activities"
-            tags={quickActivities}
-            onAdd={addTag}
-          />
-        )}
-        {quickWeather.length > 0 && (
-          <TagPalette label="Weather" tags={quickWeather} onAdd={addTag} />
+        {quickGroups.map((g) => (
+          <TagPalette key={g.label} label={g.label} tags={g.tags} onAdd={addTag} />
+        ))}
+        {rest.length > 0 && (
+          <button
+            className="mt-3 font-mono text-[0.625rem] uppercase tracking-code text-ink-faint hover:text-ink-soft"
+            onClick={() => setShowMore((v) => !v)}
+          >
+            {showMore ? "− Fewer tags" : `+ ${rest.length} more tag${rest.length === 1 ? "" : "s"}`}
+          </button>
         )}
       </div>
 

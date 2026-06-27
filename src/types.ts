@@ -62,6 +62,26 @@ export interface TagMeta {
   default: boolean;
 }
 
+/**
+ * Pick the trip-page quick-add tags from the registry: every tag already on the
+ * trip is excluded; the rest split into the always-shown `visible` set and a
+ * `rest` set behind a "more" toggle. `visible` starts with the `default` tags and,
+ * if that's under `floor` (default 20), fills up with non-defaults; any leftover
+ * non-defaults go to `rest`. Registry order is preserved within each set. Pure.
+ */
+export function selectQuickAddTags(
+  meta: TagMeta[],
+  activeKeys: Iterable<string>,
+  floor = 20,
+): { visible: TagMeta[]; rest: TagMeta[] } {
+  const active = new Set(activeKeys);
+  const available = meta.filter((m) => !active.has(m.key));
+  const defaults = available.filter((m) => m.default);
+  const others = available.filter((m) => !m.default);
+  const fill = Math.max(0, floor - defaults.length);
+  return { visible: [...defaults, ...others.slice(0, fill)], rest: others.slice(fill) };
+}
+
 export interface Destination {
   id: ID;
   label: string;
