@@ -15,6 +15,7 @@ import TripsListPage from './pages/TripsListPage';
 import TripEditorPage from './pages/TripEditorPage';
 import ItemsPage from './pages/ItemsPage';
 import { seedLibrary } from './db/library';
+import { seedTagMeta } from './db/tags';
 import { initTheme } from './lib/theme';
 
 // Hash router keeps the app deployable on any static host (GitHub Pages etc.)
@@ -40,6 +41,7 @@ const router = createHashRouter([
 function boot() {
   initTheme();
   seedLibrary();
+  seedTagMeta(); // after seedLibrary so library tags get backfilled into the registry
 
   ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>

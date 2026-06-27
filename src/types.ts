@@ -49,6 +49,19 @@ export interface Tag {
   type: TagType;
 }
 
+/** Editable grouping for a tag in the registry (drives the trip-page quick-add
+ *  palettes). 'other' covers everything that isn't an activity or weather tag. */
+export type TagGroup = 'activity' | 'weather' | 'other';
+
+/** Per-tag metadata, stored once globally (keyed by normalized `key`). Seeded
+ *  from {@link BUILTIN_TAGS} and editable via the Item Library tag editor. */
+export interface TagMeta {
+  key: string;
+  group: TagGroup;
+  /** Show this tag as a quick-add chip on the trip page. */
+  default: boolean;
+}
+
 export interface Destination {
   id: ID;
   label: string;

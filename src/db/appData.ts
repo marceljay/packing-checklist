@@ -1,4 +1,4 @@
-import type { Trip, LibraryItem } from '../types';
+import type { Trip, LibraryItem, TagGroup, TagMeta } from '../types';
 
 /**
  * The whole app state as one JSON document (persisted in localStorage by
@@ -13,13 +13,30 @@ export interface AppData {
    *  seeder skips these so deletes/edits survive reloads; "Restore defaults"
    *  clears the list. Absent on pre-existing docs → treated as empty. */
   removedDefaultIds?: string[];
+  /** Per-tag metadata (group + trip-page default), seeded on boot from
+   *  BUILTIN_TAGS and the library's tags. Absent on pre-v2 docs → seeded then. */
+  tagMeta: TagMeta[];
 }
 
 /** Document format version. Bump + handle in `migrate` when the shape changes. */
-export const CURRENT_SCHEMA_VERSION = 1;
+export const CURRENT_SCHEMA_VERSION = 2;
 
 export function emptyData(): AppData {
-  return { schemaVersion: CURRENT_SCHEMA_VERSION, trips: [], library: [], removedDefaultIds: [] };
+  return { schemaVersion: CURRENT_SCHEMA_VERSION, trips: [], library: [], removedDefaultIds: [], tagMeta: [] };
+}
+
+const TAG_GROUPS = new Set<TagGroup>(['activity', 'weather', 'other']);
+
+/** Keep only well-formed registry entries (tolerant of a hand-edited document). */
+function cleanTagMeta(raw: unknown): TagMeta[] {
+  if (!Array.isArray(raw)) return [];
+  const out: TagMeta[] = [];
+  for (const e of raw) {
+    if (e && typeof e.key === 'string' && TAG_GROUPS.has(e.group) && typeof e.default === 'boolean') {
+      out.push({ key: e.key, group: e.group, default: e.default });
+    }
+  }
+  return out;
 }
 
 /**
@@ -35,6 +52,7 @@ export function migrate(raw: unknown): AppData {
     trips: Array.isArray(o.trips) ? o.trips : [],
     library: Array.isArray(o.library) ? o.library : [],
     removedDefaultIds: Array.isArray(o.removedDefaultIds) ? o.removedDefaultIds : [],
+    tagMeta: cleanTagMeta(o.tagMeta),
   };
 }
 
