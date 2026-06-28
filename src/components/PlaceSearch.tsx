@@ -4,13 +4,12 @@ import { searchPlaces, type GeoResult } from '../engine/weather';
 interface Props {
   /** A place was chosen from the suggestions (carries coordinates). */
   onSelect: (place: GeoResult) => void;
-  /** Free text added without a match (offline / not found). */
-  onAddManual: (label: string) => void;
 }
 
-/** Destination search with geocoded autocomplete (Open-Meteo). Falls back to a
- *  plain text add when offline or no match is chosen. */
-export default function PlaceSearch({ onSelect, onAddManual }: Props) {
+/** Destination search with geocoded autocomplete (Open-Meteo, with an offline
+ *  fallback to the bundled city list). Only a recognized match can be added —
+ *  there is no free-text add, so every destination has coordinates for weather. */
+export default function PlaceSearch({ onSelect }: Props) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<GeoResult[]>([]);
   const [open, setOpen] = useState(false);
@@ -59,13 +58,6 @@ export default function PlaceSearch({ onSelect, onAddManual }: Props) {
     reset();
   }
 
-  function addManual() {
-    const label = query.trim();
-    if (!label) return;
-    onAddManual(label);
-    reset();
-  }
-
   function reset() {
     setQuery('');
     setResults([]);
@@ -83,8 +75,10 @@ export default function PlaceSearch({ onSelect, onAddManual }: Props) {
       setActive((a) => Math.max(a - 1, 0));
     } else if (e.key === 'Enter') {
       e.preventDefault();
-      if (open && active >= 0 && results[active]) choose(results[active]);
-      else addManual();
+      // Only a recognized match can be added: the highlighted one, or the sole
+      // result if there's exactly one. Otherwise Enter does nothing.
+      const pick = active >= 0 ? results[active] : results.length === 1 ? results[0] : undefined;
+      if (pick) choose(pick);
     } else if (e.key === 'Escape') {
       setOpen(false);
     }
@@ -94,23 +88,18 @@ export default function PlaceSearch({ onSelect, onAddManual }: Props) {
 
   return (
     <div className="relative mt-2" ref={ref}>
-      <div className="flex gap-2">
-        <input
-          className="input min-w-0 flex-1"
-          value={query}
-          role="combobox"
-          aria-expanded={showDropdown}
-          aria-autocomplete="list"
-          aria-label="Search for a place"
-          onChange={(e) => setQuery(e.target.value)}
-          onFocus={() => results.length > 0 && setOpen(true)}
-          onKeyDown={onKeyDown}
-          placeholder="Search a place…"
-        />
-        <button className="btn-secondary shrink-0" onClick={addManual} disabled={!query.trim()}>
-          Add
-        </button>
-      </div>
+      <input
+        className="input w-full"
+        value={query}
+        role="combobox"
+        aria-expanded={showDropdown}
+        aria-autocomplete="list"
+        aria-label="Search for a place"
+        onChange={(e) => setQuery(e.target.value)}
+        onFocus={() => results.length > 0 && setOpen(true)}
+        onKeyDown={onKeyDown}
+        placeholder="Search a place…"
+      />
 
       {showDropdown && (
         <ul
@@ -122,7 +111,8 @@ export default function PlaceSearch({ onSelect, onAddManual }: Props) {
           )}
           {!loading && results.length === 0 && (
             <li className="px-3 py-2 text-xs text-ink-soft">
-              No matches. Press Add to use “{query.trim()}” as typed.
+              No matches for “{query.trim()}”. Try a different spelling — only
+              recognized places can be added (they carry the coordinates weather needs).
             </li>
           )}
           {results.map((r, i) => (

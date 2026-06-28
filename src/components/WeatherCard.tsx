@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { CityDay, CityForecast, Destination, TripWeather, WeatherBasis } from '../types';
 import { cityMatchesDestination } from '../engine/weatherSync';
+import { shortPlace } from '../engine/weather';
 import { useTicketDesign } from '../lib/devMode';
 import {
   useUnits,
@@ -74,7 +75,7 @@ function CityRow({ c, units }: { c: CityForecast; units: UnitSystem }) {
     <div className="px-5 py-3">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-4">
       <div className="min-w-0 sm:w-40">
-        <p className="truncate font-display font-bold">{c.place}</p>
+        <p className="truncate font-display font-bold" title={c.place}>{shortPlace(c.place)}</p>
         <p className="font-mono text-[0.625rem] uppercase tracking-code text-ticket-ink/50">
           {BASIS_LABEL[c.basis]} · {c.days}d
           {c.offline && (

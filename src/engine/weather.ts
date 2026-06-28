@@ -226,6 +226,24 @@ export function placeLabel(r: Pick<GeoResult, 'name' | 'admin1' | 'country'>): s
     .join(', ');
 }
 
+/**
+ * Bound a stored label to **city + country** for display ("Faro, Faro District,
+ * Portugal" → "Faro, Portugal"). Keeps the first and last comma-segments (the
+ * full label stays stored for hover/geocoding), so a verbose place can't grow a
+ * row. De-dups when city and country coincide; a single-part label is returned
+ * as-is. Pair with `title={fullLabel}` to reveal the full detail on hover.
+ */
+export function shortPlace(label: string): string {
+  const parts = label
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (parts.length <= 1) return parts[0] ?? label.trim();
+  const city = parts[0];
+  const country = parts[parts.length - 1];
+  return city === country ? city : `${city}, ${country}`;
+}
+
 /** Reduce a stored destination label ("Lisbon, Lisboa, Portugal") to just the
  *  city, which is what the geocoder expects. */
 export function geocodeQuery(label: string): string {

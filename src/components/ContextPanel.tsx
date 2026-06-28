@@ -19,7 +19,7 @@ import { uid, useAppData } from "../db/store";
 import { rememberItem } from "../db/library";
 import { PLUGS, powerSummary, travelPowerAdvice } from "../data/plugs";
 import { useHomeCountry, setHomeCountry } from "../lib/homeCountry";
-import { placeLabel, type GeoResult } from "../engine/weather";
+import { placeLabel, shortPlace, type GeoResult } from "../engine/weather";
 import {
   refreshWeather,
   applyWeather,
@@ -244,16 +244,6 @@ export default function ContextPanel({
     void runWeatherLookup([...trip.destinations, dest], { auto: true });
   }
 
-  function addManualPlace(label: string) {
-    const dest = {
-      id: uid(),
-      label,
-      isPrimary: trip.destinations.length === 0,
-    };
-    update((d) => void d.destinations.push(dest));
-    void runWeatherLookup([...trip.destinations, dest], { auto: true });
-  }
-
   /**
    * Remove a destination. The forecast is kept honest *locally* (no network):
    * the remaining cities' cached tags are re-unioned, so any weather tag the
@@ -387,7 +377,9 @@ export default function ContextPanel({
         <ul className="mt-1.5 space-y-1">
           {trip.destinations.map((dest) => (
             <li key={dest.id} className="flex items-center gap-2 text-sm">
-              <span className="min-w-0 flex-1 truncate">{dest.label}</span>
+              <span className="min-w-0 flex-1 truncate" title={dest.label}>
+                {shortPlace(dest.label)}
+              </span>
               <button
                 className={`chip shrink-0 ${dest.isPrimary ? "bg-vermilion-soft text-vermilion-deep" : "bg-paper-sunk text-ink-faint hover:text-ink"}`}
                 title="Set as primary destination"
@@ -411,7 +403,7 @@ export default function ContextPanel({
             </li>
           ))}
         </ul>
-        <PlaceSearch onSelect={addPlace} onAddManual={addManualPlace} />
+        <PlaceSearch onSelect={addPlace} />
       </div>
 
       {/* Tags */}

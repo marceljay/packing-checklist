@@ -3,6 +3,7 @@ import {
   deriveWeatherTags,
   forecastRange,
   placeLabel,
+  shortPlace,
   geocodeQuery,
   summarizeWeather,
   splitWeatherWindow,
@@ -121,6 +122,31 @@ describe('placeLabel', () => {
   it('omits missing parts', () => {
     expect(placeLabel({ name: 'Berlin', country: 'Germany' })).toBe('Berlin, Germany');
     expect(placeLabel({ name: 'Springfield' })).toBe('Springfield');
+  });
+});
+
+describe('shortPlace', () => {
+  it('keeps only city + country, dropping the middle (province etc.)', () => {
+    expect(shortPlace('Faro, Faro District, Portugal')).toBe('Faro, Portugal');
+    expect(shortPlace('A, B, C, D, E')).toBe('A, E');
+  });
+
+  it('passes through a label that is already city + country', () => {
+    expect(shortPlace('Berlin, Germany')).toBe('Berlin, Germany');
+  });
+
+  it('returns a single-part label unchanged and trims', () => {
+    expect(shortPlace('Springfield')).toBe('Springfield');
+    expect(shortPlace('  Tokyo  ')).toBe('Tokyo');
+  });
+
+  it('de-dups when city and country coincide', () => {
+    expect(shortPlace('Singapore, Singapore')).toBe('Singapore');
+  });
+
+  it('bounds output to at most two comma-segments regardless of input length', () => {
+    const long = Array.from({ length: 12 }, (_, i) => `Part${i}`).join(', ');
+    expect(shortPlace(long).split(',').length).toBeLessThanOrEqual(2);
   });
 });
 
