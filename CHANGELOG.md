@@ -78,7 +78,9 @@ All notable changes to this project are documented here.
   split the load). The band thresholds are editable in a new Settings dialog in the
   header ⋯ menu, and weights travel with export/import.
 - **Bigger cities first in place search.** Search results are ranked by
-  population, so major cities surface above obscure same-named places.
+  population, so major cities surface above obscure same-named places, and
+  near-duplicate matches (the same city under different regions or accented
+  spellings) are folded into one, keeping the most populous.
 - **Destinations must be recognized places.** A destination can only be added by
   picking a match from search (online geocoder, or the bundled city list when
   offline) — the free-text "add as typed" path is gone, so every destination
