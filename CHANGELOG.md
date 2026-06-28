@@ -4,7 +4,20 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [0.8.0] — 2026-06-28
+
+First versioned release. Highlights since the early builds: the item library as a
+single source of truth, tag & category manager, automatic weather, smart
+laundry-aware quantities, the packing weight calculator, and offline support.
+
+### Added
+- **About dialog.** Header ⋯ menu → About… shows the app name, version, the build's
+  latest commit, and a source link.
+
 ### Changed
+- **Confirm dialogs ignore Enter.** Delete/confirm modals no longer auto-focus the
+  confirm button or act on Enter, so a stray keypress can't trigger a destructive
+  action; Escape still cancels.
 - **Restore defaults moved to the menu.** "Restore default items" now lives in
   the header ⋯ menu (was a button on the Item Library page, which read as a
   primary action) and asks for confirmation before re-adding the built-ins.
