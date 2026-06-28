@@ -11,6 +11,7 @@ import {
   resolveItems,
   resolvedByCategory,
   resolvedByTag,
+  ESSENTIAL_GROUP_KEY,
   defaultId,
   customId,
   ensureTripTags,
@@ -342,10 +343,30 @@ describe('resolvedByTag', () => {
   it('groups items under each tag key in sorted order, untagged last', () => {
     const groups = resolvedByTag([
       resolved('Towel', 'Comfort & Misc', { tagKeys: ['beach', 'hiking'] }),
-      resolved('Passport', 'Documents'),
+      resolved('Notebook', 'Comfort & Misc'),
     ]);
     expect(groups.map((g) => g.tag)).toEqual(['beach', 'hiking', '']);
-    expect(groups[2].items.map((i) => i.name)).toEqual(['Passport']);
+    expect(groups[2].items.map((i) => i.name)).toEqual(['Notebook']);
+  });
+
+  it('puts essentials in a first-class group (first), not under Untagged', () => {
+    const groups = resolvedByTag([
+      resolved('Towel', 'Comfort & Misc', { tagKeys: ['beach'] }),
+      resolved('Passport', 'Documents', { essential: true }), // tag-less essential
+      resolved('Pen', 'Comfort & Misc'), // tag-less, not essential
+    ]);
+    expect(groups.map((g) => g.tag)).toEqual([ESSENTIAL_GROUP_KEY, 'beach', '']);
+    expect(groups[0].items.map((i) => i.name)).toEqual(['Passport']); // not in Untagged
+    expect(groups[2].items.map((i) => i.name)).toEqual(['Pen']);
+  });
+
+  it('shows a tagged essential under both Essential and its tags', () => {
+    const groups = resolvedByTag([
+      resolved('Phone', 'Electronics', { essential: true, tagKeys: ['beach'] }),
+    ]);
+    expect(groups.map((g) => g.tag)).toEqual([ESSENTIAL_GROUP_KEY, 'beach']);
+    expect(groups[0].items.map((i) => i.name)).toEqual(['Phone']);
+    expect(groups[1].items.map((i) => i.name)).toEqual(['Phone']);
   });
 });
 

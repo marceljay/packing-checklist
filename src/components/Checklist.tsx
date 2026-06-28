@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import type { ResolvedItem, Trip, LibraryItem } from "../types";
-import { orderedCategories, resolveItems, resolvedByCategory, resolvedByTag } from "../types";
+import { orderedCategories, resolveItems, resolvedByCategory, resolvedByTag, ESSENTIAL_GROUP_KEY } from "../types";
 import ItemRow from "./ItemRow";
 import type { ItemRowMode } from "./ItemRow";
 
@@ -60,7 +60,7 @@ export default function Checklist({
     }
     return resolvedByTag(resolved).map((g) => ({
       key: g.tag || "__untagged",
-      label: g.tag || "Untagged",
+      label: g.tag === ESSENTIAL_GROUP_KEY ? "Essential" : g.tag || "Untagged",
       items: g.items,
     }));
   }, [resolved, groupBy]);

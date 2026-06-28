@@ -378,23 +378,36 @@ export function resolvedByCategory(
     .filter((g) => g.items.length > 0);
 }
 
-/** Group resolved items by tag key (each item under every tag it carries), named
- *  tags sorted, with a trailing untagged `{ tag: '' }` group when needed. */
+/** Sentinel group key for essentials in {@link resolvedByTag} — not a real tag,
+ *  so it can't collide with a user tag key (which is lowercased/trimmed text). */
+export const ESSENTIAL_GROUP_KEY = '__essential';
+
+/**
+ * Group resolved items by tag for the packing list. Essentials are a first-class
+ * group ({@link ESSENTIAL_GROUP_KEY}) shown first — an essential appears there as
+ * well as under any real tags it carries. Then named tags, sorted. The trailing
+ * untagged `{ tag: '' }` group holds only items that are neither tagged nor
+ * essential (so a tag-less essential lands under Essential, not Untagged).
+ */
 export function resolvedByTag(items: ResolvedItem[]): { tag: string; items: ResolvedItem[] }[] {
   const byTag = new Map<string, ResolvedItem[]>();
+  const essential: ResolvedItem[] = [];
   const untagged: ResolvedItem[] = [];
   for (const item of items) {
-    if (item.tagKeys.length === 0) {
+    if (item.essential) essential.push(item);
+    if (item.tagKeys.length > 0) {
+      for (const key of item.tagKeys) {
+        const list = byTag.get(key) ?? [];
+        list.push(item);
+        byTag.set(key, list);
+      }
+    } else if (!item.essential) {
       untagged.push(item);
-      continue;
-    }
-    for (const key of item.tagKeys) {
-      const list = byTag.get(key) ?? [];
-      list.push(item);
-      byTag.set(key, list);
     }
   }
-  const groups = [...byTag.keys()].sort().map((tag) => ({ tag, items: byTag.get(tag)! }));
+  const groups: { tag: string; items: ResolvedItem[] }[] = [];
+  if (essential.length > 0) groups.push({ tag: ESSENTIAL_GROUP_KEY, items: essential });
+  for (const tag of [...byTag.keys()].sort()) groups.push({ tag, items: byTag.get(tag)! });
   if (untagged.length > 0) groups.push({ tag: '', items: untagged });
   return groups;
 }
