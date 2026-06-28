@@ -195,6 +195,8 @@ export interface GeoResult {
   country?: string;
   /** Region / state / province, when the API provides it. */
   admin1?: string;
+  /** Inhabitants, when the source provides it — drives result ranking. */
+  population?: number;
 }
 
 interface RawGeo {
@@ -204,6 +206,7 @@ interface RawGeo {
   country_code?: string;
   country?: string;
   admin1?: string;
+  population?: number;
 }
 
 function toGeoResult(r: RawGeo): GeoResult {
@@ -214,7 +217,21 @@ function toGeoResult(r: RawGeo): GeoResult {
     countryCode: r.country_code,
     country: r.country,
     admin1: r.admin1,
+    ...(typeof r.population === 'number' ? { population: r.population } : {}),
   };
+}
+
+/**
+ * Rank place matches biggest-first so major cities surface above obscure
+ * same-named places. Sorts by population descending; matches without a known
+ * population (the offline list carries none) keep their incoming order, after
+ * the populated ones. Stable. Returns a new array.
+ */
+export function rankPlaces(results: GeoResult[]): GeoResult[] {
+  return results
+    .map((r, i) => ({ r, i }))
+    .sort((a, b) => (b.r.population ?? -1) - (a.r.population ?? -1) || a.i - b.i)
+    .map((x) => x.r);
 }
 
 /** Human-readable place label, e.g. "Faro, Faro District, Portugal".
@@ -271,7 +288,7 @@ export async function searchPlaces(
     const res = await fetch(url, { signal });
     if (!res.ok) throw new Error(`Place search failed (${res.status})`);
     const data = (await res.json()) as { results?: RawGeo[] };
-    return (data.results ?? []).map(toGeoResult);
+    return rankPlaces((data.results ?? []).map(toGeoResult));
   } catch (e) {
     // A deliberate abort means a newer query is coming — don't mask it.
     if ((e as Error).name === 'AbortError') throw e;

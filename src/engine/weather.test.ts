@@ -4,6 +4,7 @@ import {
   forecastRange,
   placeLabel,
   shortPlace,
+  rankPlaces,
   geocodeQuery,
   summarizeWeather,
   splitWeatherWindow,
@@ -11,6 +12,7 @@ import {
   averageDaily,
   lookupDestinationWeather,
   type DailyWeather,
+  type GeoResult,
 } from './weather';
 
 afterEach(() => vi.unstubAllGlobals());
@@ -147,6 +149,27 @@ describe('shortPlace', () => {
   it('bounds output to at most two comma-segments regardless of input length', () => {
     const long = Array.from({ length: 12 }, (_, i) => `Part${i}`).join(', ');
     expect(shortPlace(long).split(',').length).toBeLessThanOrEqual(2);
+  });
+});
+
+describe('rankPlaces', () => {
+  const p = (name: string, population?: number): GeoResult => ({ name, lat: 0, lon: 0, population });
+
+  it('orders matches biggest-population first', () => {
+    const ranked = rankPlaces([p('Parma', 195_000), p('Paris', 2_140_000), p('Paris TX', 25_000)]);
+    expect(ranked.map((r) => r.name)).toEqual(['Paris', 'Parma', 'Paris TX']);
+  });
+
+  it('keeps populated places ahead of those with no population, preserving their order', () => {
+    const ranked = rankPlaces([p('Nowhere'), p('Springfield', 170_000), p('Elsewhere')]);
+    expect(ranked.map((r) => r.name)).toEqual(['Springfield', 'Nowhere', 'Elsewhere']);
+  });
+
+  it('is stable for equal populations and does not mutate the input', () => {
+    const input = [p('A', 100), p('B', 100), p('C', 100)];
+    const ranked = rankPlaces(input);
+    expect(ranked.map((r) => r.name)).toEqual(['A', 'B', 'C']);
+    expect(input.map((r) => r.name)).toEqual(['A', 'B', 'C']); // untouched
   });
 });
 
