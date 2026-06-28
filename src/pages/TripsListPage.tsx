@@ -137,13 +137,13 @@ export default function TripsListPage() {
                     Checklist
                   </Link>
                   <button
-                    className="btn-ghost px-2 py-1.5 text-xs"
+                    className="btn-ghost ml-auto px-2 py-1.5 text-xs"
                     onClick={() => handleClone(trip.id)}
                   >
                     Duplicate
                   </button>
                   <button
-                    className="btn-danger ml-auto px-2 py-1.5 text-xs"
+                    className="btn-danger px-2 py-1.5 text-xs"
                     onClick={() => setPendingDelete({ id: trip.id, name: trip.name })}
                   >
                     Delete
