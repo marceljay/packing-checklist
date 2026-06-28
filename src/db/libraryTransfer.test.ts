@@ -38,6 +38,13 @@ describe('serializeLibrary / parseLibrary', () => {
     expect(parseLibrary(dirty).tagMeta).toEqual([{ key: 'ok', group: 'weather', default: true }]);
   });
 
+  it('round-trips custom categories, tolerating a missing/garbage list', () => {
+    expect(parseLibrary(serializeLibrary([row()], [], ['Camping', 'Hobbies'])).customCategories).toEqual(['Camping', 'Hobbies']);
+    expect(parseLibrary(serializeLibrary([row()])).customCategories).toEqual([]);
+    const dirty = JSON.stringify({ items: [{ name: 'X' }], customCategories: ['Good', 7, null] });
+    expect(parseLibrary(dirty).customCategories).toEqual(['Good']);
+  });
+
   it('normalizes name into nameKey and lowercases tag keys', () => {
     const { items: parsed } = parseLibrary(JSON.stringify({ items: [{ name: '  Sun Hat ', category: 'Clothing', tagKeys: ['Beach'] }] }));
     expect(parsed[0]).toMatchObject({ nameKey: 'sun hat', name: 'Sun Hat', tagKeys: ['beach'], count: 0 });

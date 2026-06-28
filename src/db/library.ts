@@ -10,6 +10,7 @@ import {
 import { forkDefault } from './appData';
 import { CATALOG } from '../data/catalog';
 import { catalogToLibraryItems } from '../data/seed';
+import { BUILTIN_TAGS } from '../data/tags';
 import type { ParsedLibraryItem, LibraryImportPlan, ConflictResolution } from './libraryTransfer';
 import { replaceTagMeta, mergeTagMeta } from './tags';
 import type { TagMeta } from '../types';
@@ -165,15 +166,30 @@ export function forgetItemById(id: string): void {
   });
 }
 
-/** Re-add any built-in defaults that are missing (deleted, or forked into customs),
- *  without touching the user's custom items. Clears the removed-defaults tombstones
- *  so the restored defaults stick. */
+/**
+ * Return to defaults: re-establish the built-in items, tags, and categories,
+ * without touching the user's own custom ones. Clears every tombstone
+ * (removed defaults / tags / categories), re-adds missing default items, and
+ * resets built-in tag metadata (group + trip-page default) to its seed values.
+ */
 export function restoreDefaults(): void {
   const seeds = catalogToLibraryItems(CATALOG);
   setData((d) => {
     d.removedDefaultIds = [];
+    d.removedTagKeys = [];
+    d.removedCategories = [];
     const have = new Set(d.library.map((i) => i.id));
     for (const s of seeds) if (!have.has(s.id)) d.library.push(s);
+    // Reset built-in tag metadata to seed values; custom tags are left untouched.
+    for (const b of BUILTIN_TAGS) {
+      const e = d.tagMeta.find((t) => t.key === b.key);
+      if (e) {
+        e.group = b.type;
+        e.default = true;
+      } else {
+        d.tagMeta.push({ key: b.key, group: b.type, default: true });
+      }
+    }
   });
 }
 
@@ -216,6 +232,7 @@ function rowFromParsed(p: ParsedLibraryItem, id: string): LibraryItem {
 export function replaceLibrary(
   incoming: ParsedLibraryItem[],
   tagMeta: TagMeta[] = [],
+  customCategories: string[] = [],
 ): { count: number; newCategories: string[] } {
   const newCategories = newCategoriesFrom(
     incoming.map((p) => p.category),
@@ -231,6 +248,9 @@ export function replaceLibrary(
     }
     d.library = rows;
     d.removedDefaultIds = [];
+    // Replace the custom-category registry with the file's (built-ins excluded).
+    d.customCategories = [...new Set(customCategories.filter((c) => c && !isBuiltinCategory(c)))];
+    d.removedCategories = [];
   });
   // Replace the registry with the file's, then backfill any tag the rows use
   // but the file's registry omitted (so no imported item is left ungrouped).
@@ -267,6 +287,7 @@ export function applyLibraryImport(
   plan: LibraryImportPlan,
   resolutions: ConflictResolution[],
   tagMeta: TagMeta[] = [],
+  customCategories: string[] = [],
 ): { added: number; replaced: number; skipped: number; newCategories: string[] } {
   const prior = getData().library;
   // Categories of items actually added or overwritten — the import's footprint.
@@ -316,5 +337,15 @@ export function applyLibraryImport(
   mergeTagMeta(tagMeta);
   const added2 = [...plan.fresh, ...plan.conflicts.map((c) => c.incoming)];
   mergeTagMeta(missingTagMeta(added2, getData().tagMeta));
+  // Merge custom categories: add new (non-built-in) names, keep existing.
+  setData((d) => {
+    const have = new Set(d.customCategories ?? []);
+    for (const c of customCategories) {
+      if (c && !isBuiltinCategory(c) && !have.has(c)) {
+        d.customCategories = [...(d.customCategories ?? []), c];
+        have.add(c);
+      }
+    }
+  });
   return { added, replaced, skipped, newCategories: newCategoriesFrom(affectedCats, prior) };
 }

@@ -24,6 +24,9 @@ beforeEach(() => {
     d.trips = [];
     d.removedDefaultIds = [];
     d.tagMeta = [];
+    d.removedTagKeys = [];
+    d.customCategories = [];
+    d.removedCategories = [];
   });
 });
 
@@ -126,6 +129,19 @@ describe('restoreDefaults', () => {
     restoreDefaults();
     expect(getLibraryItem(mine.id)?.name).toBe('My thing');
   });
+
+  it('clears tag/category tombstones and resets built-in tag metadata', () => {
+    setData((d) => {
+      d.removedTagKeys = ['hot'];
+      d.removedCategories = ['Footwear'];
+      d.tagMeta = [{ key: 'hot', group: 'other', default: false }]; // user re-grouped a built-in
+    });
+    restoreDefaults();
+    expect(getData().removedTagKeys).toEqual([]);
+    expect(getData().removedCategories).toEqual([]);
+    // built-in 'hot' reset to its seed values (weather / default)
+    expect(getData().tagMeta.find((t) => t.key === 'hot')).toEqual({ key: 'hot', group: 'weather', default: true });
+  });
 });
 
 describe('library import modes', () => {
@@ -172,6 +188,13 @@ describe('library import modes', () => {
       expect(meta.find((m) => m.key === 'camp')).toEqual({ key: 'camp', group: 'weather', default: true });
       // 'rain' is used by an item but absent from the file → backfilled as other/non-default
       expect(meta.find((m) => m.key === 'rain')).toEqual({ key: 'rain', group: 'other', default: false });
+    });
+
+    it('replaces custom categories with the file\'s (built-ins excluded)', () => {
+      setData((d) => void (d.customCategories = ['Old']));
+      replaceLibrary([parsed({ id: 'c:a', name: 'Tent' })], [], ['Camping', 'Clothing']);
+      // 'Clothing' is built-in → not stored as a custom; 'Old' wiped
+      expect(getData().customCategories).toEqual(['Camping']);
     });
   });
 
@@ -245,6 +268,15 @@ describe('library import modes', () => {
       expect(meta.find((m) => m.key === 'climb')).toEqual({ key: 'climb', group: 'activity', default: true });
       // 'ice' used by an added item but absent from the file's registry → backfilled
       expect(meta.find((m) => m.key === 'ice')).toEqual({ key: 'ice', group: 'other', default: false });
+    });
+
+    it('merges custom categories: adds new, keeps existing, skips built-ins', () => {
+      setup();
+      setData((d) => void (d.customCategories = ['Camping']));
+      const incoming = [parsed({ id: 'c:new', name: 'Tent' })];
+      const plan = planLibraryImport(incoming, listLibrary());
+      applyLibraryImport(plan, [], [], ['Camping', 'Hobbies', 'Clothing']);
+      expect(getData().customCategories).toEqual(['Camping', 'Hobbies']); // Clothing built-in, Camping kept
     });
   });
 });

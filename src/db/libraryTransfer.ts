@@ -17,12 +17,15 @@ interface LibraryEnvelope {
   items: LibraryItem[];
   /** The tag registry, so grouping/defaults survive a backup round-trip. */
   tagMeta: TagMeta[];
+  /** Custom categories that may have no items yet, so they survive too. */
+  customCategories: string[];
 }
 
-/** A parsed library file: the rows plus the tag registry it carried. */
+/** A parsed library file: the rows plus the registries it carried. */
 export interface ParsedLibrary {
   items: ParsedLibraryItem[];
   tagMeta: TagMeta[];
+  customCategories: string[];
 }
 
 /** A library row as carried in an import (id optional — absent → matched by name). */
@@ -75,15 +78,25 @@ export function planLibraryImport(
   return plan;
 }
 
-export function serializeLibrary(items: LibraryItem[], tagMeta: TagMeta[] = []): string {
+export function serializeLibrary(
+  items: LibraryItem[],
+  tagMeta: TagMeta[] = [],
+  customCategories: string[] = [],
+): string {
   const envelope: LibraryEnvelope = {
     kind: EXPORT_KIND,
     version: EXPORT_VERSION,
     exportedAt: Date.now(),
     items,
     tagMeta,
+    customCategories,
   };
   return JSON.stringify(envelope, null, 2);
+}
+
+/** Tolerant string-array parse for a registry field on an imported file. */
+function parseStrings(v: unknown): string[] {
+  return Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [];
 }
 
 function asString(v: unknown, fallback = ''): string {
@@ -114,6 +127,7 @@ export function parseLibrary(text: string): ParsedLibrary {
     throw new Error('That file isn’t a packing-checklist item library.');
   }
   const tagMeta = cleanTagMeta((data as { tagMeta?: unknown }).tagMeta);
+  const customCategories = parseStrings((data as { customCategories?: unknown }).customCategories);
 
   const out: ParsedLibraryItem[] = [];
   for (const raw of rawItems as Record<string, unknown>[]) {
@@ -132,5 +146,5 @@ export function parseLibrary(text: string): ParsedLibrary {
       lastUsed: typeof raw.lastUsed === 'number' ? raw.lastUsed : 0,
     });
   }
-  return { items: out, tagMeta };
+  return { items: out, tagMeta, customCategories };
 }

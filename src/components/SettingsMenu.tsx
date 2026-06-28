@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { importTripFromText, exportTrips, importAllTripsFromText, listTrips } from '../db/trips';
 import { listLibrary, replaceLibrary, applyLibraryImport, restoreDefaults } from '../db/library';
 import { listTagMeta } from '../db/tags';
+import { listCustomCategories } from '../db/categories';
 import {
   serializeLibrary,
   parseLibrary,
@@ -80,7 +81,7 @@ export default function SettingsMenu() {
       downloadText('packing-checklist-trips.json', exportTrips(tripIds));
     }
     if (includeLibrary) {
-      downloadText('packing-checklist-library.json', serializeLibrary(listLibrary(), listTagMeta()));
+      downloadText('packing-checklist-library.json', serializeLibrary(listLibrary(), listTagMeta(), listCustomCategories()));
     }
     setShowExport(false);
   }
@@ -115,10 +116,10 @@ export default function SettingsMenu() {
     const newCatsLine = (cats: string[]) =>
       cats.length > 0 ? `\n\n➕ New categories created: ${cats.join(', ')}` : '';
     if (mode === 'replace') {
-      const { count, newCategories } = replaceLibrary(incoming.items, incoming.tagMeta);
+      const { count, newCategories } = replaceLibrary(incoming.items, incoming.tagMeta, incoming.customCategories);
       alert(`Replaced your library with ${count} item${count === 1 ? '' : 's'}.${newCatsLine(newCategories)}`);
     } else {
-      const { added, replaced, skipped, newCategories } = applyLibraryImport(plan, resolutions, incoming.tagMeta);
+      const { added, replaced, skipped, newCategories } = applyLibraryImport(plan, resolutions, incoming.tagMeta, incoming.customCategories);
       alert(`Imported: ${added} added, ${replaced} replaced, ${skipped} skipped.${newCatsLine(newCategories)}`);
     }
     setLibImport(null);
@@ -166,7 +167,7 @@ export default function SettingsMenu() {
               setShowRestore(true);
             }}
           >
-            Restore default items…
+            Return to defaults…
           </MenuItem>
 
           <div className="border-t border-line" />
@@ -205,8 +206,8 @@ export default function SettingsMenu() {
 
       {showRestore && (
         <ConfirmDialog
-          title="Restore default items?"
-          confirmLabel="Restore defaults"
+          title="Return to defaults?"
+          confirmLabel="Return to defaults"
           onConfirm={() => {
             restoreDefaults();
             setShowRestore(false);
@@ -214,8 +215,9 @@ export default function SettingsMenu() {
           onCancel={() => setShowRestore(false)}
         >
           <p>
-            Re-adds any built-in items you removed or edited, in their original form.
-            Your own custom items are left untouched.
+            Re-establishes the built-in items, tags, and categories in their original
+            form — including any you removed, renamed, or edited. Your own custom
+            items, tags, and categories are left untouched.
           </p>
         </ConfirmDialog>
       )}
