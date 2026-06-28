@@ -223,15 +223,25 @@ function toGeoResult(r: RawGeo): GeoResult {
 
 /**
  * Rank place matches biggest-first so major cities surface above obscure
- * same-named places. Sorts by population descending; matches without a known
- * population (the offline list carries none) keep their incoming order, after
- * the populated ones. Stable. Returns a new array.
+ * same-named places, and drop entries that would render identically (same
+ * name / region / country — the geocoder often returns a city plus its boroughs
+ * that look the same in the list). Sorts by population descending so the kept
+ * duplicate is the most populous; matches without a known population (the offline
+ * list carries none) keep their incoming order, after the populated ones. Stable.
+ * Returns a new array.
  */
 export function rankPlaces(results: GeoResult[]): GeoResult[] {
-  return results
+  const ranked = results
     .map((r, i) => ({ r, i }))
     .sort((a, b) => (b.r.population ?? -1) - (a.r.population ?? -1) || a.i - b.i)
     .map((x) => x.r);
+  const seen = new Set<string>();
+  return ranked.filter((r) => {
+    const key = `${r.name}|${r.admin1 ?? ''}|${r.country ?? ''}`.toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 /** Human-readable place label, e.g. "Faro, Faro District, Portugal".

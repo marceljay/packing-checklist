@@ -155,6 +155,20 @@ describe('shortPlace', () => {
 describe('rankPlaces', () => {
   const p = (name: string, population?: number): GeoResult => ({ name, lat: 0, lon: 0, population });
 
+  it('drops entries that render identically, keeping the most populous', () => {
+    const ranked = rankPlaces([
+      { name: 'Hamburg', admin1: 'Hamburg', country: 'Germany', lat: 1, lon: 1, population: 5_000 },
+      { name: 'Hamburg', admin1: 'Hamburg', country: 'Germany', lat: 2, lon: 2, population: 1_800_000 },
+      { name: 'Hamburg', admin1: 'Hamburg', country: 'Germany', lat: 3, lon: 3 },
+      { name: 'Hamburg', admin1: 'New York', country: 'United States', lat: 4, lon: 4, population: 9_000 },
+    ]);
+    // one Hamburg/Germany (the big one) + the distinct US Hamburg
+    expect(ranked).toHaveLength(2);
+    const de = ranked.find((r) => r.country === 'Germany')!;
+    expect(de.population).toBe(1_800_000);
+    expect(ranked.map((r) => r.country)).toEqual(['Germany', 'United States']);
+  });
+
   it('orders matches biggest-population first', () => {
     const ranked = rankPlaces([p('Parma', 195_000), p('Paris', 2_140_000), p('Paris TX', 25_000)]);
     expect(ranked.map((r) => r.name)).toEqual(['Paris', 'Parma', 'Paris TX']);
