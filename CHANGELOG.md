@@ -43,6 +43,11 @@ All notable changes to this project are documented here.
   removed built-ins back.
 
 ### Changed
+- **Essentials group in the by-tag packing list.** Grouping the packing list by
+  tag used to file tag-less essentials (passport, charger…) under "Untagged".
+  They now have their own "Essential" group shown first; an essential that also
+  has tags appears under both, and "Untagged" holds only items that are neither
+  tagged nor essential.
 - **Forecast is above the fold on mobile.** In plan mode the forecast card now
   sits directly under the boarding-pass header, so it's the first thing you see
   on a phone instead of being below the trip-details panel.
