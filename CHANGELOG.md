@@ -43,15 +43,20 @@ All notable changes to this project are documented here.
   removed built-ins back.
 
 ### Added
-- **Editable tags.** Tags now carry editable metadata (a group —
-  Activity / Weather / Other — and a "show on the trip page" default), kept in a
-  registry seeded from the built-ins plus your library's tags. Click a tag chip
-  on an item in the Item Library to change its group, pin/unpin it from the
-  trip-page quick-add, rename it everywhere, or delete it (items left with no
-  tags fall back to "misc"; nothing is lost). The trip-page quick-add is now
-  driven by this registry — default tags first, grouped, with a "more" toggle
-  for the rest — and the tag metadata travels with library and trip
-  export/import.
+- **Tag & category manager.** An "Edit tags & categories" button by the Item
+  Library search opens a two-tab manager. **Tags** carry editable metadata (a
+  group — Activity / Weather / Other — and a "show on the trip page" default),
+  kept in a registry seeded from the built-ins plus your library's tags; tap a
+  tag to change its group, pin/unpin it from the trip-page quick-add, rename it
+  everywhere, or delete it (items left with no tags fall back to "misc"). The
+  trip-page quick-add is driven by this registry — default tags first, grouped,
+  with a "more" toggle. **Categories** can now be added (even with no items
+  yet), renamed, and deleted (items move to "Comfort & Misc"). Renaming or
+  deleting a tag or category never loses items — every item is rewritten to keep
+  the association. Built-ins are editable and the edits persist across reloads;
+  **Return to defaults** (header ⋯ menu) re-establishes the built-in items,
+  tags, and categories while leaving your custom ones intact. Tag and custom-
+  category metadata travels with library and trip export/import.
 - **Custom categories survive import.** Imported items keep their own category
   instead of being silently folded into "Comfort & Misc"; unknown categories
   appear as their own sections (built-ins first, custom ones after) across the
