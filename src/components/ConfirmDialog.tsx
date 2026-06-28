@@ -31,12 +31,15 @@ export default function ConfirmDialog({
   onConfirm,
   onCancel,
 }: Props) {
-  const confirmRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    confirmRef.current?.focus();
+    // Focus the panel (not the confirm button) so a stray Enter can't trigger a
+    // destructive action; Escape still cancels and Enter is swallowed entirely.
+    panelRef.current?.focus();
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape') onCancel();
+      else if (e.key === 'Enter') e.preventDefault();
     }
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
@@ -50,10 +53,12 @@ export default function ConfirmDialog({
       }}
     >
       <div
+        ref={panelRef}
+        tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="card w-full max-w-sm overflow-hidden"
+        className="card w-full max-w-sm overflow-hidden focus:outline-none"
       >
         <div aria-hidden className="airmail h-1 w-full" />
         <div className="flex flex-col gap-3 p-5">
@@ -69,7 +74,6 @@ export default function ConfirmDialog({
               </button>
             )}
             <button
-              ref={confirmRef}
               className={`${tone === 'danger' ? 'btn-danger' : 'btn-primary'} text-sm`}
               onClick={onConfirm}
             >

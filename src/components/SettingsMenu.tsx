@@ -16,6 +16,7 @@ import { useDevMode, setDevMode } from '../lib/devMode';
 import { useUnits, setUnits, type UnitSystem } from '../lib/units';
 import ExportDialog from './ExportDialog';
 import SettingsDialog from './SettingsDialog';
+import AboutDialog from './AboutDialog';
 import ImportLibraryDialog from './ImportLibraryDialog';
 import ConfirmDialog from './ConfirmDialog';
 
@@ -29,6 +30,7 @@ export default function SettingsMenu() {
   const [showExport, setShowExport] = useState(false);
   const [showRestore, setShowRestore] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showAbout, setShowAbout] = useState(false);
   // Pending library import: parsed file + its plan against the current library.
   const [libImport, setLibImport] = useState<{
     plan: LibraryImportPlan;
@@ -219,6 +221,16 @@ export default function SettingsMenu() {
               </span>
             </span>
           </MenuItem>
+
+          <div className="border-t border-line" />
+          <MenuItem
+            onClick={() => {
+              setOpen(false);
+              setShowAbout(true);
+            }}
+          >
+            About…
+          </MenuItem>
         </div>
       )}
 
@@ -240,6 +252,8 @@ export default function SettingsMenu() {
       )}
 
       {showSettings && <SettingsDialog onClose={() => setShowSettings(false)} />}
+
+      {showAbout && <AboutDialog onClose={() => setShowAbout(false)} />}
 
       {showRestore && (
         <ConfirmDialog
