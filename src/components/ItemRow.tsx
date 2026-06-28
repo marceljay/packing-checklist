@@ -93,22 +93,28 @@ export default function ItemRow({
           <span className={`min-w-0 flex-1 truncate text-sm ${item.missing ? 'text-ink-faint italic' : 'text-ink'}`}>
             {item.name}
           </span>
-          <div className="flex shrink-0 items-center gap-1" aria-label="Quantity">
-            <span className="w-5 text-center font-mono text-sm tabular-nums">{item.quantityTaken}</span>
-            <button
-              className="btn-secondary h-7 w-7 p-0 text-base leading-none"
-              aria-label="Decrease quantity"
-              onClick={() => patchRef((it) => void (it.quantityTaken = Math.max(1, it.quantityTaken - 1)))}
-            >
-              −
-            </button>
-            <button
-              className="btn-secondary h-7 w-7 p-0 text-base leading-none"
-              aria-label="Increase quantity"
-              onClick={() => patchRef((it) => void (it.quantityTaken = it.quantityTaken + 1))}
-            >
-              +
-            </button>
+          <div className="flex shrink-0 items-center gap-2" aria-label="Quantity">
+            <span className="min-w-[2rem] text-right font-mono text-sm tabular-nums text-ink-soft">
+              {item.quantityTaken}&times;
+            </span>
+            {/* Stepper: one rounded control with a centre divider (two ends). */}
+            <div className="flex items-center overflow-hidden rounded-md border border-line">
+              <button
+                className="flex h-7 w-7 items-center justify-center text-base leading-none text-ink-soft transition-colors hover:bg-paper-sunk hover:text-ink"
+                aria-label="Decrease quantity"
+                onClick={() => patchRef((it) => void (it.quantityTaken = Math.max(1, it.quantityTaken - 1)))}
+              >
+                −
+              </button>
+              <span aria-hidden className="h-7 w-px bg-line" />
+              <button
+                className="flex h-7 w-7 items-center justify-center text-base leading-none text-ink-soft transition-colors hover:bg-paper-sunk hover:text-ink"
+                aria-label="Increase quantity"
+                onClick={() => patchRef((it) => void (it.quantityTaken = it.quantityTaken + 1))}
+              >
+                +
+              </button>
+            </div>
           </div>
         </div>
 
