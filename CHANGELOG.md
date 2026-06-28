@@ -71,6 +71,12 @@ All notable changes to this project are documented here.
   button with a centre divider rather than two separate buttons.
 
 ### Added
+- **Packing weight calculator.** Every item has a per-unit weight (built-ins seed
+  sensible defaults; editable in the library and trip item editors). The trip view
+  shows a load gauge — total weight (kg or lb, following the units setting) plus a
+  Light / Medium / Heavy band with carry advice (backpack, wheeled suitcase, or
+  split the load). The band thresholds are editable in a new Settings dialog in the
+  header ⋯ menu, and weights travel with export/import.
 - **Bigger cities first in place search.** Search results are ranked by
   population, so major cities surface above obscure same-named places.
 - **Destinations must be recognized places.** A destination can only be added by
