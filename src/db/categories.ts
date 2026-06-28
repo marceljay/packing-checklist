@@ -1,5 +1,6 @@
 import { getData, setData } from './store';
 import { CATEGORIES, isBuiltinCategory, type Category } from '../types';
+import type { AppData } from './appData';
 
 /**
  * Category management over the JSON document. Categories have no separate id —
@@ -17,8 +18,9 @@ export const FALLBACK_CATEGORY = 'Comfort & Misc';
  * order, then user/imported customs, then any category still present on an item.
  * De-duplicated, first-seen order. Drives the manager and the add/edit pickers.
  */
-export function listCategories(): Category[] {
-  const d = getData();
+export function categoriesFrom(
+  d: Pick<AppData, 'library' | 'customCategories' | 'removedCategories'>,
+): Category[] {
   const removed = new Set(d.removedCategories ?? []);
   const out: string[] = [];
   const seen = new Set<string>();
@@ -32,6 +34,10 @@ export function listCategories(): Category[] {
   for (const c of d.customCategories ?? []) add(c);
   for (const item of d.library) add(item.category);
   return out;
+}
+
+export function listCategories(): Category[] {
+  return categoriesFrom(getData());
 }
 
 /** The user/imported custom categories registry (for export). */
