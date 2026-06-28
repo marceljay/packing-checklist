@@ -43,6 +43,13 @@ All notable changes to this project are documented here.
   removed built-ins back.
 
 ### Added
+- **Destinations must be recognized places.** A destination can only be added by
+  picking a match from search (online geocoder, or the bundled city list when
+  offline) — the free-text "add as typed" path is gone, so every destination
+  carries the coordinates the forecast needs. Destination labels now show as
+  *City, Country* (province and other middle parts dropped), with the full label
+  on hover, which also stops a long place name from overflowing the card on
+  mobile.
 - **Tag & category manager.** An "Edit tags & categories" button by the Item
   Library search opens a two-tab manager. **Tags** carry editable metadata (a
   group — Activity / Weather / Other — and a "show on the trip page" default),
