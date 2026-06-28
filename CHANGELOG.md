@@ -43,6 +43,10 @@ All notable changes to this project are documented here.
   removed built-ins back.
 
 ### Changed
+- **Smarter per-day quantities.** Daily items (underwear, socks, t-shirts…) now
+  track the trip length without laundry instead of pinning to a low cap — a
+  28-day trip suggests ~28 underwear, not 10 — and selecting laundry roughly
+  halves the amount (~14) rather than applying a fixed cap.
 - **Trip cards open to plan or checklist.** Each trip card's "Open" action is now
   "Plan", with a new "Checklist" action that opens the trip straight into the
   check-off view.
