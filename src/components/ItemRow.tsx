@@ -4,7 +4,7 @@ import { orderedCategories } from '../types';
 import { editLibraryItem } from '../db/library';
 import TagEditor from './TagEditor';
 import Select from './Select';
-import { EditIcon, DeleteIcon } from './icons';
+import { InfoIcon, EditIcon, DeleteIcon } from './icons';
 
 export type ItemRowMode = 'plan' | 'checklist';
 
@@ -28,6 +28,7 @@ export default function ItemRow({
   mode = 'plan',
 }: Props) {
   const [editing, setEditing] = useState(false);
+  const [info, setInfo] = useState(false);
 
   /** Patch this trip's reference (per-trip state: quantity / packed). */
   function patchRef(fn: (it: Item) => void) {
@@ -86,6 +87,7 @@ export default function ItemRow({
   }
 
   return (
+    <>
     <div className="flex items-start gap-2.5 px-4 py-2.5 transition-colors hover:bg-paper-sunk/40">
       <div className="flex min-w-0 flex-1 flex-col gap-1.5">
         {/* Line 1: name + quantity stepper */}
@@ -134,14 +136,21 @@ export default function ItemRow({
           </div>
         )}
 
-        {/* Line 3: notes / info (when present) */}
-        {item.notes && (
-          <p className="whitespace-pre-wrap text-xs text-ink-soft">{item.notes}</p>
-        )}
       </div>
 
-      {/* Actions: edit (pencil) + remove */}
+      {/* Actions: info + edit (pencil) + remove */}
       <div className="flex shrink-0 items-center gap-1">
+        {!item.missing && (
+          <button
+            className="btn-ghost mt-0.5 px-1.5 py-1"
+            aria-label={`Info about ${item.name}`}
+            aria-expanded={info}
+            title="Item details"
+            onClick={() => setInfo((v) => !v)}
+          >
+            <InfoIcon />
+          </button>
+        )}
         {!item.missing && (
           <button
             className="btn-ghost mt-0.5 px-1.5 py-1"
@@ -162,6 +171,28 @@ export default function ItemRow({
         </button>
       </div>
     </div>
+
+      {info && !item.missing && (
+        <dl className="grid grid-cols-[5.5rem_1fr] gap-x-3 gap-y-1 border-t border-line bg-paper-sunk/40 px-4 py-3 text-sm">
+          <dt className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">Category</dt>
+          <dd className="text-ink-soft">{item.category}</dd>
+          {typeof item.weight === 'number' && (
+            <>
+              <dt className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">Weight</dt>
+              <dd className="text-ink-soft">{item.weight} g each</dd>
+            </>
+          )}
+          {item.essential && (
+            <>
+              <dt className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">Essential</dt>
+              <dd className="text-ink-soft">Suggested on every trip</dd>
+            </>
+          )}
+          <dt className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">Notes</dt>
+          <dd className="whitespace-pre-wrap text-ink-soft">{item.notes || '—'}</dd>
+        </dl>
+      )}
+    </>
   );
 }
 
