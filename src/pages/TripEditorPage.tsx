@@ -6,6 +6,7 @@ import ContextPanel from '../components/ContextPanel';
 import Checklist from '../components/Checklist';
 import SuggestionsTray from '../components/SuggestionsTray';
 import WeatherCard from '../components/WeatherCard';
+import WeightSummary from '../components/WeightSummary';
 import AddItemCard from '../components/AddItemCard';
 import PrintMenu from '../components/PrintMenu';
 import PrintSheet from '../components/PrintSheet';
@@ -236,6 +237,7 @@ export default function TripEditorPage() {
                 setWeatherMsg={setWeatherMsg}
               />
               <div className="flex min-w-0 flex-col gap-5">
+                <WeightSummary items={trip.items} library={library} />
                 <AddItemCard update={update} tagSuggestions={tagSuggestions} categories={categoryOptions} />
                 <SuggestionsTray trip={trip} update={update} library={library} />
                 <Checklist trip={trip} update={update} library={library} mode="plan" />
@@ -244,6 +246,7 @@ export default function TripEditorPage() {
           </>
         ) : (
           <>
+            <WeightSummary items={trip.items} library={library} />
             <Checklist trip={trip} update={update} library={library} mode="checklist" />
             {trip.items.length > 0 && (
               <div className="flex flex-wrap justify-end gap-2">

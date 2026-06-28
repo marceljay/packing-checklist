@@ -12,6 +12,8 @@ import {
   resolvedByCategory,
   resolvedByTag,
   ESSENTIAL_GROUP_KEY,
+  tripWeightGrams,
+  weightBand,
   defaultId,
   customId,
   ensureTripTags,
@@ -380,6 +382,37 @@ describe('resolvedByTag', () => {
     expect(groups.map((g) => g.tag)).toEqual([ESSENTIAL_GROUP_KEY, 'beach']);
     expect(groups[0].items.map((i) => i.name)).toEqual(['Phone']);
     expect(groups[1].items.map((i) => i.name)).toEqual(['Phone']);
+  });
+});
+
+describe('tripWeightGrams', () => {
+  it('sums weight x quantity, treating an unset weight as 0', () => {
+    const lib = new Map([
+      ['a', libRow('A', 'Clothing', { id: 'a', weight: 150 })],
+      ['b', libRow('B', 'Clothing', { id: 'b', weight: 60 })],
+      ['c', libRow('C', 'Comfort & Misc', { id: 'c' })], // no weight
+    ]);
+    const items = [ref('a', { quantityTaken: 3 }), ref('b', { quantityTaken: 5 }), ref('c', { quantityTaken: 2 })];
+    expect(tripWeightGrams(items, lib)).toBe(150 * 3 + 60 * 5); // 750
+  });
+
+  it('ignores references whose library row is missing', () => {
+    expect(tripWeightGrams([ref('ghost', { quantityTaken: 4 })], new Map())).toBe(0);
+  });
+});
+
+describe('weightBand', () => {
+  const th = { lightMaxKg: 10, mediumMaxKg: 20 };
+  it('classifies by the thresholds, inclusive of the upper bound', () => {
+    expect(weightBand(9_000, th).key).toBe('light');
+    expect(weightBand(10_000, th).key).toBe('light'); // boundary is light
+    expect(weightBand(10_001, th).key).toBe('medium');
+    expect(weightBand(20_000, th).key).toBe('medium');
+    expect(weightBand(20_001, th).key).toBe('heavy');
+  });
+
+  it('respects custom thresholds', () => {
+    expect(weightBand(8_000, { lightMaxKg: 5, mediumMaxKg: 12 }).key).toBe('medium');
   });
 });
 

@@ -17,6 +17,7 @@ export function catalogToLibraryItems(catalog: CatalogItem[]): LibraryItem[] {
     essential: c.always === true,
     ...(c.essentialWhen ? { essentialWhen: c.essentialWhen } : {}),
     quantity: c.quantity,
+    ...(typeof c.weightG === 'number' ? { weight: c.weightG } : {}),
     count: 0,
     lastUsed: 0,
   }));

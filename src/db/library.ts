@@ -134,6 +134,8 @@ export function editLibraryItem(
     quantity?: QuantityRule | null;
     /** Whether the item is suggested on every trip (an "essential"). */
     essential?: boolean;
+    /** Per-unit weight in grams; null clears it (unset). */
+    weight?: number | null;
   },
 ): { ok: boolean; id: string } {
   let result = { ok: false, id };
@@ -162,6 +164,7 @@ export function editLibraryItem(
     if (patch.notes !== undefined) row.notes = patch.notes.trim() || undefined;
     if (patch.quantity !== undefined) row.quantity = patch.quantity ?? undefined;
     if (patch.essential !== undefined) row.essential = patch.essential || undefined;
+    if (patch.weight !== undefined) row.weight = patch.weight ?? undefined;
     result = { ok: true, id: realId };
   });
   return result;
@@ -232,6 +235,7 @@ function rowFromParsed(p: ParsedLibraryItem, id: string): LibraryItem {
     lastUsed: p.lastUsed,
     ...(p.essential ? { essential: true } : {}),
     ...(p.quantity ? { quantity: p.quantity } : {}),
+    ...(typeof p.weight === 'number' ? { weight: p.weight } : {}),
   };
 }
 
@@ -339,6 +343,7 @@ export function applyLibraryImport(
           row.lastUsed = p.lastUsed;
           row.essential = p.essential || undefined;
           row.quantity = p.quantity;
+          row.weight = p.weight;
           replaced += 1;
         }
       }

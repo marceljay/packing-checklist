@@ -15,6 +15,7 @@ import { downloadText, downloadBlob, pickTextFile } from '../lib/file';
 import { useDevMode, setDevMode } from '../lib/devMode';
 import { useUnits, setUnits, type UnitSystem } from '../lib/units';
 import ExportDialog from './ExportDialog';
+import SettingsDialog from './SettingsDialog';
 import ImportLibraryDialog from './ImportLibraryDialog';
 import ConfirmDialog from './ConfirmDialog';
 
@@ -27,6 +28,7 @@ export default function SettingsMenu() {
   const [open, setOpen] = useState(false);
   const [showExport, setShowExport] = useState(false);
   const [showRestore, setShowRestore] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   // Pending library import: parsed file + its plan against the current library.
   const [libImport, setLibImport] = useState<{
     plan: LibraryImportPlan;
@@ -173,6 +175,14 @@ export default function SettingsMenu() {
           </MenuItem>
 
           <div className="border-t border-line" />
+          <MenuItem
+            onClick={() => {
+              setOpen(false);
+              setShowSettings(true);
+            }}
+          >
+            Settings…
+          </MenuItem>
           <div className="flex items-center justify-between px-3 py-2 text-sm text-ink">
             <span>Temperature</span>
             <div
@@ -228,6 +238,8 @@ export default function SettingsMenu() {
           onApply={applyLibImport}
         />
       )}
+
+      {showSettings && <SettingsDialog onClose={() => setShowSettings(false)} />}
 
       {showRestore && (
         <ConfirmDialog

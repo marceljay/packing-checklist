@@ -38,6 +38,8 @@ export interface ParsedLibraryItem {
   custom: boolean;
   essential?: boolean;
   quantity?: QuantityRule;
+  /** Per-unit weight in grams (absent → unset). */
+  weight?: number;
   count: number;
   lastUsed: number;
 }
@@ -142,6 +144,7 @@ export function parseLibrary(text: string): ParsedLibrary {
       custom: raw.custom !== false,
       ...(raw.essential ? { essential: true } : {}),
       ...(raw.quantity ? { quantity: raw.quantity as QuantityRule } : {}),
+      ...(typeof raw.weight === 'number' ? { weight: raw.weight } : {}),
       count: typeof raw.count === 'number' ? raw.count : 0,
       lastUsed: typeof raw.lastUsed === 'number' ? raw.lastUsed : 0,
     });

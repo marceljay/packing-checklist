@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { convTemp, formatPrecip, formatWind } from './units';
+import { convTemp, formatPrecip, formatWind, convWeight, formatWeight } from './units';
 
 describe('convTemp', () => {
   it('rounds Celsius unchanged in metric', () => {
@@ -32,5 +32,18 @@ describe('formatWind', () => {
 
   it('converts to mph in imperial', () => {
     expect(formatWind(160.9344, 'imperial')).toBe('100 mph');
+  });
+});
+
+describe('convWeight / formatWeight', () => {
+  it('converts grams to kg (metric) and lb (imperial)', () => {
+    expect(convWeight(1000, 'metric')).toBeCloseTo(1);
+    expect(convWeight(453.59237, 'imperial')).toBeCloseTo(1);
+  });
+
+  it('keeps one decimal under 10 units and rounds above', () => {
+    expect(formatWeight(7500, 'metric')).toBe('7.5 kg');
+    expect(formatWeight(12000, 'metric')).toBe('12 kg');
+    expect(formatWeight(453.59237, 'imperial')).toBe('1.0 lb');
   });
 });

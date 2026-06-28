@@ -118,6 +118,8 @@ export interface ResolvedItem {
   essential: boolean;
   /** Free-text note / longer description carried from the library row. */
   notes?: string;
+  /** Per-unit weight in grams carried from the library row (absent → unset). */
+  weight?: number;
   /** true when the referenced library row no longer exists. */
   missing: boolean;
 }
@@ -244,6 +246,9 @@ export interface LibraryItem {
   quantity?: QuantityRule;
   /** Optional free-text note / longer description, shown in the item's info card. */
   notes?: string;
+  /** Per-unit weight in grams (seeded from the catalog; editable). Absent → unset
+   *  (counts as 0 in the trip total). */
+  weight?: number;
 }
 
 /**
@@ -359,6 +364,7 @@ export function resolveItems(items: Item[], libById: Map<ID, LibraryItem>): Reso
       packed: it.packed,
       essential: lib?.essential === true,
       notes: lib?.notes,
+      weight: lib?.weight,
       missing: lib === undefined,
     };
   });
@@ -492,6 +498,8 @@ export interface CatalogItem {
   /** Tag keys (normalized labels) that surface this item, with ranking weight. */
   tagKeys: { key: string; weight: number }[];
   quantity: QuantityRule;
+  /** Per-unit weight in grams (the built-in default; editable once seeded). */
+  weightG?: number;
 }
 
 /** Whether a conditional essential applies to international or domestic trips. */
@@ -569,4 +577,50 @@ export function computeQuantity(
     case 'none':
       return 1;
   }
+}
+
+// ---------------------------------------------------------------------------
+// Packing weight (SPEC: weight calculator)
+// ---------------------------------------------------------------------------
+
+/** Editable light/medium thresholds (kg) for the carry scale. */
+export interface WeightThresholds {
+  lightMaxKg: number;
+  mediumMaxKg: number;
+}
+
+export type WeightBandKey = 'light' | 'medium' | 'heavy';
+
+export interface WeightBand {
+  key: WeightBandKey;
+  label: string;
+  /** Carry advice / suggested luggage for this band. */
+  advice: string;
+}
+
+/** Total packed weight in grams: each trip item's taken quantity times its
+ *  library weight (an unset weight counts as 0). */
+export function tripWeightGrams(items: Item[], libById: Map<ID, LibraryItem>): number {
+  let g = 0;
+  for (const it of items) {
+    const w = libById.get(it.libraryId)?.weight;
+    if (typeof w === 'number') g += w * it.quantityTaken;
+  }
+  return g;
+}
+
+/** Classify a gram total against the (kg) thresholds into a carry band + advice. */
+export function weightBand(grams: number, t: WeightThresholds): WeightBand {
+  const kg = grams / 1000;
+  if (kg <= t.lightMaxKg) {
+    return { key: 'light', label: 'Light', advice: 'Easy carry — a backpack works.' };
+  }
+  if (kg <= t.mediumMaxKg) {
+    return { key: 'medium', label: 'Medium', advice: 'Use a wheeled suitcase.' };
+  }
+  return {
+    key: 'heavy',
+    label: 'Heavy',
+    advice: 'Split the load or avoid long walks; check airline limits.',
+  };
 }

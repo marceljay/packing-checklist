@@ -106,6 +106,12 @@ function LibraryItemRow({
               <dd className="text-ink-soft">{item.quantity.count}</dd>
             </>
           )}
+          {typeof item.weight === 'number' && (
+            <>
+              <dt className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">Weight</dt>
+              <dd className="text-ink-soft">{item.weight} g</dd>
+            </>
+          )}
           {item.count > 0 && (
             <>
               <dt className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">Used</dt>
@@ -157,6 +163,8 @@ function LibraryItemEdit({
   // A fixed default quantity shows as a number; smart/none rules show blank.
   const initialQty = item.quantity?.kind === 'perTrip' ? String(item.quantity.count) : '';
   const [qty, setQty] = useState(initialQty);
+  const initialWeight = item.weight != null ? String(item.weight) : '';
+  const [weight, setWeight] = useState(initialWeight);
   const [essential, setEssential] = useState(item.essential === true);
   const [error, setError] = useState('');
 
@@ -174,6 +182,10 @@ function LibraryItemEdit({
       const n = parseInt(qty, 10);
       patch.quantity = Number.isFinite(n) && n > 0 ? { kind: 'perTrip', count: n } : null;
     }
+    if (weight !== initialWeight) {
+      const w = parseInt(weight, 10);
+      patch.weight = Number.isFinite(w) && w > 0 ? w : null;
+    }
     const res = editLibraryItem(item.id, patch);
     if (!res.ok) {
       setError('Another item already has that name.');
@@ -184,7 +196,7 @@ function LibraryItemEdit({
 
   return (
     <div className="flex flex-col gap-2 bg-paper-sunk/40 px-4 py-3">
-      <div className="grid gap-2 sm:grid-cols-[1fr_11rem_5rem]">
+      <div className="grid gap-2 sm:grid-cols-[1fr_11rem_5rem_6rem]">
         <input
           className="input min-w-0"
           value={name}
@@ -209,6 +221,17 @@ function LibraryItemEdit({
           placeholder="Qty"
           aria-label="Default quantity"
           title="Default quantity when added to a trip (blank = 1, or its built-in rule)"
+        />
+        <input
+          type="number"
+          min="1"
+          inputMode="numeric"
+          className="input min-w-0"
+          value={weight}
+          onChange={(e) => setWeight(e.target.value)}
+          placeholder="Weight g"
+          aria-label="Weight in grams"
+          title="Per-unit weight in grams (blank = unset)"
         />
       </div>
       <TagEditor value={tags} onChange={setTags} suggestions={suggestions} ariaLabel={`Tags for ${item.name}`} />
@@ -289,14 +312,18 @@ function AddItemForm({ suggestions, categories }: { suggestions: string[]; categ
   const [name, setName] = useState('');
   const [category, setCategory] = useState<Category>(categories[0]);
   const [tags, setTags] = useState<string[]>([]);
+  const [weight, setWeight] = useState('');
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const trimmed = name.trim();
     if (!trimmed) return;
-    void rememberItem(trimmed, category, tags);
+    const row = rememberItem(trimmed, category, tags);
+    const w = parseInt(weight, 10);
+    if (Number.isFinite(w) && w > 0) editLibraryItem(row.id, { weight: w });
     setName('');
     setTags([]);
+    setWeight('');
     setCategory(categories[0]);
   }
 
@@ -308,7 +335,7 @@ function AddItemForm({ suggestions, categories }: { suggestions: string[]; categ
       </div>
       <form
         onSubmit={handleSubmit}
-        className="grid gap-3 border-t border-line p-4 sm:grid-cols-[1fr_12rem_1fr_auto] sm:items-start"
+        className="grid gap-3 border-t border-line p-4 sm:grid-cols-[1fr_12rem_1fr_6rem_auto] sm:items-start"
       >
         <div>
           <label className="label mb-1" htmlFor="add-item-name">
@@ -338,6 +365,21 @@ function AddItemForm({ suggestions, categories }: { suggestions: string[]; categ
         <div>
           <span className="label mb-1 block">Tags</span>
           <TagEditor value={tags} onChange={setTags} suggestions={suggestions} ariaLabel="Tags for new item" />
+        </div>
+        <div>
+          <label className="label mb-1" htmlFor="add-item-weight">
+            Weight (g)
+          </label>
+          <input
+            id="add-item-weight"
+            type="number"
+            min="1"
+            inputMode="numeric"
+            className="input"
+            placeholder="e.g. 150"
+            value={weight}
+            onChange={(e) => setWeight(e.target.value)}
+          />
         </div>
         <button type="submit" className="btn-primary sm:mt-[1.4rem]">
           Add

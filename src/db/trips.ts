@@ -136,6 +136,7 @@ function storeImported({ trip, libraryItems }: ImportResult): Trip {
       lastUsed: 0,
       ...(li.essential ? { essential: true } : {}),
       ...(li.quantity ? { quantity: li.quantity } : {}),
+      ...(typeof li.weight === 'number' ? { weight: li.weight } : {}),
     };
     keyToId.set(li.id, putWithId(row).id);
   }

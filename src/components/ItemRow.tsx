@@ -187,11 +187,18 @@ function EditForm({
   const [tags, setTags] = useState<string[]>(item.tagKeys);
   const [notes, setNotes] = useState(item.notes ?? '');
   const [essential, setEssential] = useState(item.essential);
+  const initialWeight = item.weight != null ? String(item.weight) : '';
+  const [weight, setWeight] = useState(initialWeight);
   const [error, setError] = useState('');
 
   function save() {
     if (!name.trim()) return;
-    const res = editLibraryItem(item.libraryId, { name, category, tagKeys: tags, notes, essential });
+    const patch: Parameters<typeof editLibraryItem>[1] = { name, category, tagKeys: tags, notes, essential };
+    if (weight !== initialWeight) {
+      const w = parseInt(weight, 10);
+      patch.weight = Number.isFinite(w) && w > 0 ? w : null;
+    }
+    const res = editLibraryItem(item.libraryId, patch);
     if (!res.ok) {
       setError('Another item already has that name.');
       return;
@@ -201,7 +208,7 @@ function EditForm({
 
   return (
     <div className="flex flex-col gap-2 bg-paper-sunk/40 px-4 py-3">
-      <div className="grid gap-2 sm:grid-cols-[1fr_11rem]">
+      <div className="grid gap-2 sm:grid-cols-[1fr_11rem_6rem]">
         <input
           className="input min-w-0"
           value={name}
@@ -215,6 +222,17 @@ function EditForm({
           onChange={(v) => setCategory(v as Category)}
           options={options}
           ariaLabel="Category"
+        />
+        <input
+          type="number"
+          min="1"
+          inputMode="numeric"
+          className="input min-w-0"
+          value={weight}
+          onChange={(e) => setWeight(e.target.value)}
+          placeholder="Weight g"
+          aria-label="Weight in grams"
+          title="Per-unit weight in grams (blank = unset)"
         />
       </div>
       <TagEditor value={tags} onChange={setTags} ariaLabel={`Tags for ${item.name}`} />

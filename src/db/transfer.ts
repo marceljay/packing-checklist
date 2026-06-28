@@ -34,6 +34,7 @@ export interface ImportedLibraryItem {
   custom: boolean;
   essential?: boolean;
   quantity?: LibraryItem['quantity'];
+  weight?: number;
 }
 
 export interface ImportResult {
@@ -173,6 +174,7 @@ function buildTrip(
       custom: row.custom !== false,
       ...(row.essential ? { essential: true } : {}),
       ...(row.quantity ? { quantity: row.quantity } : {}),
+      ...(typeof row.weight === 'number' ? { weight: row.weight } : {}),
     });
   }
   const items: Item[] = [];
