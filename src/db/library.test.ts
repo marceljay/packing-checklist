@@ -14,6 +14,8 @@ import {
 import { planLibraryImport, type ParsedLibraryItem } from './libraryTransfer';
 import { listTagMeta, setTagGroup } from './tags';
 import { getData, setData } from './store';
+import { CATALOG } from '../data/catalog';
+import { defaultId } from '../types';
 
 const defaults = () => listLibrary().filter((i) => !i.custom);
 const aDefault = () => defaults()[0];
@@ -41,6 +43,32 @@ describe('seedLibrary', () => {
     const n = listLibrary().length;
     seedLibrary();
     expect(listLibrary().length).toBe(n);
+  });
+
+  it('re-syncs a pristine default to the catalog (e.g. updated quantity) but keeps usage stats', () => {
+    seedLibrary();
+    const def = aDefault();
+    // Simulate a stale persisted rule + accrued usage from an older app version.
+    setData((d) => {
+      const row = d.library.find((i) => i.id === def.id)!;
+      row.quantity = { kind: 'perDay', factor: 1, max: 1 };
+      row.count = 5;
+      row.lastUsed = 123;
+    });
+    seedLibrary();
+    const refreshed = getLibraryItem(def.id)!;
+    const catalogRule = CATALOG.find((c) => defaultId(c.id) === def.id)!.quantity;
+    expect(refreshed.quantity).toEqual(catalogRule); // re-synced from catalog
+    expect(refreshed.count).toBe(5); // usage preserved
+    expect(refreshed.lastUsed).toBe(123);
+  });
+
+  it('does not touch an edited (forked → custom) item', () => {
+    seedLibrary();
+    const def = aDefault();
+    const res = editLibraryItem(def.id, { quantity: { kind: 'perTrip', count: 99 } });
+    seedLibrary();
+    expect(getLibraryItem(res.id)?.quantity).toEqual({ kind: 'perTrip', count: 99 });
   });
 });
 

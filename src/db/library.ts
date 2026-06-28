@@ -31,9 +31,21 @@ import type { TagMeta } from '../types';
 export function seedLibrary(): void {
   const seeds = catalogToLibraryItems(CATALOG);
   setData((d) => {
-    const have = new Set(d.library.map((i) => i.id));
+    const byId = new Map(d.library.map((i) => [i.id, i]));
     const removed = new Set(d.removedDefaultIds ?? []);
-    for (const s of seeds) if (!have.has(s.id) && !removed.has(s.id)) d.library.push(s);
+    for (const s of seeds) {
+      if (removed.has(s.id)) continue;
+      const existing = byId.get(s.id);
+      if (!existing) {
+        d.library.push(s);
+      } else if (existing.custom === false) {
+        // Re-sync a pristine default to the current catalog so app updates (e.g.
+        // changed quantity rules) reach already-seeded rows. Editing a default
+        // forks it to a custom (new id), so an unedited `d:` row is safe to refresh;
+        // only the per-item usage stats are preserved.
+        Object.assign(existing, s, { count: existing.count, lastUsed: existing.lastUsed });
+      }
+    }
   });
 }
 
