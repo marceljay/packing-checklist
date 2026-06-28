@@ -237,11 +237,23 @@ export function rankPlaces(results: GeoResult[]): GeoResult[] {
     .map((x) => x.r);
   const seen = new Set<string>();
   return ranked.filter((r) => {
-    const key = `${r.name}|${r.admin1 ?? ''}|${r.country ?? ''}`.toLowerCase();
+    // Fold by name + country only (accent- and case-insensitive): the geocoder
+    // returns the same city under several regions/spellings, which all read alike
+    // in the list. Keeps the most populous (we filter the population-sorted list).
+    const key = `${normalizePlace(r.name)}|${normalizePlace(r.country ?? '')}`;
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
   });
+}
+
+/** Lowercase, trim, and strip accents so "Malmo" and "Malmö" fold together. */
+function normalizePlace(s: string): string {
+  return s
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase()
+    .trim();
 }
 
 /** Human-readable place label, e.g. "Faro, Faro District, Portugal".

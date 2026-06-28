@@ -155,11 +155,11 @@ describe('shortPlace', () => {
 describe('rankPlaces', () => {
   const p = (name: string, population?: number): GeoResult => ({ name, lat: 0, lon: 0, population });
 
-  it('drops entries that render identically, keeping the most populous', () => {
+  it('folds same-name/same-country matches (any region or spelling), keeping the most populous', () => {
     const ranked = rankPlaces([
       { name: 'Hamburg', admin1: 'Hamburg', country: 'Germany', lat: 1, lon: 1, population: 5_000 },
-      { name: 'Hamburg', admin1: 'Hamburg', country: 'Germany', lat: 2, lon: 2, population: 1_800_000 },
-      { name: 'Hamburg', admin1: 'Hamburg', country: 'Germany', lat: 3, lon: 3 },
+      { name: 'Hamburg', admin1: 'Schleswig-Holstein', country: 'Germany', lat: 2, lon: 2, population: 1_800_000 },
+      { name: 'Hamburg', country: 'Germany', lat: 3, lon: 3 }, // no region
       { name: 'Hamburg', admin1: 'New York', country: 'United States', lat: 4, lon: 4, population: 9_000 },
     ]);
     // one Hamburg/Germany (the big one) + the distinct US Hamburg
@@ -167,6 +167,15 @@ describe('rankPlaces', () => {
     const de = ranked.find((r) => r.country === 'Germany')!;
     expect(de.population).toBe(1_800_000);
     expect(ranked.map((r) => r.country)).toEqual(['Germany', 'United States']);
+  });
+
+  it('folds accented vs plain spellings of the same place', () => {
+    const ranked = rankPlaces([
+      { name: 'Malmö', country: 'Sweden', lat: 1, lon: 1, population: 300_000 },
+      { name: 'Malmo', country: 'Sweden', lat: 2, lon: 2, population: 1_000 },
+    ]);
+    expect(ranked).toHaveLength(1);
+    expect(ranked[0].population).toBe(300_000);
   });
 
   it('orders matches biggest-population first', () => {
