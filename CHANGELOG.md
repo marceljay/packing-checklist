@@ -43,6 +43,14 @@ All notable changes to this project are documented here.
   removed built-ins back.
 
 ### Changed
+- **Trip cards open to plan or checklist.** Each trip card's "Open" action is now
+  "Plan", with a new "Checklist" action that opens the trip straight into the
+  check-off view.
+- **Clearer item-type labels.** The Item Library info panel reads "App default
+  item" / "User created (Custom)" instead of "Default" / "Custom".
+- **Deleting a library item is confirmed.** Removing an item from the library now
+  asks first (and notes it stays on any trip already using it; built-ins come
+  back via "Return to defaults").
 - **Essentials group in the by-tag packing list.** Grouping the packing list by
   tag used to file tag-less essentials (passport, charger…) under "Untagged".
   They now have their own "Essential" group shown first; an essential that also
