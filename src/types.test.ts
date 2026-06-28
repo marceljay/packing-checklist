@@ -180,18 +180,23 @@ describe('computeQuantity', () => {
       expect(computeQuantity({ kind: 'perDay', factor: 0.5, max: 10 }, 3, false)).toBe(2);
     });
 
-    it('roughly halves the amount when laundry is available', () => {
+    it('caps at one laundry cycle when laundry is available, regardless of length', () => {
       const rule: QuantityRule = { kind: 'perDay', factor: 1, max: 30 };
-      // no laundry tracks the trip length; laundry roughly halves it
+      // no laundry tracks the trip; laundry caps at ~a week's worth (7 + 1 buffer)
       expect(computeQuantity(rule, 28, false)).toBe(28);
-      expect(computeQuantity(rule, 28, true)).toBe(14);
-      expect(computeQuantity(rule, 7, true)).toBe(4); // ceil(7/2)
+      expect(computeQuantity(rule, 28, true)).toBe(8);
+      expect(computeQuantity(rule, 14, true)).toBe(8); // same cycle cap, longer trip
     });
 
-    it('halves the capped amount, not the raw day count', () => {
-      const rule: QuantityRule = { kind: 'perDay', factor: 1, max: 10 };
-      expect(computeQuantity(rule, 30, false)).toBe(10); // capped at max
-      expect(computeQuantity(rule, 30, true)).toBe(5); // half of the cap
+    it('never suggests more than the trip needs even with laundry', () => {
+      const rule: QuantityRule = { kind: 'perDay', factor: 1, max: 30 };
+      expect(computeQuantity(rule, 5, true)).toBe(5); // shorter than a cycle → just the trip
+    });
+
+    it('scales the laundry cycle by the per-day factor', () => {
+      const rule: QuantityRule = { kind: 'perDay', factor: 0.5, max: 8 };
+      // cycle = ceil(0.5*7)+1 = 5; a long trip with laundry caps there
+      expect(computeQuantity(rule, 28, true)).toBe(5);
     });
 
     it('never returns less than 1', () => {

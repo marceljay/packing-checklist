@@ -534,12 +534,17 @@ export function ensureTripTags(
   return { tags, tagIds };
 }
 
+/** Assumed laundry rhythm: wash about weekly, plus a small buffer for the items
+ *  in the wash. With laundry you only need one cycle's worth, not the whole trip. */
+const LAUNDRY_CYCLE_DAYS = 7;
+const LAUNDRY_BUFFER = 1;
+
 /**
  * Compute a suggested quantity from a rule, trip length and laundry setting.
  * For per-day items the no-laundry amount tracks the trip length (one-per-day
- * style, up to the rule's `max`); laundry roughly halves that, since you re-wear
- * between washes. So a 28-day trip suggests ~28 of a daily item without laundry
- * and ~14 with it, rather than being pinned to a low fixed cap.
+ * style, up to the rule's `max`). With laundry you re-wash on a ~weekly cycle, so
+ * you only pack one cycle's worth (plus a spare), independent of trip length — a
+ * 28-day trip needs ~8 of a daily item, not 28, since laundry runs ~4 times.
  */
 export function computeQuantity(
   rule: QuantityRule,
@@ -550,7 +555,9 @@ export function computeQuantity(
   switch (rule.kind) {
     case 'perDay': {
       const base = Math.min(Math.ceil(d * rule.factor), rule.max);
-      const q = laundryAvailable ? Math.ceil(base / 2) : base;
+      // Laundry: cap at one wash cycle's worth (never more than the trip needs).
+      const cycle = Math.ceil(rule.factor * LAUNDRY_CYCLE_DAYS) + LAUNDRY_BUFFER;
+      const q = laundryAvailable ? Math.min(base, cycle) : base;
       return Math.max(1, q);
     }
     case 'perTrip':
