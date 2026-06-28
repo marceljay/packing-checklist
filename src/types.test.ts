@@ -180,10 +180,18 @@ describe('computeQuantity', () => {
       expect(computeQuantity({ kind: 'perDay', factor: 0.5, max: 10 }, 3, false)).toBe(2);
     });
 
-    it('applies a lower laundry cap only when laundry is available', () => {
-      const rule: QuantityRule = { kind: 'perDay', factor: 1, max: 10, laundryCap: 7 };
-      expect(computeQuantity(rule, 14, false)).toBe(10);
-      expect(computeQuantity(rule, 14, true)).toBe(7);
+    it('roughly halves the amount when laundry is available', () => {
+      const rule: QuantityRule = { kind: 'perDay', factor: 1, max: 30 };
+      // no laundry tracks the trip length; laundry roughly halves it
+      expect(computeQuantity(rule, 28, false)).toBe(28);
+      expect(computeQuantity(rule, 28, true)).toBe(14);
+      expect(computeQuantity(rule, 7, true)).toBe(4); // ceil(7/2)
+    });
+
+    it('halves the capped amount, not the raw day count', () => {
+      const rule: QuantityRule = { kind: 'perDay', factor: 1, max: 10 };
+      expect(computeQuantity(rule, 30, false)).toBe(10); // capped at max
+      expect(computeQuantity(rule, 30, true)).toBe(5); // half of the cap
     });
 
     it('never returns less than 1', () => {

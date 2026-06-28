@@ -1,8 +1,8 @@
 import type { CatalogItem } from '../types';
 
 // Helpers to keep the catalog terse.
-const perDay = (factor: number, max: number, laundryCap?: number) =>
-  ({ kind: 'perDay', factor, max, laundryCap }) as const;
+// `max` is the no-laundry ceiling (laundry roughly halves it — see computeQuantity).
+const perDay = (factor: number, max: number) => ({ kind: 'perDay', factor, max }) as const;
 const perTrip = (count: number) => ({ kind: 'perTrip', count }) as const;
 const bucket = (weekend: number, week: number, long: number) =>
   ({ kind: 'bucket', weekend, week, long }) as const;
@@ -30,9 +30,9 @@ export const CATALOG: CatalogItem[] = [
   { id: 'toothpaste', name: 'Toothpaste', category: 'Toiletries & Health', always: true, tagKeys: [], quantity: perTrip(1) },
   { id: 'deodorant', name: 'Deodorant', category: 'Toiletries & Health', always: true, tagKeys: [], quantity: perTrip(1) },
   { id: 'shampoo', name: 'Shampoo / soap', category: 'Toiletries & Health', always: true, tagKeys: [], quantity: perTrip(1) },
-  { id: 'underwear', name: 'Underwear', category: 'Clothing', always: true, tagKeys: [], quantity: perDay(1, 10, 7) },
-  { id: 'socks', name: 'Socks', category: 'Clothing', always: true, tagKeys: [], quantity: perDay(1, 10, 7) },
-  { id: 'tshirts', name: 'T-shirts', category: 'Clothing', always: true, tagKeys: [], quantity: perDay(1, 10, 6) },
+  { id: 'underwear', name: 'Underwear', category: 'Clothing', always: true, tagKeys: [], quantity: perDay(1, 30) },
+  { id: 'socks', name: 'Socks', category: 'Clothing', always: true, tagKeys: [], quantity: perDay(1, 30) },
+  { id: 'tshirts', name: 'T-shirts', category: 'Clothing', always: true, tagKeys: [], quantity: perDay(1, 21) },
   { id: 'trousers', name: 'Trousers', category: 'Clothing', always: true, tagKeys: [], quantity: bucket(1, 2, 3) },
   { id: 'sleepwear', name: 'Sleepwear', category: 'Clothing', always: true, tagKeys: [], quantity: perTrip(1) },
   { id: 'everyday-shoes', name: 'Everyday shoes', category: 'Footwear', always: true, tagKeys: [], quantity: perTrip(1) },
@@ -45,7 +45,7 @@ export const CATALOG: CatalogItem[] = [
 
   // --- Hiking ---
   { id: 'hiking-boots', name: 'Hiking boots', category: 'Footwear', tagKeys: [t('hiking', 2)], quantity: perTrip(1) },
-  { id: 'hiking-socks', name: 'Hiking socks', category: 'Clothing', tagKeys: [t('hiking', 1)], quantity: perDay(0.5, 5, 3) },
+  { id: 'hiking-socks', name: 'Hiking socks', category: 'Clothing', tagKeys: [t('hiking', 1)], quantity: perDay(0.5, 8) },
   { id: 'daypack', name: 'Daypack', category: 'Gear & Equipment', tagKeys: [t('hiking', 2), t('photography', 1)], quantity: perTrip(1) },
   { id: 'water-bottle', name: 'Water bottle', category: 'Gear & Equipment', tagKeys: [t('hiking', 1), t('running', 1), t('cycling', 1)], quantity: perTrip(1) },
   { id: 'merino', name: 'Merino base layer', category: 'Clothing', tagKeys: [t('hiking', 2), t('cold', 2)], quantity: bucket(1, 2, 3) },

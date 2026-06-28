@@ -475,7 +475,7 @@ export function tripItemsWithAnyTag(
 
 /** How a catalog item's suggested quantity is derived (SPEC §5.4). */
 export type QuantityRule =
-  | { kind: 'perDay'; factor: number; max: number; laundryCap?: number }
+  | { kind: 'perDay'; factor: number; max: number }
   | { kind: 'perTrip'; count: number }
   | { kind: 'bucket'; weekend: number; week: number; long: number }
   | { kind: 'none' };
@@ -534,7 +534,13 @@ export function ensureTripTags(
   return { tags, tagIds };
 }
 
-/** Compute a suggested quantity from a rule, trip length and laundry setting. */
+/**
+ * Compute a suggested quantity from a rule, trip length and laundry setting.
+ * For per-day items the no-laundry amount tracks the trip length (one-per-day
+ * style, up to the rule's `max`); laundry roughly halves that, since you re-wear
+ * between washes. So a 28-day trip suggests ~28 of a daily item without laundry
+ * and ~14 with it, rather than being pinned to a low fixed cap.
+ */
 export function computeQuantity(
   rule: QuantityRule,
   days: number | null,
@@ -543,8 +549,8 @@ export function computeQuantity(
   const d = days ?? 7;
   switch (rule.kind) {
     case 'perDay': {
-      let q = Math.min(Math.ceil(d * rule.factor), rule.max);
-      if (laundryAvailable && rule.laundryCap != null) q = Math.min(q, rule.laundryCap);
+      const base = Math.min(Math.ceil(d * rule.factor), rule.max);
+      const q = laundryAvailable ? Math.ceil(base / 2) : base;
       return Math.max(1, q);
     }
     case 'perTrip':
