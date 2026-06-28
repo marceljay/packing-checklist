@@ -136,9 +136,11 @@ function Field({ label, value }: { label: string; value: string }) {
 export default function TripEditorPage() {
   const { tripId } = useParams();
   const location = useLocation();
-  const isNew = (location.state as { isNew?: boolean } | null)?.isNew === true;
+  const navState = location.state as { isNew?: boolean; mode?: EditorMode } | null;
+  const isNew = navState?.isNew === true;
   const { trip, status, update } = useTripEditor(tripId);
-  const [mode, setMode] = useState<EditorMode>('plan');
+  // A trip card can open straight into "checklist"; otherwise default to "plan".
+  const [mode, setMode] = useState<EditorMode>(navState?.mode ?? 'plan');
   // Lifted from ContextPanel so the WeatherCard can show a loading placeholder
   // the instant a destination is added (the lookup is async).
   const [weatherStatus, setWeatherStatus] = useState<WeatherStatus>('idle');

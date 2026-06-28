@@ -7,6 +7,7 @@ import TagEditor from '../components/TagEditor';
 import TagCategoryManager from '../components/TagCategoryManager';
 import { categoriesFrom } from '../db/categories';
 import Select from '../components/Select';
+import ConfirmDialog from '../components/ConfirmDialog';
 import { InfoIcon, EditIcon, DeleteIcon } from '../components/icons';
 
 const byName = (a: LibraryItem, b: LibraryItem) => a.name.localeCompare(b.name);
@@ -30,6 +31,7 @@ function LibraryItemRow({
   categories: Category[];
 }) {
   const [panel, setPanel] = useState<'none' | 'info' | 'edit'>('none');
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   if (panel === 'edit') {
     return (
@@ -79,7 +81,7 @@ function LibraryItemRow({
           <button
             className="btn-danger px-1.5 py-1"
             aria-label={`Remove ${item.name} from your library`}
-            onClick={() => void forgetItemById(item.id)}
+            onClick={() => setConfirmDelete(true)}
           >
             <DeleteIcon />
           </button>
@@ -89,7 +91,7 @@ function LibraryItemRow({
       {panel === 'info' && (
         <dl className="grid grid-cols-[5rem_1fr] gap-x-3 gap-y-1 border-t border-line bg-paper-sunk/40 px-4 py-3 text-sm">
           <dt className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">Type</dt>
-          <dd className="text-ink-soft">{item.custom ? 'Custom' : 'Default'}</dd>
+          <dd className="text-ink-soft">{item.custom ? 'User created (Custom)' : 'App default item'}</dd>
           <dt className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">Category</dt>
           <dd className="text-ink-soft">{item.category}</dd>
           {item.essential && (
@@ -113,6 +115,24 @@ function LibraryItemRow({
           <dt className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">Notes</dt>
           <dd className="whitespace-pre-wrap text-ink-soft">{item.notes || '—'}</dd>
         </dl>
+      )}
+
+      {confirmDelete && (
+        <ConfirmDialog
+          title={`Remove “${item.name}”?`}
+          confirmLabel="Remove item"
+          tone="danger"
+          onCancel={() => setConfirmDelete(false)}
+          onConfirm={() => {
+            forgetItemById(item.id);
+            setConfirmDelete(false);
+          }}
+        >
+          <p>
+            Removes <strong>{item.name}</strong> from your library. It stays on any trip that
+            already has it.{item.custom ? '' : ' You can bring built-in items back with “Return to defaults”.'}
+          </p>
+        </ConfirmDialog>
       )}
     </li>
   );

@@ -122,8 +122,19 @@ export default function TripsListPage() {
                 </Link>
 
                 <div className="flex gap-1 border-t border-line px-3 py-2">
-                  <Link to={`/trip/${trip.id}`} className="btn-ghost px-2 py-1.5 text-xs">
-                    Open
+                  <Link
+                    to={`/trip/${trip.id}`}
+                    state={{ mode: 'plan' }}
+                    className="btn-ghost px-2 py-1.5 text-xs"
+                  >
+                    Plan
+                  </Link>
+                  <Link
+                    to={`/trip/${trip.id}`}
+                    state={{ mode: 'checklist' }}
+                    className="btn-ghost px-2 py-1.5 text-xs"
+                  >
+                    Checklist
                   </Link>
                   <button
                     className="btn-ghost px-2 py-1.5 text-xs"
