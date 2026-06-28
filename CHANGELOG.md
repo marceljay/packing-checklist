@@ -54,7 +54,8 @@ All notable changes to this project are documented here.
 - **Temperature unit lives in the menu.** The °C/°F switch moved off the forecast
   card into the header ⋯ menu (Temperature), where it reads as a global setting.
 - **Quantity stepper reads left-to-right.** Plan mode shows the item amount
-  before the −/+ buttons rather than between them.
+  (as "N×", e.g. 1× / 5×) before the −/+ controls, which are now a single rounded
+  button with a centre divider rather than two separate buttons.
 
 ### Added
 - **Bigger cities first in place search.** Search results are ranked by
