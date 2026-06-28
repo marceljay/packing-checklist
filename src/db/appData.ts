@@ -16,13 +16,30 @@ export interface AppData {
   /** Per-tag metadata (group + trip-page default), seeded on boot from
    *  BUILTIN_TAGS and the library's tags. Absent on pre-v2 docs → seeded then. */
   tagMeta: TagMeta[];
+  /** Built-in tag keys the user deleted or renamed away. The boot seeder skips
+   *  these so the edit sticks across reloads. Absent on older docs → empty. */
+  removedTagKeys: string[];
+  /** User-added / imported categories that may have no items yet, in order. */
+  customCategories: string[];
+  /** Built-in category names the user deleted or renamed away (hidden from
+   *  pickers + seeding). Absent on older docs → empty. */
+  removedCategories: string[];
 }
 
 /** Document format version. Bump + handle in `migrate` when the shape changes. */
-export const CURRENT_SCHEMA_VERSION = 2;
+export const CURRENT_SCHEMA_VERSION = 3;
 
 export function emptyData(): AppData {
-  return { schemaVersion: CURRENT_SCHEMA_VERSION, trips: [], library: [], removedDefaultIds: [], tagMeta: [] };
+  return {
+    schemaVersion: CURRENT_SCHEMA_VERSION,
+    trips: [],
+    library: [],
+    removedDefaultIds: [],
+    tagMeta: [],
+    removedTagKeys: [],
+    customCategories: [],
+    removedCategories: [],
+  };
 }
 
 const TAG_GROUPS = new Set<TagGroup>(['activity', 'weather', 'other']);
@@ -48,12 +65,17 @@ export function cleanTagMeta(raw: unknown): TagMeta[] {
 export function migrate(raw: unknown): AppData {
   if (!raw || typeof raw !== 'object') return emptyData();
   const o = raw as Partial<AppData>;
+  const strings = (v: unknown): string[] =>
+    Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [];
   return {
     schemaVersion: CURRENT_SCHEMA_VERSION,
     trips: Array.isArray(o.trips) ? o.trips : [],
     library: Array.isArray(o.library) ? o.library : [],
     removedDefaultIds: Array.isArray(o.removedDefaultIds) ? o.removedDefaultIds : [],
     tagMeta: cleanTagMeta(o.tagMeta),
+    removedTagKeys: strings(o.removedTagKeys),
+    customCategories: strings(o.customCategories),
+    removedCategories: strings(o.removedCategories),
   };
 }
 

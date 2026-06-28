@@ -22,16 +22,21 @@ export const MISC_TAG = 'misc';
 export function seedTagMeta(): void {
   setData((d) => {
     const have = new Set(d.tagMeta.map((t) => t.key));
+    // Built-ins the user deleted/renamed away must not be resurrected on boot.
+    const tombstoned = new Set(d.removedTagKeys ?? []);
     const ensure = (key: string, group: TagGroup, def: boolean) => {
       if (!have.has(key)) {
         d.tagMeta.push({ key, group, default: def });
         have.add(key);
       }
     };
-    for (const b of BUILTIN_TAGS) ensure(b.key, b.type, true);
+    for (const b of BUILTIN_TAGS) if (!tombstoned.has(b.key)) ensure(b.key, b.type, true);
     for (const item of d.library) for (const k of item.tagKeys ?? []) ensure(k, 'other', false);
   });
 }
+
+/** Built-in tag keys, for deciding whether a rename/delete needs a tombstone. */
+const BUILTIN_TAG_KEYS = new Set(BUILTIN_TAGS.map((b) => b.key));
 
 export function listTagMeta(): TagMeta[] {
   return getData().tagMeta;
@@ -102,6 +107,10 @@ export function renameTag(from: string, to: string): void {
     const src = d.tagMeta.find((t) => t.key === fromKey);
     if (src && target) d.tagMeta = d.tagMeta.filter((t) => t.key !== fromKey);
     else if (src) src.key = toKey;
+    // Tombstone a renamed-away built-in so the boot seeder won't bring it back.
+    if (BUILTIN_TAG_KEYS.has(fromKey)) {
+      d.removedTagKeys = [...new Set([...(d.removedTagKeys ?? []), fromKey])];
+    }
 
     // Library items: swap the key, de-duping.
     d.library = d.library.map((item) => {
@@ -146,6 +155,10 @@ export function deleteTag(key: string): void {
     d.tagMeta = d.tagMeta.filter((t) => t.key !== k);
     if (orphaned && !d.tagMeta.some((t) => t.key === MISC_TAG)) {
       d.tagMeta.push({ key: MISC_TAG, group: 'other', default: false });
+    }
+    // Tombstone a deleted built-in so the boot seeder won't bring it back.
+    if (BUILTIN_TAG_KEYS.has(k)) {
+      d.removedTagKeys = [...new Set([...(d.removedTagKeys ?? []), k])];
     }
 
     for (const trip of d.trips) {

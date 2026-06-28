@@ -39,7 +39,7 @@ describe('forkDefault', () => {
         settings: { laundryAvailable: false }, createdAt: 0, updatedAt: 0,
       },
     ];
-    return { schemaVersion: CURRENT_SCHEMA_VERSION, trips, library: lib, tagMeta: [] };
+    return { schemaVersion: CURRENT_SCHEMA_VERSION, trips, library: lib, tagMeta: [], removedTagKeys: [], customCategories: [], removedCategories: [] };
   }
 
   it('re-keys a default to custom and rewires trip references', () => {

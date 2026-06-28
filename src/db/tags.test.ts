@@ -19,6 +19,7 @@ beforeEach(() => {
     d.library = [];
     d.removedDefaultIds = [];
     d.tagMeta = [];
+    d.removedTagKeys = [];
   });
 });
 
@@ -131,5 +132,31 @@ describe('deleteTag', () => {
     deleteTag('beach');
     expect(groupOf('misc')).toBeUndefined();
     expect(getData().library[0].tagKeys).toEqual(['sun']);
+  });
+});
+
+describe('built-in tag edits survive a reload (tombstones)', () => {
+  it('deleting a built-in tombstones it so the next boot does not re-seed it', () => {
+    seedTagMeta();
+    expect(groupOf('hot')).toBeDefined();
+    deleteTag('hot');
+    expect(getData().removedTagKeys).toContain('hot');
+    seedTagMeta(); // a later boot
+    expect(groupOf('hot')).toBeUndefined();
+  });
+
+  it('renaming a built-in tombstones the old key (no resurrection on boot)', () => {
+    seedTagMeta();
+    renameTag('hot', 'warm');
+    expect(getData().removedTagKeys).toContain('hot');
+    seedTagMeta();
+    expect(groupOf('hot')).toBeUndefined();
+    expect(groupOf('warm')).toBeDefined();
+  });
+
+  it('does not tombstone a custom (non-built-in) tag', () => {
+    setTagGroup('gadgets', 'other');
+    deleteTag('gadgets');
+    expect(getData().removedTagKeys).not.toContain('gadgets');
   });
 });
