@@ -12,6 +12,8 @@
 
 ## 1. Summary
 
+> The implemented data model is documented in [`DATA_MODEL.md`](./DATA_MODEL.md).
+
 A privacy-first, offline-capable web app that helps a traveler build a packing
 checklist tailored to a trip's destination, weather, duration, and activities —
 then check items off in the browser or print/export them for offline use.

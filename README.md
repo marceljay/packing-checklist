@@ -10,7 +10,8 @@ ranked "Recommended" tray for you to pull into the list. Each item carries a
 suggested quantity (laundry-aware) that you can adjust, and you check items off as
 you pack. Everything is stored locally — no accounts, no server, no tracking.
 
-See [`SPEC.md`](./SPEC.md) for the full specification.
+See [`SPEC.md`](./SPEC.md) for the full specification and
+[`DATA_MODEL.md`](./DATA_MODEL.md) for the data model.
 
 ## Features
 
