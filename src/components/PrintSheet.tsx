@@ -1,6 +1,14 @@
 import type { Trip, LibraryItem, CityForecast, WeatherBasis } from '../types';
-import { resolveItems, resolvedByCategory, tripDurationDays, destinationCode } from '../types';
-import { useUnits, convTemp, formatPrecip, formatWind } from '../lib/units';
+import {
+  resolveItems,
+  resolvedByCategory,
+  tripDurationDays,
+  destinationCode,
+  tripWeightGrams,
+  weightBand,
+} from '../types';
+import { useUnits, convTemp, formatPrecip, formatWind, formatWeight } from '../lib/units';
+import { useWeightThresholds } from '../lib/weightSettings';
 
 interface Props {
   trip: Trip;
@@ -35,6 +43,9 @@ export default function PrintSheet({ trip, library }: Props) {
   const dateLine = [fmt(trip.startDate), fmt(trip.endDate)].join(' → ');
   const cities = trip.weather?.cities ?? [];
   const t = (celsius: number) => convTemp(celsius, units);
+  const thresholds = useWeightThresholds();
+  const grams = tripWeightGrams(trip.items, library);
+  const band = weightBand(grams, thresholds);
 
   return (
     <div className="hidden print:block">
@@ -58,6 +69,19 @@ export default function PrintSheet({ trip, library }: Props) {
           </p>
         )}
       </header>
+
+      {grams > 0 && (
+        <section className="mb-5 break-inside-avoid">
+          <h2 className="mb-1.5 font-mono text-[0.6875rem] font-bold uppercase tracking-code text-ink">
+            Load
+          </h2>
+          <p className="flex flex-wrap items-baseline gap-x-3 text-sm">
+            <span className="font-display text-base font-bold tabular-nums">{formatWeight(grams, units)}</span>
+            <span className="font-mono text-[0.625rem] uppercase tracking-wide text-ink-soft">{band.label}</span>
+            <span className="text-ink-soft">{band.advice}</span>
+          </p>
+        </section>
+      )}
 
       {cities.length > 0 && (
         <section className="mb-5 break-inside-avoid">
