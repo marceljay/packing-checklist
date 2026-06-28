@@ -42,7 +42,18 @@ All notable changes to this project are documented here.
   Library instead of reappearing as the original. **Restore defaults** brings
   removed built-ins back.
 
+### Changed
+- **Forecast is above the fold on mobile.** In plan mode the forecast card now
+  sits directly under the boarding-pass header, so it's the first thing you see
+  on a phone instead of being below the trip-details panel.
+- **Temperature unit lives in the menu.** The °C/°F switch moved off the forecast
+  card into the header ⋯ menu (Temperature), where it reads as a global setting.
+- **Quantity stepper reads left-to-right.** Plan mode shows the item amount
+  before the −/+ buttons rather than between them.
+
 ### Added
+- **Bigger cities first in place search.** Search results are ranked by
+  population, so major cities surface above obscure same-named places.
 - **Destinations must be recognized places.** A destination can only be added by
   picking a match from search (online geocoder, or the bundled city list when
   offline) — the free-text "add as typed" path is gone, so every destination
