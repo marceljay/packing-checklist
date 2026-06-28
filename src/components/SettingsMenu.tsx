@@ -13,6 +13,7 @@ import {
 } from '../db/libraryTransfer';
 import { downloadText, downloadBlob, pickTextFile } from '../lib/file';
 import { useDevMode, setDevMode } from '../lib/devMode';
+import { useUnits, setUnits, type UnitSystem } from '../lib/units';
 import ExportDialog from './ExportDialog';
 import ImportLibraryDialog from './ImportLibraryDialog';
 import ConfirmDialog from './ConfirmDialog';
@@ -22,6 +23,7 @@ import ConfirmDialog from './ConfirmDialog';
 export default function SettingsMenu() {
   const navigate = useNavigate();
   const devMode = useDevMode();
+  const units = useUnits();
   const [open, setOpen] = useState(false);
   const [showExport, setShowExport] = useState(false);
   const [showRestore, setShowRestore] = useState(false);
@@ -169,6 +171,29 @@ export default function SettingsMenu() {
           >
             Return to defaults…
           </MenuItem>
+
+          <div className="border-t border-line" />
+          <div className="flex items-center justify-between px-3 py-2 text-sm text-ink">
+            <span>Temperature</span>
+            <div
+              role="group"
+              aria-label="Temperature units"
+              className="flex overflow-hidden rounded-full border border-line font-mono text-[0.625rem] uppercase tracking-wide"
+            >
+              {(['metric', 'imperial'] as UnitSystem[]).map((sys) => (
+                <button
+                  key={sys}
+                  aria-pressed={units === sys}
+                  onClick={() => setUnits(sys)}
+                  className={`px-2.5 py-0.5 transition-colors ${
+                    units === sys ? 'bg-ink text-paper-raised' : 'text-ink-soft hover:text-ink'
+                  }`}
+                >
+                  {sys === 'metric' ? '°C' : '°F'}
+                </button>
+              ))}
+            </div>
+          </div>
 
           <div className="border-t border-line" />
           <MenuItem

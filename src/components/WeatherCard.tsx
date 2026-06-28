@@ -5,7 +5,6 @@ import { shortPlace } from '../engine/weather';
 import { useTicketDesign } from '../lib/devMode';
 import {
   useUnits,
-  setUnits,
   convTemp,
   formatPrecip,
   formatWind,
@@ -135,28 +134,6 @@ function SkeletonRow({ label }: { label: string }) {
   );
 }
 
-/** Compact °C/°F segmented toggle (switches the whole metric/imperial system). */
-function UnitToggle({ units }: { units: UnitSystem }) {
-  return (
-    <div className="flex overflow-hidden rounded-full border border-ticket-ink/25 font-mono text-[0.625rem] uppercase tracking-wide">
-      {(['metric', 'imperial'] as UnitSystem[]).map((sys) => (
-        <button
-          key={sys}
-          aria-pressed={units === sys}
-          onClick={() => setUnits(sys)}
-          className={`px-2 py-0.5 transition-colors ${
-            units === sys
-              ? 'bg-ticket-ink text-ticket'
-              : 'text-ticket-ink/60 hover:text-ticket-ink'
-          }`}
-        >
-          {sys === 'metric' ? '°C' : '°F'}
-        </button>
-      ))}
-    </div>
-  );
-}
-
 /** Cached forecast for each of the trip's destinations. While a lookup is in
  *  flight the card appears immediately with skeleton rows for any destination
  *  that doesn't have data yet, so adding a place gives instant feedback. */
@@ -177,7 +154,6 @@ export default function WeatherCard({ weather: w, loading = false, destinations 
         <span className="ml-auto font-mono text-[0.625rem] uppercase tracking-code text-ticket-ink/50">
           {loading ? 'Updating…' : w ? `Updated ${relativeTime(w.fetchedAt)}` : ''}
         </span>
-        <UnitToggle units={units} />
       </div>
 
       <div className="divide-y divide-ticket-ink/10">

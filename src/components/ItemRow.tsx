@@ -94,6 +94,7 @@ export default function ItemRow({
             {item.name}
           </span>
           <div className="flex shrink-0 items-center gap-1" aria-label="Quantity">
+            <span className="w-5 text-center font-mono text-sm tabular-nums">{item.quantityTaken}</span>
             <button
               className="btn-secondary h-7 w-7 p-0 text-base leading-none"
               aria-label="Decrease quantity"
@@ -101,7 +102,6 @@ export default function ItemRow({
             >
               −
             </button>
-            <span className="w-5 text-center font-mono text-sm tabular-nums">{item.quantityTaken}</span>
             <button
               className="btn-secondary h-7 w-7 p-0 text-base leading-none"
               aria-label="Increase quantity"

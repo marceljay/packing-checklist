@@ -213,29 +213,33 @@ export default function TripEditorPage() {
         <PassHeader trip={trip} update={update} autoFocusName={isNew} />
 
         {mode === 'plan' ? (
-          <div className="grid gap-5 lg:grid-cols-[20rem_minmax(0,1fr)]">
-            <ContextPanel
-              trip={trip}
-              update={update}
-              library={library}
-              weatherStatus={weatherStatus}
-              setWeatherStatus={setWeatherStatus}
-              weatherMsg={weatherMsg}
-              setWeatherMsg={setWeatherMsg}
-            />
-            <div className="flex min-w-0 flex-col gap-5">
-              {(trip.weather || weatherStatus === 'loading') && (
-                <WeatherCard
-                  weather={trip.weather}
-                  loading={weatherStatus === 'loading'}
-                  destinations={trip.destinations}
-                />
-              )}
-              <AddItemCard update={update} tagSuggestions={tagSuggestions} categories={categoryOptions} />
-              <SuggestionsTray trip={trip} update={update} library={library} />
-              <Checklist trip={trip} update={update} library={library} mode="plan" />
+          <>
+            {/* Forecast sits right under the boarding-pass header so it's the first
+                thing visible on mobile (above the longer details panel). */}
+            {(trip.weather || weatherStatus === 'loading') && (
+              <WeatherCard
+                weather={trip.weather}
+                loading={weatherStatus === 'loading'}
+                destinations={trip.destinations}
+              />
+            )}
+            <div className="grid gap-5 lg:grid-cols-[20rem_minmax(0,1fr)]">
+              <ContextPanel
+                trip={trip}
+                update={update}
+                library={library}
+                weatherStatus={weatherStatus}
+                setWeatherStatus={setWeatherStatus}
+                weatherMsg={weatherMsg}
+                setWeatherMsg={setWeatherMsg}
+              />
+              <div className="flex min-w-0 flex-col gap-5">
+                <AddItemCard update={update} tagSuggestions={tagSuggestions} categories={categoryOptions} />
+                <SuggestionsTray trip={trip} update={update} library={library} />
+                <Checklist trip={trip} update={update} library={library} mode="plan" />
+              </div>
             </div>
-          </div>
+          </>
         ) : (
           <>
             <Checklist trip={trip} update={update} library={library} mode="checklist" />
