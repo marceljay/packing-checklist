@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Item, ResolvedItem, Trip, Category } from '../types';
 import { orderedCategories } from '../types';
 import { editLibraryItem } from '../db/library';
@@ -27,6 +28,7 @@ export default function ItemRow({
   categories,
   mode = 'plan',
 }: Props) {
+  const { t } = useTranslation();
   const [editing, setEditing] = useState(false);
   const [info, setInfo] = useState(false);
 
@@ -53,7 +55,7 @@ export default function ItemRow({
           type="checkbox"
           className="mt-1 h-5 w-5 shrink-0 rounded border-line text-vermilion focus:ring-vermilion"
           checked={item.packed}
-          aria-label={`Mark ${item.name} packed`}
+          aria-label={t('itemRow.markPacked', { name: item.name })}
           onChange={(e) => patchRef((it) => void (it.packed = e.target.checked))}
         />
         <div className="flex min-w-0 flex-1 flex-col gap-1">
@@ -95,7 +97,7 @@ export default function ItemRow({
           <span className={`min-w-0 flex-1 truncate text-sm ${item.missing ? 'text-ink-faint italic' : 'text-ink'}`}>
             {item.name}
           </span>
-          <div className="flex shrink-0 items-center gap-2" aria-label="Quantity">
+          <div className="flex shrink-0 items-center gap-2" aria-label={t('itemRow.quantityAria')}>
             <span className="min-w-[2rem] text-right font-mono text-sm tabular-nums text-ink-soft">
               {item.quantityTaken}&times;
             </span>
@@ -103,7 +105,7 @@ export default function ItemRow({
             <div className="flex items-center overflow-hidden rounded-md border border-line">
               <button
                 className="flex h-7 w-7 items-center justify-center text-base leading-none text-ink-soft transition-colors hover:bg-paper-sunk hover:text-ink"
-                aria-label="Decrease quantity"
+                aria-label={t('itemRow.decrease')}
                 onClick={() => patchRef((it) => void (it.quantityTaken = Math.max(1, it.quantityTaken - 1)))}
               >
                 −
@@ -111,7 +113,7 @@ export default function ItemRow({
               <span aria-hidden className="h-7 w-px bg-line" />
               <button
                 className="flex h-7 w-7 items-center justify-center text-base leading-none text-ink-soft transition-colors hover:bg-paper-sunk hover:text-ink"
-                aria-label="Increase quantity"
+                aria-label={t('itemRow.increase')}
                 onClick={() => patchRef((it) => void (it.quantityTaken = it.quantityTaken + 1))}
               >
                 +
@@ -124,7 +126,7 @@ export default function ItemRow({
         {(showCategory || item.essential || item.tagKeys.length > 0) && (
           <div className="flex flex-wrap items-center gap-1.5">
             {item.essential && (
-              <span className="chip bg-paper-sunk text-ink-faint">Essential</span>
+              <span className="chip bg-paper-sunk text-ink-faint">{t('itemRow.essential')}</span>
             )}
             {showCategory && (
               <span className="chip bg-paper-sunk font-mono text-[0.625rem] uppercase tracking-wide text-ink-faint">
@@ -146,9 +148,9 @@ export default function ItemRow({
         {!item.missing && (
           <button
             className="btn-ghost mt-0.5 px-1.5 py-1"
-            aria-label={`Info about ${item.name}`}
+            aria-label={t('itemRow.infoAria', { name: item.name })}
             aria-expanded={info}
-            title="Item details"
+            title={t('itemRow.itemDetails')}
             onClick={() => setInfo((v) => !v)}
           >
             <InfoIcon />
@@ -157,8 +159,8 @@ export default function ItemRow({
         {!item.missing && (
           <button
             className="btn-ghost mt-0.5 hidden px-1.5 py-1 sm:inline-flex"
-            aria-label={`Edit ${item.name}`}
-            title="Edit item (updates your library)"
+            aria-label={t('itemRow.editAria', { name: item.name })}
+            title={t('itemRow.editTip')}
             onClick={() => setEditing(true)}
           >
             <EditIcon />
@@ -166,8 +168,8 @@ export default function ItemRow({
         )}
         <button
           className={`btn-danger mt-0.5 px-1.5 py-1 ${item.missing ? '' : 'hidden sm:inline-flex'}`}
-          aria-label={`Remove ${item.name} from this trip`}
-          title="Remove from this trip"
+          aria-label={t('itemRow.deleteAria', { name: item.name })}
+          title={t('itemRow.removeTip')}
           onClick={removeFromTrip}
         >
           <DeleteIcon />
@@ -178,31 +180,31 @@ export default function ItemRow({
       {info && !item.missing && (
         <div className="border-t border-line bg-paper-sunk/40 px-4 py-3">
           <dl className="grid grid-cols-[5.5rem_1fr] gap-x-3 gap-y-1 text-sm">
-            <dt className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">Category</dt>
+            <dt className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">{t('itemRow.categoryLabel')}</dt>
             <dd className="text-ink-soft">{item.category}</dd>
             {typeof item.weight === 'number' && (
               <>
-                <dt className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">Weight</dt>
-                <dd className="text-ink-soft">{item.weight} g each</dd>
+                <dt className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">{t('itemRow.weightLabel')}</dt>
+                <dd className="text-ink-soft">{t('itemRow.weightEach', { grams: item.weight })}</dd>
               </>
             )}
             {item.essential && (
               <>
-                <dt className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">Essential</dt>
-                <dd className="text-ink-soft">Suggested on every trip</dd>
+                <dt className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">{t('itemRow.essential')}</dt>
+                <dd className="text-ink-soft">{t('itemRow.essentialDesc')}</dd>
               </>
             )}
-            <dt className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">Notes</dt>
+            <dt className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">{t('itemRow.notesLabel')}</dt>
             <dd className="whitespace-pre-wrap text-ink-soft">{item.notes || '—'}</dd>
           </dl>
 
           {/* On tight rows edit/delete live here (hidden once they fit inline at sm+). */}
           <div className="mt-3 flex gap-2 sm:hidden">
             <button className="btn-ghost flex items-center gap-1.5 text-xs" onClick={() => setEditing(true)}>
-              <EditIcon /> Edit
+              <EditIcon /> {t('itemRow.edit')}
             </button>
             <button className="btn-danger flex items-center gap-1.5 text-xs" onClick={removeFromTrip}>
-              <DeleteIcon /> Delete
+              <DeleteIcon /> {t('itemRow.delete')}
             </button>
           </div>
         </div>
@@ -226,6 +228,7 @@ function EditForm({
   categories?: Category[];
   onDone: () => void;
 }) {
+  const { t } = useTranslation();
   const [name, setName] = useState(item.name);
   const [category, setCategory] = useState<Category>(item.category);
   // Always include the item's own category so a custom one survives editing.
@@ -246,7 +249,7 @@ function EditForm({
     }
     const res = editLibraryItem(item.libraryId, patch);
     if (!res.ok) {
-      setError('Another item already has that name.');
+      setError(t('itemRow.nameTaken'));
       return;
     }
     onDone();
@@ -259,7 +262,7 @@ function EditForm({
           className="input min-w-0"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          aria-label="Item name"
+          aria-label={t('itemRow.nameAria')}
           autoFocus
         />
         <Select
@@ -276,19 +279,19 @@ function EditForm({
           className="input min-w-0"
           value={weight}
           onChange={(e) => setWeight(e.target.value)}
-          placeholder="Weight g"
-          aria-label="Weight in grams"
-          title="Per-unit weight in grams (blank = unset)"
+          placeholder={t('itemRow.weightPlaceholder')}
+          aria-label={t('itemRow.weightAria')}
+          title={t('itemRow.weightTip')}
         />
       </div>
-      <TagEditor value={tags} onChange={setTags} ariaLabel={`Tags for ${item.name}`} />
+      <TagEditor value={tags} onChange={setTags} ariaLabel={t('itemRow.tagsAria', { name: item.name })} />
       <textarea
         rows={1}
         className="input h-10 resize-none transition-[height] focus:h-24"
         value={notes}
         onChange={(e) => setNotes(e.target.value)}
-        placeholder="Notes / description (optional)"
-        aria-label={`Notes for ${item.name}`}
+        placeholder={t('itemRow.notesPlaceholder')}
+        aria-label={t('itemRow.notesAria', { name: item.name })}
       />
       <label className="flex items-center gap-2 text-sm">
         <input
@@ -298,17 +301,17 @@ function EditForm({
           onChange={(e) => setEssential(e.target.checked)}
         />
         <span>
-          Essential
-          <span className="ml-1.5 text-xs text-ink-faint">suggested on every trip</span>
+          {t('itemRow.essential')}
+          <span className="ml-1.5 text-xs text-ink-faint">{t('itemRow.essentialSuffix')}</span>
         </span>
       </label>
       {error && <p className="font-mono text-xs text-vermilion">{error}</p>}
       <div className="flex items-center justify-end gap-2">
         <button className="btn-ghost text-xs" onClick={onDone}>
-          Cancel
+          {t('common.cancel')}
         </button>
         <button className="btn-primary text-xs" onClick={save} disabled={!name.trim()}>
-          Save to library
+          {t('itemRow.saveToLibrary')}
         </button>
       </div>
     </div>

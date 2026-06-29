@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import type {
   CityDay,
   CityForecast,
@@ -26,19 +28,18 @@ interface Props {
   destinations: Destination[];
 }
 
-const BASIS_LABEL: Record<WeatherBasis, string> = {
-  forecast: "Forecast",
-  typical: "Typical",
-  mixed: "Forecast + typical",
-};
+function basisLabel(basis: WeatherBasis, t: TFunction): string {
+  const key = { forecast: "weather.basisForecast", typical: "weather.basisTypical", mixed: "weather.basisMixed" }[basis];
+  return t(key);
+}
 
-function relativeTime(ts: number): string {
+function relativeTime(ts: number, t: TFunction): string {
   const mins = Math.round((Date.now() - ts) / 60000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins} min ago`;
+  if (mins < 1) return t("weather.justNow");
+  if (mins < 60) return t("weather.minAgo", { count: mins });
   const hrs = Math.round(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  return `${Math.round(hrs / 24)}d ago`;
+  if (hrs < 24) return t("weather.hoursAgo", { count: hrs });
+  return t("weather.daysAgo", { count: Math.round(hrs / 24) });
 }
 
 /** "5" when the daily peak is flat, "4–8" for a range. */
@@ -85,7 +86,8 @@ function DayBreakdown({
   units: UnitSystem;
   onHide: () => void;
 }) {
-  const t = (celsius: number) => convTemp(celsius, units);
+  const { t } = useTranslation();
+  const temp = (celsius: number) => convTemp(celsius, units);
   const isMobile = useIsMobile();
   const [limit, setLimit] = useState(MOBILE_INITIAL);
   const shown = isMobile ? Math.min(limit, days.length) : days.length;
@@ -105,26 +107,26 @@ function DayBreakdown({
                 {fmtDay(d.date)}
               </span>
               <span className="flex gap-2 sm:flex-1">
-                <span className="whitespace-nowrap" title="Day's high temperature">
-                  <span className="text-ticket-ink/50">↑</span> {t(d.highC)}°
+                <span className="whitespace-nowrap" title={t("weather.tipHigh")}>
+                  <span className="text-ticket-ink/50">↑</span> {temp(d.highC)}°
                 </span>
-                <span className="whitespace-nowrap" title="Day's low temperature">
-                  <span className="text-ticket-ink/50">↓</span> {t(d.lowC)}°
+                <span className="whitespace-nowrap" title={t("weather.tipLow")}>
+                  <span className="text-ticket-ink/50">↓</span> {temp(d.lowC)}°
                 </span>
               </span>
             </div>
             {/* Line 2 on mobile: precip, wind, sun, UV. */}
             <div className="flex items-baseline gap-3 text-ticket-ink/60 sm:contents">
-              <span className="whitespace-nowrap" title="Precipitation this day">
+              <span className="whitespace-nowrap" title={t("weather.tipPrecipDay")}>
                 💧 {formatPrecip(d.precipMm, units)}
               </span>
-              <span className="whitespace-nowrap" title="Strongest gust this day">
+              <span className="whitespace-nowrap" title={t("weather.tipGustDay")}>
                 💨 {formatWind(d.windKmh, units)}
               </span>
               {d.sunshineH !== undefined && (
                 <span
                   className="whitespace-nowrap sm:w-10 sm:text-right"
-                  title="Sunshine hours this day"
+                  title={t("weather.tipSunDay")}
                 >
                   ☀️ {d.sunshineH}h
                 </span>
@@ -132,7 +134,7 @@ function DayBreakdown({
               {d.uvMax !== undefined && (
                 <span
                   className="whitespace-nowrap sm:w-12 sm:text-right"
-                  title="Peak UV index this day"
+                  title={t("weather.tipUvDay")}
                 >
                   UV {d.uvMax}
                 </span>
@@ -147,14 +149,14 @@ function DayBreakdown({
             className="text-ticket-ink/50 underline-offset-2 hover:text-ticket-ink hover:underline"
             onClick={() => setLimit((n) => n + MOBILE_STEP)}
           >
-            Load more
+            {t("weather.loadMore")}
           </button>
         )}
         <button
           className="text-ticket-ink/50 underline-offset-2 hover:text-ticket-ink hover:underline"
           onClick={onHide}
         >
-          Hide day by day
+          {t("weather.hideDayByDay")}
         </button>
       </div>
     </div>
@@ -162,7 +164,8 @@ function DayBreakdown({
 }
 
 function CityRow({ c, units }: { c: CityForecast; units: UnitSystem }) {
-  const t = (celsius: number) => convTemp(celsius, units);
+  const { t } = useTranslation();
+  const temp = (celsius: number) => convTemp(celsius, units);
   const [open, setOpen] = useState(false);
   const hasDaily = (c.daily?.length ?? 0) > 0;
   return (
@@ -173,39 +176,39 @@ function CityRow({ c, units }: { c: CityForecast; units: UnitSystem }) {
             {shortPlace(c.place)}
           </p>
           <p className="font-mono text-[0.625rem] uppercase tracking-code text-ticket-ink/50">
-            {BASIS_LABEL[c.basis]} · {c.days}d
+            {basisLabel(c.basis, t)} · {c.days}d
             {c.offline && (
               <span className="text-vermilion">
-                {" · offline"}
+                {" · "}{t("weather.offline")}
                 {c.approxFrom ? ` ≈ ${c.approxFrom}` : ""}
               </span>
             )}
           </p>
         </div>
         <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 font-mono text-sm tabular-nums [word-spacing:-0.15em] sm:shrink-0">
-          <span title="Average daily high / low across the trip">
-            <span className="text-ticket-ink/50">↑</span> {t(c.highC)}°{" "}
-            <span className="text-ticket-ink/50">↓</span> {t(c.lowC)}°
+          <span title={t("weather.tipAvgHighLow")}>
+            <span className="text-ticket-ink/50">↑</span> {temp(c.highC)}°{" "}
+            <span className="text-ticket-ink/50">↓</span> {temp(c.lowC)}°
           </span>
-          <span className="text-ticket-ink/70" title="Coldest night – warmest day">
-            {t(c.minC)}–{t(c.maxC)}°
+          <span className="text-ticket-ink/70" title={t("weather.tipColdWarm")}>
+            {temp(c.minC)}–{temp(c.maxC)}°
           </span>
           <span
             className="whitespace-nowrap text-ticket-ink/70"
-            title="Total precipitation across the trip"
+            title={t("weather.tipPrecipTotal")}
           >
             💧 {formatPrecip(c.precipMm, units)}
           </span>
           <span
             className="whitespace-nowrap text-ticket-ink/70"
-            title="Average gusts across the trip"
+            title={t("weather.tipGustAvg")}
           >
             💨 {formatWind(c.windAvgKmh, units)}
           </span>
           {c.sunshineH !== undefined && (
             <span
               className="text-ticket-ink/70"
-              title="Average sunshine hours per day"
+              title={t("weather.tipSunAvg")}
             >
               ☀️ {c.sunshineH}h
             </span>
@@ -213,7 +216,7 @@ function CityRow({ c, units }: { c: CityForecast; units: UnitSystem }) {
           {c.uvMax !== undefined && (
             <span
               className="text-ticket-ink/70"
-              title="Daily-peak UV index range across the trip"
+              title={t("weather.tipUvRange")}
             >
               UV {fmtUv(c.uvMin, c.uvMax)}
             </span>
@@ -224,7 +227,7 @@ function CityRow({ c, units }: { c: CityForecast; units: UnitSystem }) {
               aria-expanded={open}
               onClick={() => setOpen((v) => !v)}
             >
-              {open ? "Hide days" : "Day by day"}
+              {open ? t("weather.hideDays") : t("weather.dayByDay")}
             </button>
           )}
         </div>
@@ -242,6 +245,7 @@ function CityRow({ c, units }: { c: CityForecast; units: UnitSystem }) {
 
 /** Placeholder row for a destination whose forecast is still loading. */
 function SkeletonRow({ label }: { label: string }) {
+  const { t } = useTranslation();
   return (
     <div
       className="flex animate-pulse flex-col gap-1 px-5 py-3 sm:flex-row sm:items-center sm:gap-4"
@@ -252,7 +256,7 @@ function SkeletonRow({ label }: { label: string }) {
           {label}
         </p>
         <p className="font-mono text-[0.625rem] uppercase tracking-code text-ticket-ink/40">
-          Loading…
+          {t("weather.loading")}
         </p>
       </div>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
@@ -273,6 +277,7 @@ export default function WeatherCard({
   loading = false,
   destinations,
 }: Props) {
+  const { t } = useTranslation();
   const units = useUnits();
   const design = useTicketDesign();
   const cities = w?.cities ?? [];
@@ -289,12 +294,12 @@ export default function WeatherCard({
     >
       <div className="flex items-center gap-2.5 border-b border-ticket-ink/15 px-5 py-3">
         <span aria-hidden>☀</span>
-        <h2 className="font-display text-base font-bold">Destinations / Forecast</h2>
+        <h2 className="font-display text-base font-bold">{t("weather.title")}</h2>
         <span className="ml-auto font-mono text-[0.625rem] uppercase tracking-code text-ticket-ink/50">
           {loading
-            ? "Updating…"
+            ? t("weather.updating")
             : w
-              ? `Updated ${relativeTime(w.fetchedAt)}`
+              ? t("weather.updated", { time: relativeTime(w.fetchedAt, t) })
               : ""}
         </span>
       </div>

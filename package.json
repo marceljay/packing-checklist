@@ -18,9 +18,12 @@
   "dependencies": {
     "@fontsource/space-grotesk": "^5.2.10",
     "@fontsource/space-mono": "^5.2.9",
+    "i18next": "^26.3.3",
+    "i18next-browser-languagedetector": "^8.2.1",
     "react": "^18.3.1",
     "react-day-picker": "^10.0.1",
     "react-dom": "^18.3.1",
+    "react-i18next": "^17.0.8",
     "react-router-dom": "^6.26.2",
     "zustand": "^4.5.5"
   },

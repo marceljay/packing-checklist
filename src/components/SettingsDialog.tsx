@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
 import { useWeightThresholds, setWeightThresholds, DEFAULT_THRESHOLDS } from '../lib/weightSettings';
 
 /**
@@ -8,6 +9,7 @@ import { useWeightThresholds, setWeightThresholds, DEFAULT_THRESHOLDS } from '..
  * closes; changes save explicitly.
  */
 export default function SettingsDialog({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation();
   const current = useWeightThresholds();
   const [light, setLight] = useState(String(current.lightMaxKg));
   const [medium, setMedium] = useState(String(current.mediumMaxKg));
@@ -44,20 +46,19 @@ export default function SettingsDialog({ onClose }: { onClose: () => void }) {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div role="dialog" aria-modal="true" aria-label="Settings" className="card w-full max-w-sm overflow-hidden">
+      <div role="dialog" aria-modal="true" aria-label={t('settingsDialog.title')} className="card w-full max-w-sm overflow-hidden">
         <div aria-hidden className="airmail h-1 w-full" />
         <div className="flex flex-col gap-4 p-5">
-          <h2 className="font-display text-lg font-bold leading-tight">Settings</h2>
+          <h2 className="font-display text-lg font-bold leading-tight">{t('settingsDialog.title')}</h2>
 
           <div>
-            <p className="label mb-1.5">Weight scale (kg)</p>
+            <p className="label mb-1.5">{t('settingsDialog.weightScale')}</p>
             <p className="mb-3 text-xs text-ink-faint">
-              Thresholds for the trip load gauge. Up to the first is “Light” (backpack); up to the
-              second is “Medium” (wheeled suitcase); above is “Heavy”.
+              {t('settingsDialog.weightScaleHelp')}
             </p>
             <div className="grid grid-cols-2 gap-3">
               <label className="flex flex-col gap-1 text-sm">
-                <span className="text-ink-soft">Light up to</span>
+                <span className="text-ink-soft">{t('settingsDialog.lightUpTo')}</span>
                 <input
                   type="number"
                   min="0.1"
@@ -66,11 +67,11 @@ export default function SettingsDialog({ onClose }: { onClose: () => void }) {
                   className="input"
                   value={light}
                   onChange={(e) => setLight(e.target.value)}
-                  aria-label="Light band maximum (kg)"
+                  aria-label={t('settingsDialog.lightAria')}
                 />
               </label>
               <label className="flex flex-col gap-1 text-sm">
-                <span className="text-ink-soft">Medium up to</span>
+                <span className="text-ink-soft">{t('settingsDialog.mediumUpTo')}</span>
                 <input
                   type="number"
                   min="0.1"
@@ -79,7 +80,7 @@ export default function SettingsDialog({ onClose }: { onClose: () => void }) {
                   className="input"
                   value={medium}
                   onChange={(e) => setMedium(e.target.value)}
-                  aria-label="Medium band maximum (kg)"
+                  aria-label={t('settingsDialog.mediumAria')}
                 />
               </label>
             </div>
@@ -87,14 +88,14 @@ export default function SettingsDialog({ onClose }: { onClose: () => void }) {
 
           <div className="mt-1 flex items-center justify-between gap-2 border-t border-line pt-3">
             <button className="btn-ghost text-sm" onClick={reset}>
-              Reset
+              {t('common.reset')}
             </button>
             <div className="flex gap-2">
               <button className="btn-ghost text-sm" onClick={onClose}>
-                Cancel
+                {t('common.cancel')}
               </button>
               <button ref={closeRef} className="btn-primary text-sm" onClick={save}>
-                Save
+                {t('common.save')}
               </button>
             </div>
           </div>

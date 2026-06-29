@@ -1,8 +1,8 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { getThemeMode, setThemeMode, type ThemeMode } from '../lib/theme';
 
 const MODES: ThemeMode[] = ['light', 'system', 'dark'];
-const LABEL: Record<ThemeMode, string> = { light: 'Light', system: 'System', dark: 'Dark' };
 
 function Icon({ mode }: { mode: ThemeMode }) {
   const common = {
@@ -43,8 +43,14 @@ function Icon({ mode }: { mode: ThemeMode }) {
 /** Sliding segmented theme control: Light · System · Dark. A thumb glides under
  *  the active segment; preference persists and System follows the OS (lib/theme). */
 export default function ThemeToggle() {
+  const { t } = useTranslation();
   const [mode, setMode] = useState<ThemeMode>(getThemeMode);
   const index = MODES.indexOf(mode);
+  const label: Record<ThemeMode, string> = {
+    light: t('theme.light'),
+    system: t('theme.system'),
+    dark: t('theme.dark'),
+  };
 
   function select(next: ThemeMode) {
     setThemeMode(next);
@@ -54,7 +60,7 @@ export default function ThemeToggle() {
   return (
     <div
       role="radiogroup"
-      aria-label="Theme"
+      aria-label={t('theme.label')}
       className="relative flex items-center rounded-full border border-line bg-paper-sunk p-0.5"
     >
       {/* Gliding thumb behind the active segment. */}
@@ -71,8 +77,8 @@ export default function ThemeToggle() {
             type="button"
             role="radio"
             aria-checked={on}
-            aria-label={LABEL[m]}
-            title={LABEL[m]}
+            aria-label={label[m]}
+            title={label[m]}
             onClick={() => select(m)}
             className={`relative z-10 flex h-7 w-7 items-center justify-center rounded-full transition-colors ${
               on ? 'text-ink' : 'text-ink-faint hover:text-ink-soft'

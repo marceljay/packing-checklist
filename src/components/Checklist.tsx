@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { ResolvedItem, Trip, LibraryItem } from "../types";
 import { orderedCategories, resolveItems, resolvedByCategory, resolvedByTag, ESSENTIAL_GROUP_KEY } from "../types";
 import ItemRow from "./ItemRow";
@@ -27,6 +28,7 @@ export default function Checklist({
   library,
   mode = "plan",
 }: Props) {
+  const { t } = useTranslation();
   const [groupBy, setGroupBy] = useState<GroupBy>("category");
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
 
@@ -60,10 +62,10 @@ export default function Checklist({
     }
     return resolvedByTag(resolved).map((g) => ({
       key: g.tag || "__untagged",
-      label: g.tag === ESSENTIAL_GROUP_KEY ? "Essential" : g.tag || "Untagged",
+      label: g.tag === ESSENTIAL_GROUP_KEY ? t("checklist.essential") : g.tag || t("checklist.untagged"),
       items: g.items,
     }));
-  }, [resolved, groupBy]);
+  }, [resolved, groupBy, t]);
 
   const total = trip.items.length;
   const packedCount = trip.items.filter((i) => i.packed).length;
@@ -73,14 +75,14 @@ export default function Checklist({
     <section className="card flex flex-col">
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-line p-4">
-        <h2 className="font-display text-base font-bold">Packing list</h2>
+        <h2 className="font-display text-base font-bold">{t("checklist.title")}</h2>
         {total > 0 && (
           <span className="font-mono text-xs tabular-nums text-ink-faint">
-            {packedCount}/{total} packed
+            {t("checklist.packedCount", { packed: packedCount, total })}
           </span>
         )}
         <div className="ml-auto flex items-center gap-1">
-          <span className="label mr-1">Group by</span>
+          <span className="label mr-1">{t("checklist.groupBy")}</span>
           {(["category", "tag"] as GroupBy[]).map((g) => (
             <button
               key={g}
@@ -91,7 +93,7 @@ export default function Checklist({
               }`}
               onClick={() => setGroupBy(g)}
             >
-              {g}
+              {g === "category" ? t("checklist.groupCategory") : t("checklist.groupTag")}
             </button>
           ))}
         </div>
@@ -108,7 +110,7 @@ export default function Checklist({
               aria-valuenow={packedCount}
               aria-valuemin={0}
               aria-valuemax={total}
-              aria-label="Packing progress"
+              aria-label={t("checklist.progressAria")}
             />
           </div>
           <span className="shrink-0 font-mono text-sm tabular-nums text-ink">
@@ -123,10 +125,10 @@ export default function Checklist({
       {/* Groups */}
       {total === 0 ? (
         <div className="px-4 py-12 text-center">
-          <p className="text-sm text-ink-soft">Your packing list is empty.</p>
+          <p className="text-sm text-ink-soft">{t("checklist.emptyTitle")}</p>
           {mode === "plan" && (
             <p className="mt-1 font-mono text-xs text-ink-faint">
-              Add items above or pull from suggestions.
+              {t("checklist.emptyHint")}
             </p>
           )}
         </div>

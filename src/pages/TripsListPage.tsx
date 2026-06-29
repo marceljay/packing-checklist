@@ -1,14 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAppData } from '../db/store';
 import { createTrip, cloneTrip, deleteTrip, pruneEmptyTrips } from '../db/trips';
 import { useTicketDesign } from '../lib/devMode';
 import { tripDurationDays, destinationCode } from '../types';
 import ConfirmDialog from '../components/ConfirmDialog';
 
-function formatDateRange(start?: string, end?: string): string {
-  if (!start && !end) return 'No dates set';
+function formatDateRange(start: string | undefined, end: string | undefined, noDates: string): string {
+  if (!start && !end) return noDates;
   const fmt = (d: string) =>
     new Date(d + 'T00:00:00').toLocaleDateString(undefined, {
       month: 'short',
@@ -20,6 +21,7 @@ function formatDateRange(start?: string, end?: string): string {
 
 export default function TripsListPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const data = useAppData();
   const design = useTicketDesign();
   const [pendingDelete, setPendingDelete] = useState<{ id: string; name: string } | null>(null);
@@ -49,7 +51,7 @@ export default function TripsListPage() {
       {trips.length > 0 && (
         <div className="mb-5 flex items-center justify-end">
           <button className="btn-primary" onClick={handleNew}>
-            + New trip
+            {t('trips.newTrip')}
           </button>
         </div>
       )}
@@ -57,13 +59,12 @@ export default function TripsListPage() {
       {trips.length === 0 ? (
         <div className="card flex flex-col items-center gap-4 px-6 py-16 text-center">
           <span aria-hidden className="airmail h-1 w-24 rounded-full" />
-          <h2 className="font-display text-xl font-bold">No trips on the board</h2>
+          <h2 className="font-display text-xl font-bold">{t('trips.noTripsTitle')}</h2>
           <p className="max-w-sm text-sm text-ink-soft">
-            Start a trip, set your dates and destination, then let the suggestions
-            fill your packing list.
+            {t('trips.noTripsBody')}
           </p>
           <button className="btn-primary" onClick={handleNew}>
-            Start your first trip
+            {t('trips.startFirst')}
           </button>
         </div>
       ) : (
@@ -92,7 +93,7 @@ export default function TripsListPage() {
                         {trip.name}
                       </h2>
                       <p className="mt-1 font-mono text-xs uppercase tracking-wide text-ticket-ink/70">
-                        {formatDateRange(trip.startDate, trip.endDate)}
+                        {formatDateRange(trip.startDate, trip.endDate, t('trips.noDates'))}
                         {days ? ` · ${days}d` : ''}
                       </p>
                     </div>
@@ -107,7 +108,7 @@ export default function TripsListPage() {
                   {/* Packed meter — the load gauge */}
                   <div className="mt-auto">
                     <div className="mb-1 flex items-center justify-between font-mono text-[0.625rem] uppercase tracking-code text-ticket-ink/60">
-                      <span>Packed</span>
+                      <span>{t('trips.packed')}</span>
                       <span className="tabular-nums">
                         {packed}/{total || 0}
                       </span>
@@ -127,26 +128,26 @@ export default function TripsListPage() {
                     state={{ mode: 'plan' }}
                     className="btn-ghost px-2 py-1.5 text-xs"
                   >
-                    Plan
+                    {t('trips.plan')}
                   </Link>
                   <Link
                     to={`/trip/${trip.id}`}
                     state={{ mode: 'checklist' }}
                     className="btn-ghost px-2 py-1.5 text-xs"
                   >
-                    Checklist
+                    {t('trips.checklist')}
                   </Link>
                   <button
                     className="btn-ghost ml-auto px-2 py-1.5 text-xs"
                     onClick={() => handleClone(trip.id)}
                   >
-                    Duplicate
+                    {t('trips.duplicate')}
                   </button>
                   <button
                     className="btn-danger px-2 py-1.5 text-xs"
                     onClick={() => setPendingDelete({ id: trip.id, name: trip.name })}
                   >
-                    Delete
+                    {t('trips.delete')}
                   </button>
                 </div>
               </li>
@@ -157,13 +158,13 @@ export default function TripsListPage() {
 
       {pendingDelete && (
         <ConfirmDialog
-          title={`Delete "${pendingDelete.name || 'this trip'}"?`}
-          confirmLabel="Delete trip"
+          title={t('trips.deleteTitle', { name: pendingDelete.name || t('trips.thisTrip') })}
+          confirmLabel={t('trips.deleteConfirm')}
           tone="danger"
           onConfirm={confirmDelete}
           onCancel={() => setPendingDelete(null)}
         >
-          <p>This removes the trip and its packing list. It can't be undone.</p>
+          <p>{t('trips.deleteBody')}</p>
         </ConfirmDialog>
       )}
     </div>

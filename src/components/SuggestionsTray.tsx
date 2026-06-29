@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Trip, LibraryItem } from '../types';
 import { rememberItem } from '../db/library';
 import { suggestItems, type Suggestion } from '../engine/suggest';
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export default function SuggestionsTray({ trip, update, library }: Props) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(true);
   // Which suggestion's notes panel is expanded (only items with notes get a button).
   const [infoId, setInfoId] = useState<string | null>(null);
@@ -51,7 +53,7 @@ export default function SuggestionsTray({ trip, update, library }: Props) {
           aria-expanded={open}
         >
           <span aria-hidden className="airmail h-4 w-1 rounded-full" />
-          <h2 className="font-display text-base font-bold">Recommended</h2>
+          <h2 className="font-display text-base font-bold">{t('suggestions.title')}</h2>
           <span className="chip bg-vermilion-soft text-vermilion-deep tabular-nums">
             {suggestions.length}
           </span>
@@ -64,7 +66,7 @@ export default function SuggestionsTray({ trip, update, library }: Props) {
             className="btn-ghost shrink-0 px-2 py-1 text-xs"
             onClick={() => void addAll()}
           >
-            Add all
+            {t('suggestions.addAll')}
           </button>
         )}
       </div>
@@ -72,8 +74,7 @@ export default function SuggestionsTray({ trip, update, library }: Props) {
       {open &&
         (suggestions.length === 0 ? (
           <p className="border-t border-line px-4 py-6 text-center text-sm text-ink-soft">
-            Add activity or weather tags (or dates) to get tailored suggestions.
-            Anything already on your list is hidden here.
+            {t('suggestions.empty')}
           </p>
         ) : (
             <ul className="max-h-80 divide-y divide-line/60 overflow-y-auto border-t border-line">
@@ -82,7 +83,7 @@ export default function SuggestionsTray({ trip, update, library }: Props) {
                     <div className="flex items-center gap-3 px-4 py-2">
                       <button
                         className="btn-secondary h-7 w-7 shrink-0 p-0 text-base leading-none"
-                        aria-label={`Add ${s.item.name}`}
+                        aria-label={t('suggestions.addAria', { name: s.item.name })}
                         onClick={() => void add(s)}
                       >
                         +
@@ -98,11 +99,11 @@ export default function SuggestionsTray({ trip, update, library }: Props) {
                         </div>
                         <div className="mt-0.5 flex flex-wrap gap-1">
                           {s.essential ? (
-                            <span className="chip bg-paper-sunk text-ink-faint">Essential</span>
+                            <span className="chip bg-paper-sunk text-ink-faint">{t('suggestions.essential')}</span>
                           ) : (
-                            s.reasonTags.map((t) => (
-                              <span key={t.id} className="chip bg-stamp-soft text-stamp">
-                                {t.label}
+                            s.reasonTags.map((tag) => (
+                              <span key={tag.id} className="chip bg-stamp-soft text-stamp">
+                                {tag.label}
                               </span>
                             ))
                           )}
@@ -111,9 +112,9 @@ export default function SuggestionsTray({ trip, update, library }: Props) {
                       {s.item.notes && (
                         <button
                           className="btn-ghost shrink-0 px-1.5 py-1"
-                          aria-label={`Info about ${s.item.name}`}
+                          aria-label={t('suggestions.infoAria', { name: s.item.name })}
                           aria-expanded={infoId === s.item.id}
-                          title="Item details"
+                          title={t('suggestions.itemDetails')}
                           onClick={() => setInfoId((id) => (id === s.item.id ? null : s.item.id))}
                         >
                           <InfoIcon />

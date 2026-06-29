@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { importTripFromText, exportTrips, importAllTripsFromText, listTrips } from '../db/trips';
 import { listLibrary, replaceLibrary, applyLibraryImport, restoreDefaults } from '../db/library';
 import { listTagMeta } from '../db/tags';
@@ -14,6 +15,8 @@ import {
 import { downloadText, downloadBlob, pickTextFile } from '../lib/file';
 import { useDevMode, setDevMode } from '../lib/devMode';
 import { useUnits, setUnits, type UnitSystem } from '../lib/units';
+import { SUPPORTED_LANGUAGES } from '../i18n';
+import Select from './Select';
 import ExportDialog from './ExportDialog';
 import SettingsDialog from './SettingsDialog';
 import AboutDialog from './AboutDialog';
@@ -24,9 +27,13 @@ import ConfirmDialog from './ConfirmDialog';
  *  and export / import the whole item library. */
 export default function SettingsMenu() {
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
   const devMode = useDevMode();
   const units = useUnits();
   const [open, setOpen] = useState(false);
+
+  // The swapper shows native language names; map the chosen label back to its code.
+  const currentLang = SUPPORTED_LANGUAGES.find((l) => l.code === (i18n.resolvedLanguage ?? i18n.language)) ?? SUPPORTED_LANGUAGES[0];
   const [showExport, setShowExport] = useState(false);
   const [showRestore, setShowRestore] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -137,7 +144,7 @@ export default function SettingsMenu() {
         className="btn-ghost px-2 py-1.5"
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label="Menu"
+        aria-label={t('common.menu')}
         onClick={() => setOpen((o) => !o)}
       >
         <span aria-hidden className="text-lg leading-none">⋯</span>
@@ -154,17 +161,17 @@ export default function SettingsMenu() {
               setShowExport(true);
             }}
           >
-            Export…
+            {t('settingsMenu.export')}
           </MenuItem>
           {canDownloadApp && (
-            <MenuItem onClick={downloadApp}>Download app for offline use…</MenuItem>
+            <MenuItem onClick={downloadApp}>{t('settingsMenu.downloadApp')}</MenuItem>
           )}
 
           <div className="border-t border-line" />
-          <MenuLabel>Import</MenuLabel>
-          <MenuItem onClick={importTrip}>Import trip…</MenuItem>
-          <MenuItem onClick={importTrips}>Import trips…</MenuItem>
-          <MenuItem onClick={importLibrary}>Import library…</MenuItem>
+          <MenuLabel>{t('settingsMenu.import')}</MenuLabel>
+          <MenuItem onClick={importTrip}>{t('settingsMenu.importTrip')}</MenuItem>
+          <MenuItem onClick={importTrips}>{t('settingsMenu.importTrips')}</MenuItem>
+          <MenuItem onClick={importLibrary}>{t('settingsMenu.importLibrary')}</MenuItem>
 
           <div className="border-t border-line" />
           <MenuItem
@@ -173,7 +180,7 @@ export default function SettingsMenu() {
               setShowRestore(true);
             }}
           >
-            Return to defaults…
+            {t('settingsMenu.returnToDefaults')}
           </MenuItem>
 
           <div className="border-t border-line" />
@@ -183,13 +190,26 @@ export default function SettingsMenu() {
               setShowSettings(true);
             }}
           >
-            Settings…
+            {t('settingsMenu.settings')}
           </MenuItem>
+          <div className="flex items-center justify-between gap-2 px-3 py-2 text-sm text-ink">
+            <span>{t('settingsMenu.language')}</span>
+            <Select
+              className="w-32"
+              ariaLabel={t('settingsMenu.language')}
+              value={currentLang.label}
+              options={SUPPORTED_LANGUAGES.map((l) => l.label)}
+              onChange={(label) => {
+                const lang = SUPPORTED_LANGUAGES.find((l) => l.label === label);
+                if (lang) void i18n.changeLanguage(lang.code);
+              }}
+            />
+          </div>
           <div className="flex items-center justify-between px-3 py-2 text-sm text-ink">
-            <span>Temperature</span>
+            <span>{t('settingsMenu.temperature')}</span>
             <div
               role="group"
-              aria-label="Temperature units"
+              aria-label={t('settingsMenu.temperatureUnits')}
               className="flex overflow-hidden rounded-full border border-line font-mono text-[0.625rem] uppercase tracking-wide"
             >
               {(['metric', 'imperial'] as UnitSystem[]).map((sys) => (
@@ -215,9 +235,9 @@ export default function SettingsMenu() {
             }}
           >
             <span className="flex items-center justify-between">
-              Dev mode
+              {t('settingsMenu.devMode')}
               <span className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">
-                {devMode ? 'On' : 'Off'}
+                {devMode ? t('settingsMenu.on') : t('settingsMenu.off')}
               </span>
             </span>
           </MenuItem>
@@ -229,7 +249,7 @@ export default function SettingsMenu() {
               setShowAbout(true);
             }}
           >
-            About…
+            {t('settingsMenu.about')}
           </MenuItem>
         </div>
       )}
@@ -257,19 +277,15 @@ export default function SettingsMenu() {
 
       {showRestore && (
         <ConfirmDialog
-          title="Return to defaults?"
-          confirmLabel="Return to defaults"
+          title={t('settingsMenu.restoreTitle')}
+          confirmLabel={t('settingsMenu.restoreConfirm')}
           onConfirm={() => {
             restoreDefaults();
             setShowRestore(false);
           }}
           onCancel={() => setShowRestore(false)}
         >
-          <p>
-            Re-establishes the built-in items, tags, and categories in their original
-            form — including any you removed, renamed, or edited. Your own custom
-            items, tags, and categories are left untouched.
-          </p>
+          <p>{t('settingsMenu.restoreBody')}</p>
         </ConfirmDialog>
       )}
     </div>

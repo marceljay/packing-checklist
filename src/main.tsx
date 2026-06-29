@@ -17,6 +17,7 @@ import ItemsPage from './pages/ItemsPage';
 import { seedLibrary } from './db/library';
 import { seedTagMeta } from './db/tags';
 import { initTheme } from './lib/theme';
+import { initI18n } from './i18n';
 
 // Hash router keeps the app deployable on any static host (GitHub Pages etc.)
 // without server-side rewrite rules.
@@ -40,6 +41,7 @@ const router = createHashRouter([
 /** Apply the saved theme and seed any missing built-in defaults before rendering. */
 function boot() {
   initTheme();
+  initI18n();
   seedLibrary();
   seedTagMeta(); // after seedLibrary so library tags get backfilled into the registry
 

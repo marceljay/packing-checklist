@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Trip, Category, LibraryItem } from '../types';
 import { computeQuantity, orderedCategories, searchLibrary } from '../types';
 import { rememberItem, editLibraryItem } from '../db/library';
@@ -26,6 +27,7 @@ interface Props {
  * re-adding an item already on the trip bumps its quantity.
  */
 export default function AddItemCard({ trip, update, library, tagSuggestions = [], categories }: Props) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(true);
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<Category>('Comfort & Misc');
@@ -95,7 +97,7 @@ export default function AddItemCard({ trip, update, library, tagSuggestions = []
           aria-expanded={open}
         >
           <span aria-hidden className="h-4 w-1 rounded-full bg-vermilion" />
-          <h2 className="font-display text-base font-bold">Add item</h2>
+          <h2 className="font-display text-base font-bold">{t('addItem.title')}</h2>
           <ChevronIcon
             className={`ml-1 text-ink-faint transition-transform ${open ? '' : '-rotate-90'}`}
           />
@@ -110,15 +112,15 @@ export default function AddItemCard({ trip, update, library, tagSuggestions = []
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && onFieldEnter()}
-              placeholder="Search or add item"
-              aria-label="Search or add item"
+              placeholder={t('addItem.searchOrAdd')}
+              aria-label={t('addItem.searchOrAdd')}
             />
             <Select
               className="min-w-0"
               value={category}
               onChange={(v) => setCategory(v as Category)}
               options={options}
-              ariaLabel="Category"
+              ariaLabel={t('addItem.category')}
             />
           </div>
 
@@ -148,7 +150,7 @@ export default function AddItemCard({ trip, update, library, tagSuggestions = []
               className="btn-secondary self-start text-xs"
               onClick={() => setExpanded(true)}
             >
-              + Add new item “{q}”
+              {t('addItem.addNew', { name: q })}
             </button>
           )}
 
@@ -156,10 +158,10 @@ export default function AddItemCard({ trip, update, library, tagSuggestions = []
             <>
               <div className="flex items-start gap-2">
                 <div className="min-w-0 flex-1">
-                  <TagEditor value={tags} onChange={setTags} suggestions={tagSuggestions} ariaLabel="Tags for new item" />
+                  <TagEditor value={tags} onChange={setTags} suggestions={tagSuggestions} ariaLabel={t('addItem.tagsAria')} />
                 </div>
                 <button className="btn-primary shrink-0" onClick={addNew} disabled={!q}>
-                  Add item
+                  {t('addItem.addItemBtn')}
                 </button>
               </div>
               <textarea
@@ -167,11 +169,11 @@ export default function AddItemCard({ trip, update, library, tagSuggestions = []
                 className="input h-10 resize-none transition-[height] focus:h-24"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="Notes / description (optional)"
-                aria-label="Notes for new item"
+                placeholder={t('addItem.notesPlaceholder')}
+                aria-label={t('addItem.notesAria')}
               />
               <p className="font-mono text-[0.625rem] text-ink-faint">
-                Saved to your item library and reusable on future trips.
+                {t('addItem.savedNote')}
               </p>
             </>
           )}

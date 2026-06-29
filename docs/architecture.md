@@ -128,6 +128,31 @@ passport/visa-check items are gated to international trips via `essentialWhen`.
 - **Dev mode** (`src/lib/devMode.ts`): ticket-design / field-style overrides for
   iterating on the "Manifest" visual identity.
 
+## UI language (i18n)
+
+The **interface** can switch between English, German, French, Spanish, and
+Portuguese via **react-i18next** (`src/i18n/`). `initI18n()` runs once in
+`main.tsx` (alongside `initTheme`); bundled JSON dictionaries
+(`src/i18n/locales/{en,de,fr,es,pt}.json`) are keyed by area (`nav`, `pass`,
+`weather`, `suggestions`, …) and components read them with the `useTranslation`
+`t()` hook. English is the source of truth and the `fallbackLng`.
+
+- **Detection & persistence:** `i18next-browser-languagedetector` resolves the
+  language from `localStorage` (key `packing-checklist-lang`, matching the app's
+  other preference keys) → `navigator.language` → `en`. The swapper
+  (`i18n.changeLanguage`) lives in the header settings menu beside the
+  temperature toggle and writes the chosen code back to that key; region
+  variants like `de-DE`/`pt-BR` collapse to their base language.
+- **Scope — chrome only.** Only UI text is translated. Item names, categories,
+  tags, notes, and country/region/plug-type/destination names stay in their
+  original language: that text is **data** held in the library/catalog, where a
+  custom item has no canonical translation and a tag keyed by its label can't be
+  two strings at once. Keeping the boundary at "chrome vs. data" avoids that
+  identity/redundancy problem.
+- **Locale sync** is guarded by `src/i18n/i18n.test.ts`: every locale must carry
+  the exact key set of `en` with no empty values, so a missing translation fails
+  CI rather than silently falling back.
+
 ## Offline & bundled data
 
 `npm run gen:city-data` generates `src/data/` from `all-the-cities` (GeoNames) and

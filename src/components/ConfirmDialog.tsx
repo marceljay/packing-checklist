@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   title: string;
@@ -24,14 +25,17 @@ interface Props {
 export default function ConfirmDialog({
   title,
   children,
-  confirmLabel = 'Confirm',
-  cancelLabel = 'Cancel',
+  confirmLabel,
+  cancelLabel,
   secondary,
   tone = 'default',
   onConfirm,
   onCancel,
 }: Props) {
+  const { t } = useTranslation();
   const panelRef = useRef<HTMLDivElement>(null);
+  const confirm = confirmLabel ?? t('common.confirm');
+  const cancel = cancelLabel ?? t('common.cancel');
 
   useEffect(() => {
     // Focus the panel (not the confirm button) so a stray Enter can't trigger a
@@ -66,7 +70,7 @@ export default function ConfirmDialog({
           {children && <div className="text-sm text-ink-soft">{children}</div>}
           <div className="mt-1 flex flex-wrap items-center justify-end gap-2">
             <button className="btn-ghost text-sm" onClick={onCancel}>
-              {cancelLabel}
+              {cancel}
             </button>
             {secondary && (
               <button className="btn-secondary text-sm" onClick={secondary.onClick}>
@@ -77,7 +81,7 @@ export default function ConfirmDialog({
               className={`${tone === 'danger' ? 'btn-danger' : 'btn-primary'} text-sm`}
               onClick={onConfirm}
             >
-              {confirmLabel}
+              {confirm}
             </button>
           </div>
         </div>

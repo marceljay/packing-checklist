@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useTripEditor } from './useTripEditor';
 import { useAppData } from '../db/store';
 import ContextPanel from '../components/ContextPanel';
@@ -47,6 +48,7 @@ function PassHeader({
   const pct = total > 0 ? Math.round((packed / total) * 100) : 0;
   const design = useTicketDesign();
   const intl = isInternationalTrip(trip);
+  const { t } = useTranslation();
 
   // On a freshly created trip, focus the name and select the placeholder text so
   // the user can type straight over it.
@@ -70,11 +72,11 @@ function PassHeader({
                 htmlFor="pass-trip-name"
                 className="font-mono text-[0.625rem] uppercase tracking-code text-ticket-ink/50"
               >
-                Packing list
+                {t('pass.packingList')}
               </label>
               {intl && (
                 <span className="inline-flex items-center gap-0.5 rounded-sm border border-ticket-ink/40 px-1 font-mono text-[0.5625rem] font-bold uppercase tracking-code text-ticket-ink/75">
-                  <span aria-hidden>✈</span> International
+                  <span aria-hidden>✈</span> {t('pass.international')}
                 </span>
               )}
             </div>
@@ -83,8 +85,8 @@ function PassHeader({
               ref={nameRef}
               value={trip.name}
               onChange={(e) => update((d) => void (d.name = e.target.value))}
-              placeholder="Name this trip"
-              aria-label="Trip name"
+              placeholder={t('pass.nameTrip')}
+              aria-label={t('pass.tripName')}
               className="w-full truncate rounded bg-transparent font-display text-xl font-bold leading-tight text-ticket-ink placeholder:text-ticket-ink/40 hover:bg-ticket-ink/5 focus:bg-ticket-ink/10 focus:outline-none"
             />
           </div>
@@ -98,16 +100,16 @@ function PassHeader({
 
         {/* Stats — boarding-pass field grid */}
         <div className="grid grid-cols-3 gap-4 sm:ml-auto">
-          <Field label="Depart" value={formatDate(trip.startDate)} />
-          <Field label="Return" value={formatDate(trip.endDate)} />
-          <Field label="Nights" value={days != null ? String(days) : '—'} />
+          <Field label={t('pass.depart')} value={formatDate(trip.startDate)} />
+          <Field label={t('pass.return')} value={formatDate(trip.endDate)} />
+          <Field label={t('pass.nights')} value={days != null ? String(days) : '—'} />
         </div>
       </div>
 
       {/* Packed gauge along the stub edge */}
       <div className="flex items-center gap-3 border-t border-ticket-ink/15 px-5 py-2.5">
         <span className="font-mono text-[0.625rem] uppercase tracking-code text-ticket-ink/50">
-          Packed
+          {t('pass.packed')}
         </span>
         <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-ticket-ink/15">
           <div
@@ -136,6 +138,7 @@ function Field({ label, value }: { label: string; value: string }) {
 
 export default function TripEditorPage() {
   const { tripId } = useParams();
+  const { t } = useTranslation();
   const location = useLocation();
   const navState = location.state as { isNew?: boolean; mode?: EditorMode } | null;
   const isNew = navState?.isNew === true;
@@ -170,9 +173,9 @@ export default function TripEditorPage() {
   if (status === 'not-found' || !trip) {
     return (
       <div className="card p-8 text-center">
-        <p className="text-ink-soft">That trip isn't on the board.</p>
+        <p className="text-ink-soft">{t('editor.notFound')}</p>
         <Link to="/" className="btn-secondary mt-4">
-          Back to trips
+          {t('editor.backToTrips')}
         </Link>
       </div>
     );
@@ -185,7 +188,7 @@ export default function TripEditorPage() {
         <div className="flex items-stretch rounded-lg border border-line bg-paper-sunk shadow-tag">
           <Link to="/" className={`${SEG_BASE} ${SEG_IDLE} rounded-l-lg`}>
             <span aria-hidden>←</span>
-            <span className="hidden sm:inline">All trips</span>
+            <span className="hidden sm:inline">{t('editor.allTrips')}</span>
           </Link>
 
           <div role="tablist" aria-label="Editor mode" className="contents">
@@ -199,7 +202,7 @@ export default function TripEditorPage() {
                 }`}
                 onClick={() => setMode(m)}
               >
-                {m}
+                {m === 'plan' ? t('editor.tabPlan') : t('editor.tabChecklist')}
               </button>
             ))}
           </div>
@@ -245,7 +248,7 @@ export default function TripEditorPage() {
             </div>
             <div className="flex justify-end">
               <button className="btn-secondary" onClick={() => setMode('checklist')}>
-                To checklist →
+                {t('editor.toChecklist')}
               </button>
             </div>
           </>
@@ -262,15 +265,15 @@ export default function TripEditorPage() {
             <Checklist trip={trip} update={update} library={library} mode="checklist" />
             <div className="flex flex-wrap items-center justify-between gap-2">
               <button className="btn-secondary" onClick={() => setMode('plan')}>
-                ← To planning
+                {t('editor.toPlanning')}
               </button>
               {trip.items.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   <button className="btn-secondary" onClick={printTrip}>
-                    Print
+                    {t('editor.print')}
                   </button>
                   <button className="btn-secondary" onClick={printTrip}>
-                    Save as PDF
+                    {t('editor.saveAsPdf')}
                   </button>
                 </div>
               )}

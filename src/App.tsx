@@ -1,4 +1,5 @@
 import { Link, Outlet } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import SettingsMenu from './components/SettingsMenu';
 import ThemeToggle from './components/ThemeToggle';
 import DevBar from './components/DevBar';
@@ -22,6 +23,7 @@ function TagMark() {
 
 export default function App() {
   const devMode = useDevMode();
+  const { t } = useTranslation();
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-10 border-b border-line bg-paper/85 backdrop-blur print:hidden">
@@ -30,15 +32,15 @@ export default function App() {
             <TagMark />
             <span className="flex flex-col leading-none">
               <span className="font-display text-base font-bold tracking-tight text-ink">
-                Packing Checklist
+                {t('common.appName')}
               </span>
               <span className="mt-0.5 font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">
-                Packing lists
+                {t('common.packingLists')}
               </span>
             </span>
           </Link>
           <span className="ml-auto hidden font-mono text-[0.625rem] uppercase tracking-code text-ink-faint sm:inline">
-            private · offline · no account
+            {t('common.tagline')}
           </span>
           <div className="ml-auto flex items-center gap-1 sm:ml-3">
             <ThemeToggle />
@@ -47,8 +49,8 @@ export default function App() {
               target="_blank"
               rel="noreferrer"
               className="btn-ghost px-2 py-1.5"
-              aria-label="View source on GitHub"
-              title="View source on GitHub"
+              aria-label={t('common.viewSource')}
+              title={t('common.viewSource')}
             >
               <GithubIcon />
             </a>
