@@ -317,11 +317,11 @@ export default function ContextPanel({
     update((d) => void (d.settings.international = checked));
   }
 
-  const adapterName = (type: string) => `Travel adapter — Type ${type}`;
+  const adapterName = (types: string[]) => `Travel adapter — Type ${types.join("/")}`;
 
-  /** Whether an adapter item for this plug type is already on the trip. */
-  function adapterOnTrip(type: string): boolean {
-    const name = adapterName(type);
+  /** Whether the adapter item for this plug-type group is already on the trip. */
+  function adapterOnTrip(types: string[]): boolean {
+    const name = adapterName(types);
     return trip.items.some((i) => library.get(i.libraryId)?.name === name);
   }
 
@@ -332,12 +332,12 @@ export default function ContextPanel({
    * user already has (so manual edits to a reused adapter survive).
    */
   function addAdapter(need: AdapterNeed) {
-    const name = adapterName(need.type);
+    const name = adapterName(need.types);
     const isNew = ![...library.values()].some((it) => it.name === name);
     const row = rememberItem(name, "Electronics", ["international"]);
     if (isNew) {
       const notes = [
-        `Type ${need.type} plug adapter.`,
+        `Type ${need.types.join("/")} plug adapter.`,
         need.tripCountries.length ? `For this trip: ${need.tripCountries.join(", ")}.` : "",
         need.regions.length ? `Also common in: ${need.regions.join(", ")}.` : "",
       ]
@@ -628,14 +628,14 @@ export default function ContextPanel({
                     </p>
                     <ul className="space-y-1.5">
                       {adapters.map((need) => {
-                        const added = adapterOnTrip(need.type);
+                        const added = adapterOnTrip(need.types);
                         return (
                           <li
-                            key={need.type}
+                            key={need.types.join("/")}
                             className="flex items-center justify-between gap-2"
                           >
                             <span className="min-w-0 text-xs">
-                              <span className="font-mono">Type {need.type}</span>
+                              <span className="font-mono">Type {need.types.join("/")}</span>
                               <span className="block truncate text-ink-faint">
                                 {need.tripCountries.join(", ")}
                               </span>

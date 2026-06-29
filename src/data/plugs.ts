@@ -214,31 +214,67 @@ export function regionsForPlug(type: string): string[] {
   return [...regions].sort();
 }
 
-/** One plug type to pack a separate adapter for, with the context for its item. */
+/** One adapter to pack, with the context for its item. Covers one or more
+ *  compatible socket types (e.g. ['A', 'B'] — an A plug fits both). */
 export interface AdapterNeed {
-  /** Plug type letter, e.g. 'G'. */
-  type: string;
-  /** Destination countries on this trip that use this plug type (names). */
+  /** Compatible plug type letters this single adapter serves, sorted. */
+  types: string[];
+  /** Destination countries on this trip that use any of these plug types. */
   tripCountries: string[];
-  /** Distinct world regions (dataset-wide) where this plug type is common. */
+  /** Distinct world regions (dataset-wide) where these plug types are common. */
   regions: string[];
 }
 
 /**
- * One {@link AdapterNeed} per plug type the traveller should pack an adapter for.
- * With a known home country these are the destination plug types the home plug
+ * Group plug types a single adapter can serve into connected components: two
+ * types belong together when one's plug fits the other's socket (e.g. A→B, or
+ * the Europlug C→E/F/…), so the traveller buys one adapter instead of several.
+ * Union-find so a type bridging two clusters merges them.
+ */
+function groupCompatible(types: string[]): string[][] {
+  const parent = new Map(types.map((t) => [t, t]));
+  const find = (x: string): string => {
+    let r = x;
+    while (parent.get(r) !== r) r = parent.get(r)!;
+    return r;
+  };
+  for (let i = 0; i < types.length; i++) {
+    for (let j = i + 1; j < types.length; j++) {
+      const a = types[i];
+      const b = types[j];
+      if (plugFits(a, b) || plugFits(b, a)) parent.set(find(a), find(b));
+    }
+  }
+  const byRoot = new Map<string, string[]>();
+  for (const t of types) {
+    const r = find(t);
+    const g = byRoot.get(r) ?? [];
+    g.push(t);
+    byRoot.set(r, g);
+  }
+  return [...byRoot.values()].map((g) => [...g].sort());
+}
+
+/**
+ * One {@link AdapterNeed} per adapter the traveller should pack. With a known
+ * home country the relevant plug types are the destination types the home plug
  * doesn't fit (via {@link travelPowerAdvice}); without one we can't tell what
- * they already have, so every destination plug type is returned. Each need
- * carries the trip's destination countries using it plus the broader regions
- * where it's common — the info shown on the adapter item.
+ * they already have, so every destination plug type is considered. Compatible
+ * types are grouped into a single adapter, and each carries the trip's
+ * destination countries using it plus the broader regions where it's common.
  */
 export function adapterNeeds(homeCode: string | undefined, destCodes: string[]): AdapterNeed[] {
   const summary = powerSummary(destCodes);
   const advice = travelPowerAdvice(homeCode, destCodes);
   const types = advice.home ? advice.adapterFor : summary.plugTypes;
-  return types.map((type) => ({
-    type,
-    tripCountries: summary.known.filter((k) => k.info.types.includes(type)).map((k) => k.info.name),
-    regions: regionsForPlug(type),
-  }));
+  return groupCompatible(types).map((group) => {
+    const set = new Set(group);
+    return {
+      types: group,
+      tripCountries: summary.known
+        .filter((k) => k.info.types.some((t) => set.has(t)))
+        .map((k) => k.info.name),
+      regions: [...new Set(group.flatMap((t) => regionsForPlug(t)))].sort(),
+    };
+  });
 }

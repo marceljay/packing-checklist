@@ -106,10 +106,13 @@ and offers to drop the items that tag had pulled in.
 A trip is flagged international when its destinations span more than one country
 (or the user ticks the box). `src/data/plugs.ts` maps countries to plug type(s),
 mains voltage, and a coarse world region. The Trip-type panel surfaces them and,
-via `adapterNeeds()`, offers **one adapter item per plug type** the traveller
-actually needs (the destination types their home plug doesn't fit; every
-destination type when no home country is set). Each added item's notes record the
-trip countries using that type plus the broader regions where it's common.
+via `adapterNeeds()`, offers **one adapter item per group of compatible plug
+types** the traveller actually needs (the destination types their home plug
+doesn't fit; every destination type when no home country is set). Compatible
+sockets are grouped so a single adapter covers them — e.g. an A-plug fits a
+B-socket, the Europlug C fits E/F — via union-find over `PLUG_FITS`. Each added
+item's notes record the trip countries using those types plus the broader regions
+where they're common.
 Home-country preference (`src/lib/homeCountry.ts`) tailors the advice;
 passport/visa-check items are gated to international trips via `essentialWhen`.
 

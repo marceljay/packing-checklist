@@ -8,8 +8,10 @@ All notable changes to this project are documented here.
 - **Per-plug-type travel adapters.** International trips now offer a separate
   adapter item for each plug type you actually need (the destination types your
   home plug doesn't fit; every destination type when no home country is set),
-  instead of one generic "Travel adapter". Each item's notes record the trip
-  countries that use the type plus the broader regions where it's common.
+  instead of one generic "Travel adapter". Compatible sockets are grouped into a
+  single adapter (e.g. Type A/B, or the Europlug Type C/E/F) so the list isn't
+  confusing. Each item's notes record the trip countries that use it plus the
+  broader regions where those plugs are common.
 
 ### Changed
 - **Docs refreshed.** Added `docs/architecture.md` (layers, state/persistence,
