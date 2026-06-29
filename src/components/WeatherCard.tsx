@@ -289,7 +289,7 @@ export default function WeatherCard({
     >
       <div className="flex items-center gap-2.5 border-b border-ticket-ink/15 px-5 py-3">
         <span aria-hidden>☀</span>
-        <h2 className="font-display text-base font-bold">Forecast</h2>
+        <h2 className="font-display text-base font-bold">Destinations / Forecast</h2>
         <span className="ml-auto font-mono text-[0.625rem] uppercase tracking-code text-ticket-ink/50">
           {loading
             ? "Updating…"

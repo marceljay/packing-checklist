@@ -86,7 +86,7 @@ export default function PrintSheet({ trip, library }: Props) {
       {cities.length > 0 && (
         <section className="mb-5 break-inside-avoid">
           <h2 className="mb-1.5 font-mono text-[0.6875rem] font-bold uppercase tracking-code text-ink">
-            Forecast
+            Destinations / Forecast
           </h2>
           <ul className="space-y-1">
             {cities.map((c: CityForecast) => (
