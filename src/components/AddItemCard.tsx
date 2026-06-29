@@ -5,6 +5,7 @@ import { computeQuantity, orderedCategories, searchLibrary } from '../types';
 import { rememberItem, editLibraryItem } from '../db/library';
 import TagEditor from './TagEditor';
 import Select from './Select';
+import { useLabels } from '../i18n/labels';
 import { ChevronIcon } from './icons';
 
 interface Props {
@@ -28,6 +29,7 @@ interface Props {
  */
 export default function AddItemCard({ trip, update, library, tagSuggestions = [], categories }: Props) {
   const { t } = useTranslation();
+  const { tCategory } = useLabels();
   const [open, setOpen] = useState(true);
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<Category>('Comfort & Misc');
@@ -120,6 +122,7 @@ export default function AddItemCard({ trip, update, library, tagSuggestions = []
               value={category}
               onChange={(v) => setCategory(v as Category)}
               options={options}
+              renderOption={tCategory}
               ariaLabel={t('addItem.category')}
             />
           </div>
@@ -136,7 +139,7 @@ export default function AddItemCard({ trip, update, library, tagSuggestions = []
                     <span className="text-base leading-none text-ink-soft">+</span>
                     <span className="min-w-0 flex-1 truncate">{item.name}</span>
                     <span className="shrink-0 font-mono text-[0.625rem] uppercase tracking-wide text-ink-faint">
-                      {item.category}
+                      {tCategory(item.category)}
                     </span>
                   </button>
                 </li>

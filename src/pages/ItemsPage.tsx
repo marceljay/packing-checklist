@@ -8,6 +8,7 @@ import TagEditor from '../components/TagEditor';
 import TagCategoryManager from '../components/TagCategoryManager';
 import { categoriesFrom } from '../db/categories';
 import Select from '../components/Select';
+import { useLabels } from '../i18n/labels';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { InfoIcon, EditIcon, DeleteIcon } from '../components/icons';
 
@@ -32,6 +33,7 @@ function LibraryItemRow({
   categories: Category[];
 }) {
   const { t } = useTranslation();
+  const { tTag, tCategory } = useLabels();
   const [panel, setPanel] = useState<'none' | 'info' | 'edit'>('none');
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -57,7 +59,7 @@ function LibraryItemRow({
             <div className="flex flex-wrap gap-1">
               {item.tagKeys.map((k) => (
                 <span key={k} className="chip bg-airblue-soft text-airblue">
-                  {k}
+                  {tTag(k)}
                 </span>
               ))}
             </div>
@@ -95,7 +97,7 @@ function LibraryItemRow({
           <dt className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">{t('items.type')}</dt>
           <dd className="text-ink-soft">{item.custom ? t('items.typeCustom') : t('items.typeDefault')}</dd>
           <dt className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">{t('items.categoryLabel')}</dt>
-          <dd className="text-ink-soft">{item.category}</dd>
+          <dd className="text-ink-soft">{tCategory(item.category)}</dd>
           {item.essential && (
             <>
               <dt className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">{t('items.essential')}</dt>
@@ -159,6 +161,7 @@ function LibraryItemEdit({
   onDone: () => void;
 }) {
   const { t } = useTranslation();
+  const { tCategory } = useLabels();
   const [name, setName] = useState(item.name);
   const [category, setCategory] = useState<Category>(item.category);
   const [tags, setTags] = useState<string[]>(item.tagKeys);
@@ -212,6 +215,7 @@ function LibraryItemEdit({
           value={category}
           onChange={(v) => setCategory(v as Category)}
           options={categories}
+          renderOption={tCategory}
           ariaLabel={t('items.category')}
         />
         <input
@@ -313,6 +317,7 @@ function Section({
 
 function AddItemForm({ suggestions, categories }: { suggestions: string[]; categories: Category[] }) {
   const { t } = useTranslation();
+  const { tCategory } = useLabels();
   const [name, setName] = useState('');
   const [category, setCategory] = useState<Category>(categories[0]);
   const [tags, setTags] = useState<string[]>([]);
@@ -363,6 +368,7 @@ function AddItemForm({ suggestions, categories }: { suggestions: string[]; categ
             value={category}
             onChange={(v) => setCategory(v as Category)}
             options={categories}
+            renderOption={tCategory}
             ariaLabel={t('items.category')}
           />
         </div>
@@ -399,6 +405,7 @@ function AddItemForm({ suggestions, categories }: { suggestions: string[]; categ
 
 export default function ItemsPage() {
   const { t } = useTranslation();
+  const { tTag, tCategory } = useLabels();
   const data = useAppData();
   const library = useMemo(
     () => data.library.map((r) => ({ ...r, tagKeys: r.tagKeys ?? [], custom: r.custom ?? true })),
@@ -492,7 +499,7 @@ export default function ItemsPage() {
                   on ? 'bg-ink text-paper-raised' : 'bg-paper-sunk text-ink-soft hover:bg-line'
                 }`}
               >
-                {tg}
+                {tTag(tg)}
               </button>
             );
           })}
@@ -519,7 +526,7 @@ export default function ItemsPage() {
         // column (not grid) so collapsing one card doesn't leave a tall gap.
         <div className="gap-3 [column-fill:balance] sm:columns-2 [&>section]:mb-3 [&>section]:break-inside-avoid">
           {categoryGroups.map((g) => (
-            <Section key={g.category} title={g.category} count={g.items.length} forceOpen={filtering}>
+            <Section key={g.category} title={tCategory(g.category)} count={g.items.length} forceOpen={filtering}>
               {[...g.items].sort(byName).map((item) => (
                 <LibraryItemRow
                   key={item.id}

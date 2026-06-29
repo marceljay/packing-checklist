@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation, Trans } from "react-i18next";
+import { useLabels } from "../i18n/labels";
 import type {
   Trip,
   TagType,
@@ -77,6 +78,7 @@ function TagPalette({
   tags: { key: string; type: TagType }[];
   onAdd: (key: string, type: TagType) => void;
 }) {
+  const { tTag } = useLabels();
   return (
     <div className="mt-3">
       <p className="mb-1.5 font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">
@@ -89,7 +91,7 @@ function TagPalette({
             className="chip border border-dashed border-line bg-transparent text-ink-soft transition-colors hover:border-solid hover:border-ink/30 hover:bg-paper-sunk hover:text-ink"
             onClick={() => onAdd(b.key, b.type)}
           >
-            + {b.key}
+            + {tTag(b.key)}
           </button>
         ))}
       </div>
@@ -107,6 +109,7 @@ export default function ContextPanel({
   setWeatherMsg,
 }: Props) {
   const { t } = useTranslation();
+  const { tTag } = useLabels();
   // Pending destination-removal confirmation (in-app dialog).
   const [pendingRemoval, setPendingRemoval] = useState<{
     dest: Destination;
@@ -442,10 +445,10 @@ export default function ContextPanel({
           )}
           {trip.tags.map((tag) => (
             <span key={tag.id} className={`chip ${TAG_TYPE_STYLES[tag.type]}`}>
-              {tag.label}
+              {tTag(tag.label)}
               <button
                 className="ml-0.5 opacity-60 hover:opacity-100"
-                aria-label={t("context.removeTag", { label: tag.label })}
+                aria-label={t("context.removeTag", { label: tTag(tag.label) })}
                 onClick={() =>
                   update(
                     (d) =>

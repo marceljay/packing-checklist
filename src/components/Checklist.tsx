@@ -4,6 +4,7 @@ import type { ResolvedItem, Trip, LibraryItem } from "../types";
 import { orderedCategories, resolveItems, resolvedByCategory, resolvedByTag, ESSENTIAL_GROUP_KEY } from "../types";
 import ItemRow from "./ItemRow";
 import type { ItemRowMode } from "./ItemRow";
+import { useLabels } from "../i18n/labels";
 
 interface Props {
   trip: Trip;
@@ -29,6 +30,7 @@ export default function Checklist({
   mode = "plan",
 }: Props) {
   const { t } = useTranslation();
+  const { tTag, tCategory } = useLabels();
   const [groupBy, setGroupBy] = useState<GroupBy>("category");
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
 
@@ -56,16 +58,17 @@ export default function Checklist({
     if (groupBy === "category") {
       return resolvedByCategory(resolved).map((g) => ({
         key: g.category,
-        label: g.category,
+        label: tCategory(g.category),
         items: g.items,
       }));
     }
     return resolvedByTag(resolved).map((g) => ({
       key: g.tag || "__untagged",
-      label: g.tag === ESSENTIAL_GROUP_KEY ? t("checklist.essential") : g.tag || t("checklist.untagged"),
+      label:
+        g.tag === ESSENTIAL_GROUP_KEY ? t("checklist.essential") : g.tag ? tTag(g.tag) : t("checklist.untagged"),
       items: g.items,
     }));
-  }, [resolved, groupBy, t]);
+  }, [resolved, groupBy, t, tTag, tCategory]);
 
   const total = trip.items.length;
   const packedCount = trip.items.filter((i) => i.packed).length;

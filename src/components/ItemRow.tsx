@@ -5,6 +5,7 @@ import { orderedCategories } from '../types';
 import { editLibraryItem } from '../db/library';
 import TagEditor from './TagEditor';
 import Select from './Select';
+import { useLabels } from '../i18n/labels';
 import { InfoIcon, EditIcon, DeleteIcon } from './icons';
 
 export type ItemRowMode = 'plan' | 'checklist';
@@ -29,6 +30,7 @@ export default function ItemRow({
   mode = 'plan',
 }: Props) {
   const { t } = useTranslation();
+  const { tTag, tCategory } = useLabels();
   const [editing, setEditing] = useState(false);
   const [info, setInfo] = useState(false);
 
@@ -130,12 +132,12 @@ export default function ItemRow({
             )}
             {showCategory && (
               <span className="chip bg-paper-sunk font-mono text-[0.625rem] uppercase tracking-wide text-ink-faint">
-                {item.category}
+                {tCategory(item.category)}
               </span>
             )}
             {item.tagKeys.map((k) => (
               <span key={k} className="chip bg-airblue-soft text-airblue">
-                {k}
+                {tTag(k)}
               </span>
             ))}
           </div>
@@ -181,7 +183,7 @@ export default function ItemRow({
         <div className="border-t border-line bg-paper-sunk/40 px-4 py-3">
           <dl className="grid grid-cols-[5.5rem_1fr] gap-x-3 gap-y-1 text-sm">
             <dt className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">{t('itemRow.categoryLabel')}</dt>
-            <dd className="text-ink-soft">{item.category}</dd>
+            <dd className="text-ink-soft">{tCategory(item.category)}</dd>
             {typeof item.weight === 'number' && (
               <>
                 <dt className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">{t('itemRow.weightLabel')}</dt>
@@ -229,6 +231,7 @@ function EditForm({
   onDone: () => void;
 }) {
   const { t } = useTranslation();
+  const { tCategory } = useLabels();
   const [name, setName] = useState(item.name);
   const [category, setCategory] = useState<Category>(item.category);
   // Always include the item's own category so a custom one survives editing.
@@ -270,6 +273,7 @@ function EditForm({
           value={category}
           onChange={(v) => setCategory(v as Category)}
           options={options}
+          renderOption={tCategory}
           ariaLabel="Category"
         />
         <input

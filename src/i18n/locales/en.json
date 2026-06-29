@@ -408,5 +408,38 @@
     "deleteTitle": "Delete “{{tag}}”?",
     "deleteConfirm": "Delete tag",
     "deleteBody": "Removes <strong>{{tag}}</strong> from all trips and items. Items keep their place; any item left with no tags moves to <strong>misc</strong>."
+  },
+  "categories": {
+    "Documents": "Documents",
+    "Clothing": "Clothing",
+    "Footwear": "Footwear",
+    "Toiletries & Health": "Toiletries & Health",
+    "Electronics": "Electronics",
+    "Gear & Equipment": "Gear & Equipment",
+    "Money & Cards": "Money & Cards",
+    "Comfort & Misc": "Comfort & Misc"
+  },
+  "tags": {
+    "beach": "beach",
+    "swimming": "swimming",
+    "hiking": "hiking",
+    "surfing": "surfing",
+    "skiing": "skiing",
+    "camping": "camping",
+    "running": "running",
+    "cycling": "cycling",
+    "business": "business",
+    "formal": "formal",
+    "photography": "photography",
+    "climbing": "climbing",
+    "bbq": "bbq",
+    "road trip": "road trip",
+    "festival": "festival",
+    "hot": "hot",
+    "cold": "cold",
+    "rainy": "rainy",
+    "sunny": "sunny",
+    "windy": "windy",
+    "tropical": "tropical"
   }
 }

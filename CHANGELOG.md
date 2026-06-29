@@ -4,6 +4,15 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+### Added
+- **Translated default tags and categories.** The eight built-in categories and
+  the built-in activity/weather tags now display in the chosen UI language across
+  pickers, group headings, chips, suggestions, and the print sheet. Translation is
+  display-only — the stored category name and tag key stay English (they remain the
+  identity used for suggestions, filtering, grouping, and import/export), and
+  custom/imported categories and tags pass through unchanged. A few names are kept
+  as-is where that reads more naturally (e.g. *business* and *surfing* in German).
+
 ## [0.9.0] — 2026-06-29
 
 ### Added

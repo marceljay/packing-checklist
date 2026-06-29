@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { tagKey } from '../types';
+import { useLabels } from '../i18n/labels';
 
 interface Props {
   /** Current tag keys. */
@@ -23,6 +24,7 @@ type Pos = { left: number; width: number; top?: number; bottom?: number; maxHeig
  */
 export default function TagEditor({ value, onChange, suggestions = [], ariaLabel }: Props) {
   const { t } = useTranslation();
+  const { tTag } = useLabels();
   const label = ariaLabel ?? t('items.tags');
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -105,14 +107,14 @@ export default function TagEditor({ value, onChange, suggestions = [], ariaLabel
         {value.length === 0 && <span className="text-sm text-ink-faint">{t('tagEditor.addTags')}</span>}
         {value.map((k) => (
           <span key={k} className="chip bg-airblue-soft text-airblue">
-            {k}
+            {tTag(k)}
             <button
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 remove(k);
               }}
-              aria-label={t('tagEditor.removeTag', { tag: k })}
+              aria-label={t('tagEditor.removeTag', { tag: tTag(k) })}
               className="ml-0.5 rounded-full text-airblue/70 hover:text-airblue"
             >
               ✕
@@ -180,7 +182,7 @@ export default function TagEditor({ value, onChange, suggestions = [], ariaLabel
                         onChange={() => toggle(s)}
                         className="h-4 w-4 shrink-0 rounded border-line text-vermilion focus:ring-vermilion"
                       />
-                      <span className="chip max-w-full truncate bg-airblue-soft text-airblue">{s}</span>
+                      <span className="chip max-w-full truncate bg-airblue-soft text-airblue">{tTag(s)}</span>
                     </label>
                   </li>
                 );

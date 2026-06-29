@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Trip, LibraryItem } from '../types';
 import { rememberItem } from '../db/library';
+import { useLabels } from '../i18n/labels';
 import { suggestItems, type Suggestion } from '../engine/suggest';
 import { ChevronIcon, InfoIcon } from './icons';
 
@@ -14,6 +15,7 @@ interface Props {
 
 export default function SuggestionsTray({ trip, update, library }: Props) {
   const { t } = useTranslation();
+  const { tTag, tCategory } = useLabels();
   const [open, setOpen] = useState(true);
   // Which suggestion's notes panel is expanded (only items with notes get a button).
   const [infoId, setInfoId] = useState<string | null>(null);
@@ -103,7 +105,7 @@ export default function SuggestionsTray({ trip, update, library }: Props) {
                           ) : (
                             s.reasonTags.map((tag) => (
                               <span key={tag.id} className="chip bg-stamp-soft text-stamp">
-                                {tag.label}
+                                {tTag(tag.label)}
                               </span>
                             ))
                           )}
@@ -121,7 +123,7 @@ export default function SuggestionsTray({ trip, update, library }: Props) {
                         </button>
                       )}
                       <span className="shrink-0 font-mono text-[0.625rem] uppercase tracking-wide text-ink-faint">
-                        {s.item.category}
+                        {tCategory(s.item.category)}
                       </span>
                     </div>
                     {s.item.notes && infoId === s.item.id && (

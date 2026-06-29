@@ -10,6 +10,9 @@ interface Props {
   id?: string;
   /** Extra classes on the trigger (e.g. layout helpers like `min-w-0`). */
   className?: string;
+  /** Map an option value to its display label (e.g. translate built-ins). The
+   *  value passed to `onChange` stays the original option string. */
+  renderOption?: (value: string) => string;
 }
 
 type Pos = { left: number; width: number; top?: number; bottom?: number; maxHeight: number };
@@ -20,7 +23,8 @@ type Pos = { left: number; width: number; top?: number; bottom?: number; maxHeig
  * one checked. Portalled with fixed positioning so it is never clipped by the
  * surrounding `overflow-hidden` cards. Keyboard: ↑/↓ move, Enter selects, Esc closes.
  */
-export default function Select({ value, onChange, options, ariaLabel, id, className = '' }: Props) {
+export default function Select({ value, onChange, options, ariaLabel, id, className = '', renderOption }: Props) {
+  const display = renderOption ?? ((v: string) => v);
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
   const [pos, setPos] = useState<Pos | null>(null);
@@ -110,7 +114,7 @@ export default function Select({ value, onChange, options, ariaLabel, id, classN
         onKeyDown={onKeyDown}
         className={`input flex items-center justify-between gap-2 text-left ${className}`}
       >
-        <span className="truncate">{value}</span>
+        <span className="truncate">{display(value)}</span>
         <svg viewBox="0 0 24 24" width={16} height={16} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden className="shrink-0 text-ink-faint">
           <path d="m6 9 6 6 6-6" />
         </svg>
@@ -141,7 +145,7 @@ export default function Select({ value, onChange, options, ariaLabel, id, classN
                   <svg viewBox="0 0 24 24" width={15} height={15} fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden className={`shrink-0 text-vermilion ${selected ? '' : 'invisible'}`}>
                     <path d="M20 6 9 17l-5-5" />
                   </svg>
-                  <span className="truncate">{opt}</span>
+                  <span className="truncate">{display(opt)}</span>
                 </button>
               );
             })}

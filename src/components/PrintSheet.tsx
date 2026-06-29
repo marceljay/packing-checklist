@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { useLabels } from '../i18n/labels';
 import type { Trip, LibraryItem, CityForecast, WeatherBasis, WeightBandKey } from '../types';
 import {
   resolveItems,
@@ -45,6 +46,7 @@ function fmt(d?: string): string {
  */
 export default function PrintSheet({ trip, library }: Props) {
   const { t } = useTranslation();
+  const { tTag, tCategory } = useLabels();
   const units = useUnits();
   const groups = resolvedByCategory(resolveItems(trip.items, library));
   const days = tripDurationDays(trip);
@@ -73,7 +75,7 @@ export default function PrintSheet({ trip, library }: Props) {
         </div>
         {trip.tags.length > 0 && (
           <p className="mt-2 font-mono text-[0.6875rem] uppercase tracking-wide text-ink-soft">
-            {trip.tags.map((tag) => tag.label).join(' · ')}
+            {trip.tags.map((tag) => tTag(tag.label)).join(' · ')}
           </p>
         )}
       </header>
@@ -124,7 +126,7 @@ export default function PrintSheet({ trip, library }: Props) {
           {groups.map((g) => (
             <section key={g.category} className="mb-4 break-inside-avoid">
               <h2 className="mb-1.5 font-mono text-[0.6875rem] font-bold uppercase tracking-code text-ink">
-                {g.category}
+                {tCategory(g.category)}
               </h2>
               <ul className="space-y-1">
                 {g.items.map((i) => (

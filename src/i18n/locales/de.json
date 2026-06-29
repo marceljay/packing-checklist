@@ -408,5 +408,38 @@
     "deleteTitle": "„{{tag}}“ löschen?",
     "deleteConfirm": "Tag löschen",
     "deleteBody": "Entfernt <strong>{{tag}}</strong> aus allen Reisen und Artikeln. Artikel behalten ihren Platz; ein Artikel ohne Tags wandert zu <strong>misc</strong>."
+  },
+  "categories": {
+    "Documents": "Dokumente",
+    "Clothing": "Kleidung",
+    "Footwear": "Schuhe",
+    "Toiletries & Health": "Hygiene & Gesundheit",
+    "Electronics": "Elektronik",
+    "Gear & Equipment": "Ausrüstung",
+    "Money & Cards": "Geld & Karten",
+    "Comfort & Misc": "Komfort & Sonstiges"
+  },
+  "tags": {
+    "beach": "strand",
+    "swimming": "schwimmen",
+    "hiking": "wandern",
+    "surfing": "surfing",
+    "skiing": "skifahren",
+    "camping": "camping",
+    "running": "laufen",
+    "cycling": "radfahren",
+    "business": "business",
+    "formal": "formell",
+    "photography": "fotografie",
+    "climbing": "klettern",
+    "bbq": "grillen",
+    "road trip": "roadtrip",
+    "festival": "festival",
+    "hot": "heiß",
+    "cold": "kalt",
+    "rainy": "regnerisch",
+    "sunny": "sonnig",
+    "windy": "windig",
+    "tropical": "tropisch"
   }
 }
