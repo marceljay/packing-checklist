@@ -156,7 +156,7 @@ export default function Checklist({
                     <span className="font-mono text-[0.6875rem] font-bold uppercase tracking-code text-ink-soft">
                       {group.label}
                     </span>
-                    {mode === "checklist" ? (
+                    {mode === "checklist" && (
                       <span className="ml-auto flex items-center gap-2">
                         <span className="h-1 w-12 overflow-hidden rounded-full bg-paper">
                           <span
@@ -167,10 +167,6 @@ export default function Checklist({
                         <span className="font-mono text-[0.625rem] tabular-nums text-ink-faint">
                           {groupPacked}/{groupTotal}
                         </span>
-                      </span>
-                    ) : (
-                      <span className="ml-auto font-mono text-[0.625rem] tabular-nums text-ink-faint">
-                        {groupTotal}
                       </span>
                     )}
                   </button>
