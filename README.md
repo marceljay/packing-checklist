@@ -10,8 +10,8 @@ ranked "Recommended" tray for you to pull into the list. Each item carries a
 suggested quantity (laundry-aware) that you can adjust, and you check items off as
 you pack. Everything is stored locally — no accounts, no server, no tracking.
 
-See [`SPEC.md`](./SPEC.md) for the full specification and
-[`DATA_MODEL.md`](./DATA_MODEL.md) for the data model.
+See [`docs/architecture.md`](./docs/architecture.md) for how the app is built and
+[`DATA_MODEL.md`](./DATA_MODEL.md) for the persisted data model.
 
 ## Features
 
@@ -26,11 +26,13 @@ See [`SPEC.md`](./SPEC.md) for the full specification and
   and reduced when laundry is available; you can also set a default quantity per
   item.
 - **Automatic weather** — adding a destination (or changing the dates) fetches the
-  forecast from Open-Meteo and derives hot/cold/rainy/sunny/windy tags. A
-  per-destination **forecast card** shows highs/lows, rain, and wind with a
-  **°C/°F (metric/imperial)** toggle. It refreshes when you open a trip and falls
-  back to the cached forecast offline. Removing a destination re-derives the tags
-  and offers to drop the items that tag had pulled in.
+  forecast from Open-Meteo and derives hot/cold/rainy/sunny/windy tags (near dates
+  use the live forecast, far dates a year-ago "typical" archive). A
+  per-destination **forecast card** shows highs/lows, rain, average gusts, average
+  sunshine, and a UV range, plus an expandable **day-by-day** breakdown — all with
+  a **°C/°F (metric/imperial)** toggle. It refreshes when you open a trip and falls
+  back to bundled climate normals offline. Removing a destination re-derives the
+  tags and offers to drop the items that tag had pulled in.
 - **Item library (single source of truth)** — every item lives in one editable
   library shared across trips (built-in defaults + your own). Edit a name,
   category, tags, notes, default quantity, or mark it **essential** (suggested on
@@ -76,10 +78,9 @@ npm run test:ui     # tests in the browser UI
 
 ## Status
 
-See [`STATUS.md`](./STATUS.md) for current work,
-[`_planning/backlog.md`](./_planning/backlog.md) for what's next (e.g. a per-day
-forecast breakdown, library import modes), and [`CHANGELOG.md`](./CHANGELOG.md)
-for completed milestones.
+See [`CHANGELOG.md`](./CHANGELOG.md) for completed milestones. Day-to-day status
+and the forward backlog are kept in the project's local planning workspace
+(outside the repo).
 
 ## Deployment
 
