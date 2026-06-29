@@ -78,16 +78,16 @@ function DayBreakdown({ days, units, onHide }: { days: CityDay[]; units: UnitSys
   const remaining = days.length - shown;
   return (
     <div className="mt-2 border-t border-ticket-ink/10 pt-2">
-      <ul className="space-y-1">
+      <ul className="divide-y divide-ticket-ink/10">
         {days.slice(0, shown).map((d) => (
           <li
             key={d.date}
-            className="flex flex-col gap-0.5 font-mono text-xs tabular-nums text-ticket-ink/80 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3"
+            className="flex flex-col gap-0.5 py-1.5 font-mono text-xs tabular-nums text-ticket-ink/80 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3"
           >
             {/* Line 1 on mobile: day + temps. On sm the wrappers dissolve
                 (display:contents) so every span lays out in one row. */}
             <div className="flex items-baseline justify-between gap-3 sm:contents">
-              <span className="text-ticket-ink/60 sm:w-24 sm:shrink-0">{fmtDay(d.date)}</span>
+              <span className="font-bold text-ticket-ink/70 sm:w-24 sm:shrink-0">{fmtDay(d.date)}</span>
               <span className="flex gap-2 sm:flex-1">
                 <span className="whitespace-nowrap">
                   <span className="text-ticket-ink/50">↑</span> {t(d.highC)}°
@@ -99,8 +99,8 @@ function DayBreakdown({ days, units, onHide }: { days: CityDay[]; units: UnitSys
             </div>
             {/* Line 2 on mobile: precip, wind, sun, UV. */}
             <div className="flex items-baseline gap-3 text-ticket-ink/60 sm:contents">
-              <span className="whitespace-nowrap">{formatPrecip(d.precipMm, units)}</span>
-              <span className="whitespace-nowrap">{formatWind(d.windKmh, units)}</span>
+              <span className="whitespace-nowrap" title="Precipitation">💧 {formatPrecip(d.precipMm, units)}</span>
+              <span className="whitespace-nowrap" title="Wind">💨 {formatWind(d.windKmh, units)}</span>
               {d.sunshineH !== undefined && (
                 <span className="whitespace-nowrap sm:w-10 sm:text-right" title="Sunshine">
                   ☀ {d.sunshineH}h
@@ -162,8 +162,8 @@ function CityRow({ c, units }: { c: CityForecast; units: UnitSystem }) {
         <span className="text-ticket-ink/70">
           {t(c.minC)}–{t(c.maxC)}°
         </span>
-        <span className="text-ticket-ink/70">{formatPrecip(c.precipMm, units)}</span>
-        <span className="text-ticket-ink/70">{formatWind(c.windMaxKmh, units)}</span>
+        <span className="whitespace-nowrap text-ticket-ink/70" title="Precipitation">💧 {formatPrecip(c.precipMm, units)}</span>
+        <span className="whitespace-nowrap text-ticket-ink/70" title="Wind">💨 {formatWind(c.windMaxKmh, units)}</span>
         {c.sunshineH !== undefined && (
           <span className="text-ticket-ink/70" title="Average sunshine per day">
             ☀ {c.sunshineH}h
