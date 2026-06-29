@@ -33,8 +33,9 @@ const avg = (xs: number[]): number => (xs.length ? xs.reduce((a, b) => a + b, 0)
  * - hot   > 20% of days have a high > 25°C
  * - cold  avg low ≤ 5°C or any day ≤ 0°C
  * - rainy ≥ 40% of days wet (≥1mm) or ≥ 20mm total
- * - sunny avg sunshine > 5h/day AND avg daily-max UV ≥ 5 (both required; when
- *         either series is missing — historical UV, or offline — sunny is skipped)
+ * - sunny avg sunshine > 5h/day, plus avg daily-max UV ≥ 5 when UV is present.
+ *         Historical (no UV) falls back to sunshine alone; offline (no sunshine
+ *         either) can't fire.
  * - windy any day with gusts ≥ 35 km/h
  */
 export function deriveWeatherTags(d: DailyWeather): WeatherTagKey[] {
@@ -47,9 +48,12 @@ export function deriveWeatherTags(d: DailyWeather): WeatherTagKey[] {
   const rainy =
     (d.precip.length > 0 && wetDays / d.precip.length >= 0.4) ||
     d.precip.reduce((a, b) => a + b, 0) >= 20;
+  // Sunny needs sunshine > 5h/day; when UV is available (forecast) it must also
+  // be ≥ 5. Historical archive carries sunshine but no UV, so it falls back to
+  // sunshine alone. Offline (no sunshine) can't fire.
   const sun = d.sunshineH ?? [];
   const uv = d.uvMax ?? [];
-  const sunny = sun.length > 0 && uv.length > 0 && avg(sun) > 5 && avg(uv) >= 5;
+  const sunny = sun.length > 0 && avg(sun) > 5 && (uv.length === 0 || avg(uv) >= 5);
   const windy = Math.max(...d.wind, -Infinity) >= 35;
 
   const flags: Record<WeatherTagKey, boolean> = { hot, cold, rainy, sunny, windy };

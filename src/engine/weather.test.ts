@@ -59,7 +59,7 @@ describe('deriveWeatherTags', () => {
     ).toContain('hot');
   });
 
-  it('flags sunny only when sunshine > 5h/day AND UV >= 5', () => {
+  it('flags sunny on sunshine > 5h/day, requiring UV >= 5 only when UV is present', () => {
     const base = { tMax: [22, 23], tMin: [12, 13], precip: [0, 0], wind: [10, 8] };
     // both conditions met
     expect(deriveWeatherTags(daily({ ...base, sunshineH: [8, 9], uvMax: [6, 7] }))).toContain('sunny');
@@ -67,8 +67,11 @@ describe('deriveWeatherTags', () => {
     expect(deriveWeatherTags(daily({ ...base, sunshineH: [8, 9], uvMax: [3, 4] }))).not.toContain('sunny');
     // UV high but sunshine low → not sunny
     expect(deriveWeatherTags(daily({ ...base, sunshineH: [3, 4], uvMax: [6, 7] }))).not.toContain('sunny');
-    // missing series (e.g. historical UV / offline) → not sunny
-    expect(deriveWeatherTags(daily({ ...base, sunshineH: [8, 9] }))).not.toContain('sunny');
+    // historical: sunshine high, UV missing → sunshine-only fallback fires
+    expect(deriveWeatherTags(daily({ ...base, sunshineH: [8, 9] }))).toContain('sunny');
+    // historical: sunshine low, UV missing → not sunny
+    expect(deriveWeatherTags(daily({ ...base, sunshineH: [3, 4] }))).not.toContain('sunny');
+    // offline: no sunshine, no UV → not sunny
     expect(deriveWeatherTags(daily(base))).not.toContain('sunny');
   });
 
