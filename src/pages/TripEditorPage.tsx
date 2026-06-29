@@ -251,6 +251,13 @@ export default function TripEditorPage() {
           </>
         ) : (
           <>
+            {(trip.weather || weatherStatus === 'loading') && (
+              <WeatherCard
+                weather={trip.weather}
+                loading={weatherStatus === 'loading'}
+                destinations={trip.destinations}
+              />
+            )}
             <WeightSummary items={trip.items} library={library} />
             <Checklist trip={trip} update={update} library={library} mode="checklist" />
             <div className="flex flex-wrap items-center justify-between gap-2">
