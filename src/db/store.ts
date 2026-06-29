@@ -1,10 +1,10 @@
 import { useSyncExternalStore } from 'react';
-import { migrate, emptyData, type AppData } from './appData';
+import { normalizeAppData, emptyData, type AppData } from './appData';
 
 /**
  * The whole app state is one JSON document in localStorage. This module owns it:
  * a synchronous in-memory copy, persistence, and subscription for React. There is
- * no schema to migrate, just `migrate()` normalizing the parsed JSON on load.
+ * no schema to migrate, just `normalizeAppData()` on the parsed JSON at load.
  */
 
 const KEY = 'packing-checklist';
@@ -12,7 +12,7 @@ const KEY = 'packing-checklist';
 function load(): AppData {
   try {
     const raw = localStorage.getItem(KEY);
-    if (raw) return migrate(JSON.parse(raw));
+    if (raw) return normalizeAppData(JSON.parse(raw));
   } catch {
     // corrupt/unavailable storage → start empty rather than crash
   }

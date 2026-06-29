@@ -2,8 +2,8 @@ import type { Trip, LibraryItem, TagGroup, TagMeta } from '../types';
 
 /**
  * The whole app state as one JSON document (persisted in localStorage by
- * `store.ts`). On load, `migrate()` normalizes a parsed object in memory; there is
- * no versioned schema-upgrade machinery.
+ * `store.ts`). On load, `normalizeAppData()` coerces a parsed object into a valid
+ * document in memory; there is no versioned schema-upgrade machinery.
  */
 export interface AppData {
   schemaVersion: number;
@@ -26,7 +26,7 @@ export interface AppData {
   removedCategories: string[];
 }
 
-/** Document format version. Bump + handle in `migrate` when the shape changes. */
+/** Document format version. Bump + handle in `normalizeAppData` when the shape changes. */
 export const CURRENT_SCHEMA_VERSION = 3;
 
 export function emptyData(): AppData {
@@ -45,7 +45,7 @@ export function emptyData(): AppData {
 const TAG_GROUPS = new Set<TagGroup>(['activity', 'weather', 'other']);
 
 /** Keep only well-formed registry entries (tolerant of a hand-edited document or
- *  an imported file). Shared by `migrate` and the export/import parsers. */
+ *  an imported file). Shared by `normalizeAppData` and the export/import parsers. */
 export function cleanTagMeta(raw: unknown): TagMeta[] {
   if (!Array.isArray(raw)) return [];
   const out: TagMeta[] = [];
@@ -62,7 +62,7 @@ export function cleanTagMeta(raw: unknown): TagMeta[] {
  * missing/garbage input (returns empty) so a corrupt document can never crash the
  * app. Future schema bumps add their transforms here.
  */
-export function migrate(raw: unknown): AppData {
+export function normalizeAppData(raw: unknown): AppData {
   if (!raw || typeof raw !== 'object') return emptyData();
   const o = raw as Partial<AppData>;
   const strings = (v: unknown): string[] =>

@@ -4,7 +4,7 @@
 
 **Persistence is one JSON document** in `localStorage` (key `packing-checklist`),
 owned by `src/db/store.ts` (synchronous in-memory copy + `useAppData` via
-`useSyncExternalStore`). On load, `migrate()` (`src/db/appData.ts`) normalizes the
+`useSyncExternalStore`). On load, `normalizeAppData()` (`src/db/appData.ts`) normalizes the
 parsed JSON in memory — defaulting missing fields and dropping garbage — rather
 than running versioned schema upgrades. Shape (`schemaVersion` 3):
 
@@ -63,7 +63,7 @@ erDiagram
 ```
 
 - **No migration path / no legacy code.** The store starts from `emptyData()` and
-  `seedLibrary()`; `migrate()` only tolerates missing/garbage fields. There is no
+  `seedLibrary()`; `normalizeAppData()` only tolerates missing/garbage fields. There is no
   import of any prior storage format and no v1 file compatibility — imports require
   the current envelopes.
 - **Trip export** bundles the trip's referenced library rows (envelope v2) so a file

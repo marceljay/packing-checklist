@@ -27,7 +27,7 @@ in components and the `useTripEditor` hook.
 - **One JSON document** (`localStorage` key `packing-checklist`) owned by
   `src/db/store.ts`: a synchronous in-memory copy exposed to React via
   `useSyncExternalStore` (`useAppData`).
-- **Loading normalizes, it doesn't upgrade.** On load, `migrate()` (`src/db/appData.ts`)
+- **Loading normalizes, it doesn't upgrade.** On load, `normalizeAppData()` (`src/db/appData.ts`)
   takes the parsed JSON and coerces it into a valid document in memory — defaulting
   missing fields and dropping garbage — so a corrupt or older document can't crash
   the app. There is no versioned schema-upgrade machinery; `schemaVersion`
