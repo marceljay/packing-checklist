@@ -15,7 +15,9 @@ All notable changes to this project are documented here.
   add-item, checklist), the item-library manager, print sheet, and every dialog.
   Only UI chrome is translated: item names, categories, tags, and notes stay in
   their original language (that text is data, not chrome). A test keeps the five
-  locale files in sync.
+  locale files in sync. The language also lives in the URL via a hash segment
+  (`/#/pt/trips`), so a language is shareable/bookmarkable; the bare root
+  redirects to the active-language home.
 - **More international essentials.** International trips now suggest **travel
   insurance** and a **traveller-declarations** reminder (ESTA/eTA, customs/health
   forms) alongside the existing visa/passport checks. The visa-check item also

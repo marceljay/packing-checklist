@@ -143,6 +143,13 @@ Portuguese via **react-i18next** (`src/i18n/`). `initI18n()` runs once in
   (`i18n.changeLanguage`) lives in the header settings menu beside the
   temperature toggle and writes the chosen code back to that key; region
   variants like `de-DE`/`pt-BR` collapse to their base language.
+- **Language in the URL:** the hash router nests everything under a `/:lang`
+  segment (`/#/pt/trips`, `/#/pt/items`, `/#/pt/trip/:id`), so a language is
+  shareable and bookmarkable while keeping static-host + offline routing (no
+  server rewrites). The bare root (and any unmatched path) redirects to the
+  active-language home via `RootRedirect`; `App` validates the segment and
+  syncs i18n to it (URL wins), and the `useLocalePath` hook prefixes every
+  internal `Link`/`navigate` so the language carries across navigation.
 - **Scope — chrome only.** Only UI text is translated. Item names, categories,
   tags, notes, and country/region/plug-type/destination names stay in their
   original language: that text is **data** held in the library/catalog, where a

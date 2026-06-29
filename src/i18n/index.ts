@@ -27,7 +27,17 @@ export type LanguageCode = (typeof SUPPORTED_LANGUAGES)[number]['code'];
 
 export const LANGUAGE_STORAGE_KEY = 'packing-checklist-lang';
 
-const SUPPORTED_CODES = SUPPORTED_LANGUAGES.map((l) => l.code);
+export const SUPPORTED_CODES = SUPPORTED_LANGUAGES.map((l) => l.code);
+
+/** Narrow an arbitrary URL segment to a supported language code. */
+export function isSupportedLang(code: string | undefined): code is LanguageCode {
+  return code != null && (SUPPORTED_CODES as readonly string[]).includes(code);
+}
+
+/** The active base language, always one of {@link SUPPORTED_CODES}. */
+export function resolvedLang(): LanguageCode {
+  return isSupportedLang(i18n.resolvedLanguage) ? i18n.resolvedLanguage : 'en';
+}
 
 /** Initialise i18next once. Idempotent (safe to call in tests and main.tsx). */
 export function initI18n() {

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useLocalePath } from '../i18n/useLocalePath';
 import { useAppData } from '../db/store';
 import { createTrip, cloneTrip, deleteTrip, pruneEmptyTrips } from '../db/trips';
 import { useTicketDesign } from '../lib/devMode';
@@ -22,6 +23,7 @@ function formatDateRange(start: string | undefined, end: string | undefined, noD
 export default function TripsListPage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const lp = useLocalePath();
   const data = useAppData();
   const design = useTicketDesign();
   const [pendingDelete, setPendingDelete] = useState<{ id: string; name: string } | null>(null);
@@ -33,12 +35,12 @@ export default function TripsListPage() {
   }, []);
 
   function handleNew() {
-    navigate(`/trip/${createTrip()}`, { state: { isNew: true } });
+    navigate(lp(`/trip/${createTrip()}`), { state: { isNew: true } });
   }
 
   function handleClone(id: string) {
     const newId = cloneTrip(id);
-    if (newId) navigate(`/trip/${newId}`);
+    if (newId) navigate(lp(`/trip/${newId}`));
   }
 
   function confirmDelete() {
@@ -84,7 +86,7 @@ export default function TripsListPage() {
                   className="absolute left-4 top-4 h-3 w-3 rounded-full border border-line bg-paper"
                 />
                 <Link
-                  to={`/trip/${trip.id}`}
+                  to={lp(`/trip/${trip.id}`)}
                   className={`ticket-stock ticket--${design} flex flex-1 flex-col gap-4 p-4 pl-10`}
                 >
                   <div className="flex items-start justify-between gap-3">
@@ -124,14 +126,14 @@ export default function TripsListPage() {
 
                 <div className="flex gap-1 border-t border-line px-3 py-2">
                   <Link
-                    to={`/trip/${trip.id}`}
+                    to={lp(`/trip/${trip.id}`)}
                     state={{ mode: 'plan' }}
                     className="btn-ghost px-2 py-1.5 text-xs"
                   >
                     {t('trips.plan')}
                   </Link>
                   <Link
-                    to={`/trip/${trip.id}`}
+                    to={lp(`/trip/${trip.id}`)}
                     state={{ mode: 'checklist' }}
                     className="btn-ghost px-2 py-1.5 text-xs"
                   >

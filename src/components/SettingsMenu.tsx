@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { importTripFromText, exportTrips, importAllTripsFromText, listTrips } from '../db/trips';
 import { listLibrary, replaceLibrary, applyLibraryImport, restoreDefaults } from '../db/library';
@@ -16,6 +16,7 @@ import { downloadText, downloadBlob, pickTextFile } from '../lib/file';
 import { useDevMode, setDevMode } from '../lib/devMode';
 import { useUnits, setUnits, type UnitSystem } from '../lib/units';
 import { SUPPORTED_LANGUAGES } from '../i18n';
+import { useLocalePath } from '../i18n/useLocalePath';
 import ExportDialog from './ExportDialog';
 import SettingsDialog from './SettingsDialog';
 import AboutDialog from './AboutDialog';
@@ -26,13 +27,20 @@ import ConfirmDialog from './ConfirmDialog';
  *  and export / import the whole item library. */
 export default function SettingsMenu() {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const lp = useLocalePath();
   const { t, i18n } = useTranslation();
   const devMode = useDevMode();
   const units = useUnits();
   const [open, setOpen] = useState(false);
 
-  // The swapper shows native language names; map the chosen label back to its code.
   const currentLang = SUPPORTED_LANGUAGES.find((l) => l.code === (i18n.resolvedLanguage ?? i18n.language)) ?? SUPPORTED_LANGUAGES[0];
+
+  /** Switch language and reflect it in the URL's `/:lang` segment, keeping the rest of the path. */
+  function chooseLanguage(code: string) {
+    void i18n.changeLanguage(code);
+    navigate(`/${code}${pathname.replace(/^\/[^/]+/, '')}`);
+  }
   const [showExport, setShowExport] = useState(false);
   const [showRestore, setShowRestore] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -82,7 +90,7 @@ export default function SettingsMenu() {
     if (text == null) return;
     try {
       const id = await importTripFromText(text);
-      navigate(`/trip/${id}`);
+      navigate(lp(`/trip/${id}`));
     } catch (e) {
       alert(e instanceof Error ? e.message : t('settingsMenu.importFail'));
     }
@@ -198,7 +206,7 @@ export default function SettingsMenu() {
                 <button
                   key={l.code}
                   aria-pressed={currentLang.code === l.code}
-                  onClick={() => void i18n.changeLanguage(l.code)}
+                  onClick={() => chooseLanguage(l.code)}
                   className={`rounded-full border px-2.5 py-0.5 text-xs transition-colors ${
                     currentLang.code === l.code
                       ? 'border-ink bg-ink text-paper-raised'

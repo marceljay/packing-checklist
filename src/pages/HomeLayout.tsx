@@ -1,16 +1,18 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useLocalePath } from '../i18n/useLocalePath';
 
 /** Two full-width tabs over the home content: Your trips and Item library.
- *  The active tab is driven by the route (`/` and `/items`) so deep links and
- *  the browser back/forward buttons work. */
+ *  The active tab is driven by the route (`/:lang` and `/:lang/items`) so deep
+ *  links and the browser back/forward buttons work. */
 export default function HomeLayout() {
   const { t } = useTranslation();
+  const lp = useLocalePath();
   return (
     <div className="flex flex-col gap-6">
       <nav className="grid grid-cols-2 gap-2" aria-label={t('home.sections')}>
-        <TabLink to="/" end hint={t('home.departures')} label={t('home.yourTrips')} />
-        <TabLink to="/items" hint={t('home.yourGear')} label={t('home.itemLibrary')} />
+        <TabLink to={lp('/trips')} end hint={t('home.departures')} label={t('home.yourTrips')} />
+        <TabLink to={lp('/items')} hint={t('home.yourGear')} label={t('home.itemLibrary')} />
       </nav>
       <Outlet />
     </div>

@@ -1,10 +1,13 @@
-import { Link, Outlet } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Link, Navigate, Outlet, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import SettingsMenu from './components/SettingsMenu';
 import ThemeToggle from './components/ThemeToggle';
 import DevBar from './components/DevBar';
 import { GithubIcon } from './components/icons';
 import { useDevMode } from './lib/devMode';
+import { isSupportedLang, resolvedLang } from './i18n';
+import { useLocalePath } from './i18n/useLocalePath';
 
 const REPO_URL = 'https://github.com/marceljay/packing-checklist';
 
@@ -23,12 +26,24 @@ function TagMark() {
 
 export default function App() {
   const devMode = useDevMode();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const { lang } = useParams();
+  const lp = useLocalePath();
+  const supported = isSupportedLang(lang);
+
+  // Keep i18n in sync with the URL: opening /#/pt/… switches the app to Portuguese.
+  useEffect(() => {
+    if (supported && i18n.resolvedLanguage !== lang) void i18n.changeLanguage(lang);
+  }, [lang, supported, i18n]);
+
+  // Unknown language segment (or an old, unprefixed link) → active-language home.
+  if (!supported) return <Navigate to={`/${resolvedLang()}`} replace />;
+
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-10 border-b border-line bg-paper/85 backdrop-blur print:hidden">
         <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-3">
-          <Link to="/" className="flex items-center gap-2.5">
+          <Link to={lp('/trips')} className="flex items-center gap-2.5">
             <TagMark />
             <span className="flex flex-col leading-none">
               <span className="font-display text-base font-bold tracking-tight text-ink">

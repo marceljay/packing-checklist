@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useLocalePath } from '../i18n/useLocalePath';
 import { useTripEditor } from './useTripEditor';
 import { useAppData } from '../db/store';
 import ContextPanel from '../components/ContextPanel';
@@ -139,6 +140,7 @@ function Field({ label, value }: { label: string; value: string }) {
 export default function TripEditorPage() {
   const { tripId } = useParams();
   const { t } = useTranslation();
+  const lp = useLocalePath();
   const location = useLocation();
   const navState = location.state as { isNew?: boolean; mode?: EditorMode } | null;
   const isNew = navState?.isNew === true;
@@ -174,7 +176,7 @@ export default function TripEditorPage() {
     return (
       <div className="card p-8 text-center">
         <p className="text-ink-soft">{t('editor.notFound')}</p>
-        <Link to="/" className="btn-secondary mt-4">
+        <Link to={lp('/trips')} className="btn-secondary mt-4">
           {t('editor.backToTrips')}
         </Link>
       </div>
@@ -186,7 +188,7 @@ export default function TripEditorPage() {
       <div className="flex flex-col gap-5 print:hidden">
         {/* Unified nav bar: back · Plan/Checklist tabs · Print menu — equal segments. */}
         <div className="flex items-stretch rounded-lg border border-line bg-paper-sunk shadow-tag">
-          <Link to="/" className={`${SEG_BASE} ${SEG_IDLE} rounded-l-lg`}>
+          <Link to={lp('/trips')} className={`${SEG_BASE} ${SEG_IDLE} rounded-l-lg`}>
             <span aria-hidden>←</span>
             <span className="hidden sm:inline">{t('editor.allTrips')}</span>
           </Link>
