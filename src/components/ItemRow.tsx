@@ -90,14 +90,44 @@ export default function ItemRow({
     <>
     <div className="flex items-start gap-2.5 px-4 py-2.5 transition-colors hover:bg-paper-sunk/40">
       <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-        {/* Name — gets the full row width so longer names aren't cramped. */}
-        <span className={`break-words text-sm ${item.missing ? 'text-ink-faint italic' : 'text-ink'}`}>
-          {item.name}
-        </span>
+        {/* Line 1: name + quantity stepper */}
+        <div className="flex items-center gap-2">
+          <span className={`min-w-0 flex-1 truncate text-sm ${item.missing ? 'text-ink-faint italic' : 'text-ink'}`}>
+            {item.name}
+          </span>
+          <div className="flex shrink-0 items-center gap-2" aria-label="Quantity">
+            <span className="min-w-[2rem] text-right font-mono text-sm tabular-nums text-ink-soft">
+              {item.quantityTaken}&times;
+            </span>
+            {/* Stepper: one rounded control with a centre divider (two ends). */}
+            <div className="flex items-center overflow-hidden rounded-md border border-line">
+              <button
+                className="flex h-7 w-7 items-center justify-center text-base leading-none text-ink-soft transition-colors hover:bg-paper-sunk hover:text-ink"
+                aria-label="Decrease quantity"
+                onClick={() => patchRef((it) => void (it.quantityTaken = Math.max(1, it.quantityTaken - 1)))}
+              >
+                −
+              </button>
+              <span aria-hidden className="h-7 w-px bg-line" />
+              <button
+                className="flex h-7 w-7 items-center justify-center text-base leading-none text-ink-soft transition-colors hover:bg-paper-sunk hover:text-ink"
+                aria-label="Increase quantity"
+                onClick={() => patchRef((it) => void (it.quantityTaken = it.quantityTaken + 1))}
+              >
+                +
+              </button>
+            </div>
+          </div>
+        </div>
 
-        {/* Category chip + tag chips (read-only display) */}
-        {(showCategory || item.tagKeys.length > 0) && (
+        {/* Line 2: essential + category + tag chips (read-only display) */}
+        {(showCategory || item.essential || item.tagKeys.length > 0) && (
           <div className="flex flex-wrap items-center gap-1.5">
+            {item.essential && (
+              <span className="chip bg-vermilion/10 font-mono text-[0.625rem] uppercase tracking-wide text-vermilion">
+                Essential
+              </span>
+            )}
             {showCategory && (
               <span className="chip bg-paper-sunk font-mono text-[0.625rem] uppercase tracking-wide text-ink-faint">
                 {item.category}
@@ -112,86 +142,72 @@ export default function ItemRow({
         )}
       </div>
 
-      {/* Right column: quantity stepper, then the action icons in a row below it. */}
-      <div className="flex shrink-0 flex-col items-end gap-1.5">
-        <div className="flex items-center gap-2" aria-label="Quantity">
-          <span className="min-w-[2rem] text-right font-mono text-sm tabular-nums text-ink-soft">
-            {item.quantityTaken}&times;
-          </span>
-          {/* Stepper: one rounded control with a centre divider (two ends). */}
-          <div className="flex items-center overflow-hidden rounded-md border border-line">
-            <button
-              className="flex h-7 w-7 items-center justify-center text-base leading-none text-ink-soft transition-colors hover:bg-paper-sunk hover:text-ink"
-              aria-label="Decrease quantity"
-              onClick={() => patchRef((it) => void (it.quantityTaken = Math.max(1, it.quantityTaken - 1)))}
-            >
-              −
-            </button>
-            <span aria-hidden className="h-7 w-px bg-line" />
-            <button
-              className="flex h-7 w-7 items-center justify-center text-base leading-none text-ink-soft transition-colors hover:bg-paper-sunk hover:text-ink"
-              aria-label="Increase quantity"
-              onClick={() => patchRef((it) => void (it.quantityTaken = it.quantityTaken + 1))}
-            >
-              +
-            </button>
-          </div>
-        </div>
-
-        {/* Actions: info + edit (pencil) + remove */}
-        <div className="flex items-center gap-1">
-          {!item.missing && (
-            <button
-              className="btn-ghost px-1.5 py-1"
-              aria-label={`Info about ${item.name}`}
-              aria-expanded={info}
-              title="Item details"
-              onClick={() => setInfo((v) => !v)}
-            >
-              <InfoIcon />
-            </button>
-          )}
-          {!item.missing && (
-            <button
-              className="btn-ghost px-1.5 py-1"
-              aria-label={`Edit ${item.name}`}
-              title="Edit item (updates your library)"
-              onClick={() => setEditing(true)}
-            >
-              <EditIcon />
-            </button>
-          )}
+      {/* Actions: info always; edit + delete inline only when there's room (sm+).
+          On a tight (mobile) row they collapse into the info panel below. */}
+      <div className="flex shrink-0 items-center gap-1">
+        {!item.missing && (
           <button
-            className="btn-danger px-1.5 py-1"
-            aria-label={`Remove ${item.name} from this trip`}
-            title="Remove from this trip"
-            onClick={removeFromTrip}
+            className="btn-ghost mt-0.5 px-1.5 py-1"
+            aria-label={`Info about ${item.name}`}
+            aria-expanded={info}
+            title="Item details"
+            onClick={() => setInfo((v) => !v)}
           >
-            <DeleteIcon />
+            <InfoIcon />
           </button>
-        </div>
+        )}
+        {!item.missing && (
+          <button
+            className="btn-ghost mt-0.5 hidden px-1.5 py-1 sm:inline-flex"
+            aria-label={`Edit ${item.name}`}
+            title="Edit item (updates your library)"
+            onClick={() => setEditing(true)}
+          >
+            <EditIcon />
+          </button>
+        )}
+        <button
+          className={`btn-danger mt-0.5 px-1.5 py-1 ${item.missing ? '' : 'hidden sm:inline-flex'}`}
+          aria-label={`Remove ${item.name} from this trip`}
+          title="Remove from this trip"
+          onClick={removeFromTrip}
+        >
+          <DeleteIcon />
+        </button>
       </div>
     </div>
 
       {info && !item.missing && (
-        <dl className="grid grid-cols-[5.5rem_1fr] gap-x-3 gap-y-1 border-t border-line bg-paper-sunk/40 px-4 py-3 text-sm">
-          <dt className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">Category</dt>
-          <dd className="text-ink-soft">{item.category}</dd>
-          {typeof item.weight === 'number' && (
-            <>
-              <dt className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">Weight</dt>
-              <dd className="text-ink-soft">{item.weight} g each</dd>
-            </>
-          )}
-          {item.essential && (
-            <>
-              <dt className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">Essential</dt>
-              <dd className="text-ink-soft">Suggested on every trip</dd>
-            </>
-          )}
-          <dt className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">Notes</dt>
-          <dd className="whitespace-pre-wrap text-ink-soft">{item.notes || '—'}</dd>
-        </dl>
+        <div className="border-t border-line bg-paper-sunk/40 px-4 py-3">
+          <dl className="grid grid-cols-[5.5rem_1fr] gap-x-3 gap-y-1 text-sm">
+            <dt className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">Category</dt>
+            <dd className="text-ink-soft">{item.category}</dd>
+            {typeof item.weight === 'number' && (
+              <>
+                <dt className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">Weight</dt>
+                <dd className="text-ink-soft">{item.weight} g each</dd>
+              </>
+            )}
+            {item.essential && (
+              <>
+                <dt className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">Essential</dt>
+                <dd className="text-ink-soft">Suggested on every trip</dd>
+              </>
+            )}
+            <dt className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">Notes</dt>
+            <dd className="whitespace-pre-wrap text-ink-soft">{item.notes || '—'}</dd>
+          </dl>
+
+          {/* On tight rows edit/delete live here (hidden once they fit inline at sm+). */}
+          <div className="mt-3 flex gap-2 sm:hidden">
+            <button className="btn-ghost flex items-center gap-1.5 text-xs" onClick={() => setEditing(true)}>
+              <EditIcon /> Edit
+            </button>
+            <button className="btn-danger flex items-center gap-1.5 text-xs" onClick={removeFromTrip}>
+              <DeleteIcon /> Delete
+            </button>
+          </div>
+        </div>
       )}
     </>
   );
