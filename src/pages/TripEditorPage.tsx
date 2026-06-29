@@ -243,21 +243,31 @@ export default function TripEditorPage() {
                 <Checklist trip={trip} update={update} library={library} mode="plan" />
               </div>
             </div>
+            <div className="flex justify-end">
+              <button className="btn-secondary" onClick={() => setMode('checklist')}>
+                To checklist →
+              </button>
+            </div>
           </>
         ) : (
           <>
             <WeightSummary items={trip.items} library={library} />
             <Checklist trip={trip} update={update} library={library} mode="checklist" />
-            {trip.items.length > 0 && (
-              <div className="flex flex-wrap justify-end gap-2">
-                <button className="btn-secondary" onClick={printTrip}>
-                  Print
-                </button>
-                <button className="btn-secondary" onClick={printTrip}>
-                  Save as PDF
-                </button>
-              </div>
-            )}
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <button className="btn-secondary" onClick={() => setMode('plan')}>
+                ← To planning
+              </button>
+              {trip.items.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  <button className="btn-secondary" onClick={printTrip}>
+                    Print
+                  </button>
+                  <button className="btn-secondary" onClick={printTrip}>
+                    Save as PDF
+                  </button>
+                </div>
+              )}
+            </div>
           </>
         )}
       </div>
