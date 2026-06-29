@@ -82,25 +82,36 @@ function DayBreakdown({ days, units, onHide }: { days: CityDay[]; units: UnitSys
         {days.slice(0, shown).map((d) => (
           <li
             key={d.date}
-            className="flex items-baseline justify-between gap-3 font-mono text-xs tabular-nums text-ticket-ink/80"
+            className="flex flex-col gap-0.5 font-mono text-xs tabular-nums text-ticket-ink/80 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3"
           >
-            <span className="w-24 shrink-0 text-ticket-ink/60">{fmtDay(d.date)}</span>
-            <span className="flex-1">
-              <span className="text-ticket-ink/50">↑</span> {t(d.highC)}°{' '}
-              <span className="text-ticket-ink/50">↓</span> {t(d.lowC)}°
-            </span>
-            <span className="text-ticket-ink/60">{formatPrecip(d.precipMm, units)}</span>
-            <span className="text-ticket-ink/60">{formatWind(d.windKmh, units)}</span>
-            {d.sunshineH !== undefined && (
-              <span className="w-10 text-right text-ticket-ink/60" title="Sunshine">
-                ☀ {d.sunshineH}h
+            {/* Line 1 on mobile: day + temps. On sm the wrappers dissolve
+                (display:contents) so every span lays out in one row. */}
+            <div className="flex items-baseline justify-between gap-3 sm:contents">
+              <span className="text-ticket-ink/60 sm:w-24 sm:shrink-0">{fmtDay(d.date)}</span>
+              <span className="flex gap-2 sm:flex-1">
+                <span className="whitespace-nowrap">
+                  <span className="text-ticket-ink/50">↑</span> {t(d.highC)}°
+                </span>
+                <span className="whitespace-nowrap">
+                  <span className="text-ticket-ink/50">↓</span> {t(d.lowC)}°
+                </span>
               </span>
-            )}
-            {d.uvMax !== undefined && (
-              <span className="w-12 text-right text-ticket-ink/60" title="Peak UV index">
-                UV {d.uvMax}
-              </span>
-            )}
+            </div>
+            {/* Line 2 on mobile: precip, wind, sun, UV. */}
+            <div className="flex items-baseline gap-3 text-ticket-ink/60 sm:contents">
+              <span className="whitespace-nowrap">{formatPrecip(d.precipMm, units)}</span>
+              <span className="whitespace-nowrap">{formatWind(d.windKmh, units)}</span>
+              {d.sunshineH !== undefined && (
+                <span className="whitespace-nowrap sm:w-10 sm:text-right" title="Sunshine">
+                  ☀ {d.sunshineH}h
+                </span>
+              )}
+              {d.uvMax !== undefined && (
+                <span className="whitespace-nowrap sm:w-12 sm:text-right" title="Peak UV index">
+                  UV {d.uvMax}
+                </span>
+              )}
+            </div>
           </li>
         ))}
       </ul>
