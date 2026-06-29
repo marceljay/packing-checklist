@@ -231,7 +231,7 @@ describe('summarizeWeather', () => {
       maxC: 30,
       minC: 10,
       precipMm: 5, // total
-      windMaxKmh: 40,
+      windAvgKmh: 25, // avg of daily gusts (10, 40)
       days: 2,
     });
   });
@@ -241,7 +241,7 @@ describe('summarizeWeather', () => {
     expect(s.highC).toBe(22); // 21.5 -> 22
     expect(s.lowC).toBe(10); // 9.5 -> 10
     expect(s.precipMm).toBe(1); // 1.4 -> 1
-    expect(s.windMaxKmh).toBe(13); // 12.6 -> 13
+    expect(s.windAvgKmh).toBe(13); // 12.6 -> 13
   });
 
   it('includes average sunshine hours and a UV range when present, omits them otherwise', () => {
@@ -262,7 +262,7 @@ describe('summarizeWeather', () => {
       maxC: 0,
       minC: 0,
       precipMm: 0,
-      windMaxKmh: 0,
+      windAvgKmh: 0,
       days: 0,
     });
   });

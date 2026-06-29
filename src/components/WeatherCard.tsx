@@ -198,9 +198,9 @@ function CityRow({ c, units }: { c: CityForecast; units: UnitSystem }) {
           </span>
           <span
             className="whitespace-nowrap text-ticket-ink/70"
-            title="Strongest gust across the trip"
+            title="Average gusts across the trip"
           >
-            💨 {formatWind(c.windMaxKmh, units)}
+            💨 {formatWind(c.windAvgKmh, units)}
           </span>
           {c.sunshineH !== undefined && (
             <span

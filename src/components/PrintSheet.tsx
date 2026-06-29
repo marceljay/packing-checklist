@@ -101,7 +101,7 @@ export default function PrintSheet({ trip, library }: Props) {
                 </span>
                 <span className="font-mono tabular-nums text-ink-soft">
                   ↑ {t(c.highC)}° ↓ {t(c.lowC)}° · {t(c.minC)}–{t(c.maxC)}° ·{' '}
-                  {formatPrecip(c.precipMm, units)} · {formatWind(c.windMaxKmh, units)}
+                  {formatPrecip(c.precipMm, units)} · {formatWind(c.windAvgKmh, units)}
                 </span>
               </li>
             ))}

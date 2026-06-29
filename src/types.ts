@@ -166,7 +166,7 @@ export interface CityForecast {
   maxC: number;
   minC: number;
   precipMm: number;
-  windMaxKmh: number;
+  windAvgKmh: number;
   /** Average sunshine hours per day over the window, when available. */
   sunshineH?: number;
   /** Lowest daily-peak UV over the window, when available (forecast only). */

@@ -72,8 +72,8 @@ export interface WeatherSummary {
   minC: number;
   /** Total precipitation over the window. */
   precipMm: number;
-  /** Strongest daily gust. */
-  windMaxKmh: number;
+  /** Average of the daily-max gusts over the window. */
+  windAvgKmh: number;
   /** Average sunshine hours per day, when available (else undefined). */
   sunshineH?: number;
   /** Lowest daily-peak UV over the window, when available (forecast only). */
@@ -90,7 +90,7 @@ const sum = (xs: number[]): number => xs.reduce((a, b) => a + b, 0);
 export function summarizeWeather(d: DailyWeather): WeatherSummary {
   const days = d.tMax.length;
   if (days === 0) {
-    return { highC: 0, lowC: 0, maxC: 0, minC: 0, precipMm: 0, windMaxKmh: 0, days: 0 };
+    return { highC: 0, lowC: 0, maxC: 0, minC: 0, precipMm: 0, windAvgKmh: 0, days: 0 };
   }
   const sun = d.sunshineH ?? [];
   const uv = d.uvMax ?? [];
@@ -100,7 +100,7 @@ export function summarizeWeather(d: DailyWeather): WeatherSummary {
     maxC: Math.round(Math.max(...d.tMax)),
     minC: Math.round(Math.min(...d.tMin)),
     precipMm: Math.round(sum(d.precip)),
-    windMaxKmh: Math.round(Math.max(...d.wind)),
+    windAvgKmh: Math.round(avg(d.wind)),
     ...(sun.length > 0 ? { sunshineH: Math.round(avg(sun)) } : {}),
     ...(uv.length > 0 ? { uvMin: Math.round(Math.min(...uv)), uvMax: Math.round(Math.max(...uv)) } : {}),
     days,

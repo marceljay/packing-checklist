@@ -126,7 +126,7 @@ export function applyWeather(
       maxC: c.summary.maxC,
       minC: c.summary.minC,
       precipMm: c.summary.precipMm,
-      windMaxKmh: c.summary.windMaxKmh,
+      windAvgKmh: c.summary.windAvgKmh,
       ...(c.summary.sunshineH !== undefined ? { sunshineH: c.summary.sunshineH } : {}),
       ...(c.summary.uvMin !== undefined ? { uvMin: c.summary.uvMin } : {}),
       ...(c.summary.uvMax !== undefined ? { uvMax: c.summary.uvMax } : {}),

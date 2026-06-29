@@ -13,7 +13,7 @@ function city(name: string): DestinationWeather {
     place: { name, lat: 0, lon: 0 },
     tags: ['hot'],
     basis: 'forecast',
-    summary: { highC: 28, lowC: 18, maxC: 31, minC: 15, precipMm: 0, windMaxKmh: 12, days: 7 },
+    summary: { highC: 28, lowC: 18, maxC: 31, minC: 15, precipMm: 0, windAvgKmh: 12, days: 7 },
   };
 }
 
@@ -157,7 +157,7 @@ describe('applyWeather', () => {
 
 describe('cityMatchesDestination', () => {
   const fc = (place: string): CityForecast =>
-    ({ place, basis: 'forecast', days: 1, highC: 0, lowC: 0, maxC: 0, minC: 0, precipMm: 0, windMaxKmh: 0 });
+    ({ place, basis: 'forecast', days: 1, highC: 0, lowC: 0, maxC: 0, minC: 0, precipMm: 0, windAvgKmh: 0 });
 
   it('matches a geocoded short name against a full label', () => {
     expect(cityMatchesDestination(fc('Lisbon'), { label: 'Lisbon, Portugal' })).toBe(true);
@@ -172,7 +172,7 @@ describe('cityMatchesDestination', () => {
 
 describe('recomputeWeatherAfterRemoval', () => {
   const fc = (place: string, tags: string[]): CityForecast =>
-    ({ place, tags, basis: 'forecast', days: 1, highC: 0, lowC: 0, maxC: 0, minC: 0, precipMm: 0, windMaxKmh: 0 });
+    ({ place, tags, basis: 'forecast', days: 1, highC: 0, lowC: 0, maxC: 0, minC: 0, precipMm: 0, windAvgKmh: 0 });
   const cities = [fc('Reykjavik', ['cold', 'windy']), fc('Lisbon', ['hot', 'sunny'])];
 
   it('returns empty when no destinations remain', () => {
