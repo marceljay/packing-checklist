@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import type { Trip, LibraryItem } from '../types';
 import { rememberItem } from '../db/library';
 import { suggestItems, type Suggestion } from '../engine/suggest';
+import { ChevronIcon } from './icons';
 
 interface Props {
   trip: Trip;
@@ -41,39 +42,39 @@ export default function SuggestionsTray({ trip, update, library }: Props) {
 
   return (
     <section className="card flex flex-col overflow-hidden">
-      <button
-        className="flex items-center gap-2.5 p-4 text-left"
-        onClick={() => setOpen((o) => !o)}
-        aria-expanded={open}
-      >
-        <span aria-hidden className="airmail h-4 w-1 rounded-full" />
-        <h2 className="font-display text-base font-bold">Recommended</h2>
-        <span className="chip bg-vermilion-soft text-vermilion-deep tabular-nums">
-          {suggestions.length}
-        </span>
-        <span className="ml-auto font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">
-          {open ? 'Hide' : 'Show'}
-        </span>
-      </button>
+      <div className="flex items-center gap-2.5 p-4">
+        <button
+          className="flex flex-1 items-center gap-2.5 text-left"
+          onClick={() => setOpen((o) => !o)}
+          aria-expanded={open}
+        >
+          <span aria-hidden className="airmail h-4 w-1 rounded-full" />
+          <h2 className="font-display text-base font-bold">Recommended</h2>
+          <span className="chip bg-vermilion-soft text-vermilion-deep tabular-nums">
+            {suggestions.length}
+          </span>
+          <ChevronIcon
+            className={`ml-1 text-ink-faint transition-transform ${open ? '' : '-rotate-90'}`}
+          />
+        </button>
+        {suggestions.length > 0 && (
+          <button
+            className="btn-ghost shrink-0 px-2 py-1 text-xs"
+            onClick={() => void addAll()}
+          >
+            Add all
+          </button>
+        )}
+      </div>
 
-      {open && (
-        <>
-          {suggestions.length === 0 ? (
-            <p className="border-t border-line px-4 py-6 text-center text-sm text-ink-soft">
-              Add activity or weather tags (or dates) to get tailored suggestions.
-              Anything already on your list is hidden here.
-            </p>
-          ) : (
-            <>
-              <div className="flex items-center justify-between border-t border-line px-4 py-2">
-                <span className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">
-                  Tap to add
-                </span>
-                <button className="btn-ghost px-2 py-1 text-xs" onClick={() => void addAll()}>
-                  Add all
-                </button>
-              </div>
-              <ul className="max-h-80 divide-y divide-line/60 overflow-y-auto">
+      {open &&
+        (suggestions.length === 0 ? (
+          <p className="border-t border-line px-4 py-6 text-center text-sm text-ink-soft">
+            Add activity or weather tags (or dates) to get tailored suggestions.
+            Anything already on your list is hidden here.
+          </p>
+        ) : (
+            <ul className="max-h-80 divide-y divide-line/60 overflow-y-auto border-t border-line">
                 {suggestions.map((s) => (
                   <li
                     key={s.item.id}
@@ -113,10 +114,7 @@ export default function SuggestionsTray({ trip, update, library }: Props) {
                   </li>
                 ))}
               </ul>
-            </>
-          )}
-        </>
-      )}
+        ))}
     </section>
   );
 }

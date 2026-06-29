@@ -47,6 +47,16 @@ export function DeleteIcon({ className, size = 16 }: IconProps) {
   );
 }
 
+/** Chevron — points down by default; rotate via className to indicate collapsed
+ *  (e.g. `-rotate-90`). Used for expand/collapse controls. */
+export function ChevronIcon({ className, size = 16 }: IconProps) {
+  return (
+    <svg {...base(size)} className={className}>
+      <path d="m6 9 6 6 6-6" />
+    </svg>
+  );
+}
+
 /** GitHub mark — a filled brand glyph (uses currentColor), not a line icon. */
 export function GithubIcon({ className, size = 18 }: IconProps) {
   return (

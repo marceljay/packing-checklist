@@ -238,7 +238,7 @@ export default function TripEditorPage() {
               />
               <div className="flex min-w-0 flex-col gap-5">
                 <WeightSummary items={trip.items} library={library} />
-                <AddItemCard update={update} tagSuggestions={tagSuggestions} categories={categoryOptions} />
+                <AddItemCard trip={trip} update={update} library={library} tagSuggestions={tagSuggestions} categories={categoryOptions} />
                 <SuggestionsTray trip={trip} update={update} library={library} />
                 <Checklist trip={trip} update={update} library={library} mode="plan" />
               </div>

@@ -5,6 +5,12 @@ All notable changes to this project are documented here.
 ## [Unreleased]
 
 ### Added
+- **Search-or-add item card.** The Add-item card now leads with a single
+  "Search or add item" field that matches your existing library first (tap a
+  result to add it); only when nothing matches the typed name does "+ Add new
+  item" expand the tags/notes fields to create one. The card and the Recommended
+  tray both collapse with a chevron, and "Add all" moved onto the Recommended
+  header line (the "tap to add" hint is gone).
 - **Wider plug coverage + named countries.** Added plug/voltage data for ~40 more
   countries (Iraq, Iran, the Caucasus, the Balkans, more of Africa, the Americas,
   and SE Asia). Destinations still without data now show the full country name
