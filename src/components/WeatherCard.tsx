@@ -105,26 +105,26 @@ function DayBreakdown({
                 {fmtDay(d.date)}
               </span>
               <span className="flex gap-2 sm:flex-1">
-                <span className="whitespace-nowrap">
+                <span className="whitespace-nowrap" title="Day's high temperature">
                   <span className="text-ticket-ink/50">↑</span> {t(d.highC)}°
                 </span>
-                <span className="whitespace-nowrap">
+                <span className="whitespace-nowrap" title="Day's low temperature">
                   <span className="text-ticket-ink/50">↓</span> {t(d.lowC)}°
                 </span>
               </span>
             </div>
             {/* Line 2 on mobile: precip, wind, sun, UV. */}
             <div className="flex items-baseline gap-3 text-ticket-ink/60 sm:contents">
-              <span className="whitespace-nowrap" title="Precipitation">
+              <span className="whitespace-nowrap" title="Precipitation this day">
                 💧 {formatPrecip(d.precipMm, units)}
               </span>
-              <span className="whitespace-nowrap" title="Wind">
+              <span className="whitespace-nowrap" title="Strongest gust this day">
                 💨 {formatWind(d.windKmh, units)}
               </span>
               {d.sunshineH !== undefined && (
                 <span
                   className="whitespace-nowrap sm:w-10 sm:text-right"
-                  title="Sunshine"
+                  title="Sunshine hours this day"
                 >
                   ☀️ {d.sunshineH}h
                 </span>
@@ -132,7 +132,7 @@ function DayBreakdown({
               {d.uvMax !== undefined && (
                 <span
                   className="whitespace-nowrap sm:w-12 sm:text-right"
-                  title="Peak UV index"
+                  title="Peak UV index this day"
                 >
                   UV {d.uvMax}
                 </span>
@@ -183,26 +183,29 @@ function CityRow({ c, units }: { c: CityForecast; units: UnitSystem }) {
           </p>
         </div>
         <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 font-mono text-sm tabular-nums">
-          <span>
+          <span title="Average daily high / low across the trip">
             <span className="text-ticket-ink/50">↑</span> {t(c.highC)}°{" "}
             <span className="text-ticket-ink/50">↓</span> {t(c.lowC)}°
           </span>
-          <span className="text-ticket-ink/70">
+          <span className="text-ticket-ink/70" title="Coldest night – warmest day">
             {t(c.minC)}–{t(c.maxC)}°
           </span>
           <span
             className="whitespace-nowrap text-ticket-ink/70"
-            title="Precipitation"
+            title="Total precipitation across the trip"
           >
             💧 {formatPrecip(c.precipMm, units)}
           </span>
-          <span className="whitespace-nowrap text-ticket-ink/70" title="Wind">
+          <span
+            className="whitespace-nowrap text-ticket-ink/70"
+            title="Strongest gust across the trip"
+          >
             💨 {formatWind(c.windMaxKmh, units)}
           </span>
           {c.sunshineH !== undefined && (
             <span
               className="text-ticket-ink/70"
-              title="Average sunshine per day"
+              title="Average sunshine hours per day"
             >
               ☀️ {c.sunshineH}h
             </span>
@@ -210,7 +213,7 @@ function CityRow({ c, units }: { c: CityForecast; units: UnitSystem }) {
           {c.uvMax !== undefined && (
             <span
               className="text-ticket-ink/70"
-              title="Daily-peak UV index range"
+              title="Daily-peak UV index range across the trip"
             >
               UV {fmtUv(c.uvMin, c.uvMax)}
             </span>
