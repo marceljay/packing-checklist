@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { CityDay, CityForecast, Destination, TripWeather, WeatherBasis } from '../types';
 import { cityMatchesDestination } from '../engine/weatherSync';
 import { shortPlace } from '../engine/weather';
@@ -40,6 +40,26 @@ function fmtUv(min: number | undefined, max: number): string {
   return min === undefined || min === max ? `${max}` : `${min}–${max}`;
 }
 
+/** True below Tailwind's `sm` breakpoint (640px), tracked across resizes. */
+function useIsMobile(): boolean {
+  const query = '(max-width: 639px)';
+  const [mobile, setMobile] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia(query).matches,
+  );
+  useEffect(() => {
+    const mq = window.matchMedia(query);
+    const onChange = () => setMobile(mq.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+  return mobile;
+}
+
+// On phones a long (e.g. 30-day) breakdown is unwieldy: show a few days, then
+// reveal more in chunks. Desktops show the whole series.
+const MOBILE_INITIAL = 4;
+const MOBILE_STEP = 7;
+
 function fmtDay(iso: string): string {
   return new Date(iso + 'T00:00:00').toLocaleDateString(undefined, {
     weekday: 'short',
@@ -48,36 +68,59 @@ function fmtDay(iso: string): string {
   });
 }
 
-/** Expandable list of each day's high/low, precip and wind. */
-function DayBreakdown({ days, units }: { days: CityDay[]; units: UnitSystem }) {
+/** Expandable list of each day's high/low, precip and wind. On phones it starts
+ *  at {@link MOBILE_INITIAL} days and reveals more in {@link MOBILE_STEP} chunks. */
+function DayBreakdown({ days, units, onHide }: { days: CityDay[]; units: UnitSystem; onHide: () => void }) {
   const t = (celsius: number) => convTemp(celsius, units);
+  const isMobile = useIsMobile();
+  const [limit, setLimit] = useState(MOBILE_INITIAL);
+  const shown = isMobile ? Math.min(limit, days.length) : days.length;
+  const remaining = days.length - shown;
   return (
-    <ul className="mt-2 space-y-1 border-t border-ticket-ink/10 pt-2">
-      {days.map((d) => (
-        <li
-          key={d.date}
-          className="flex items-baseline justify-between gap-3 font-mono text-xs tabular-nums text-ticket-ink/80"
+    <div className="mt-2 border-t border-ticket-ink/10 pt-2">
+      <ul className="space-y-1">
+        {days.slice(0, shown).map((d) => (
+          <li
+            key={d.date}
+            className="flex items-baseline justify-between gap-3 font-mono text-xs tabular-nums text-ticket-ink/80"
+          >
+            <span className="w-24 shrink-0 text-ticket-ink/60">{fmtDay(d.date)}</span>
+            <span className="flex-1">
+              <span className="text-ticket-ink/50">↑</span> {t(d.highC)}°{' '}
+              <span className="text-ticket-ink/50">↓</span> {t(d.lowC)}°
+            </span>
+            <span className="text-ticket-ink/60">{formatPrecip(d.precipMm, units)}</span>
+            <span className="text-ticket-ink/60">{formatWind(d.windKmh, units)}</span>
+            {d.sunshineH !== undefined && (
+              <span className="w-10 text-right text-ticket-ink/60" title="Sunshine">
+                ☀ {d.sunshineH}h
+              </span>
+            )}
+            {d.uvMax !== undefined && (
+              <span className="w-12 text-right text-ticket-ink/60" title="Peak UV index">
+                UV {d.uvMax}
+              </span>
+            )}
+          </li>
+        ))}
+      </ul>
+      <div className="mt-2 flex items-center gap-4 font-mono text-[0.625rem] uppercase tracking-code">
+        {remaining > 0 && (
+          <button
+            className="text-ticket-ink/50 underline-offset-2 hover:text-ticket-ink hover:underline"
+            onClick={() => setLimit((n) => n + MOBILE_STEP)}
+          >
+            Load more · {remaining} left
+          </button>
+        )}
+        <button
+          className="text-ticket-ink/50 underline-offset-2 hover:text-ticket-ink hover:underline"
+          onClick={onHide}
         >
-          <span className="w-24 shrink-0 text-ticket-ink/60">{fmtDay(d.date)}</span>
-          <span className="flex-1">
-            <span className="text-ticket-ink/50">↑</span> {t(d.highC)}°{' '}
-            <span className="text-ticket-ink/50">↓</span> {t(d.lowC)}°
-          </span>
-          <span className="text-ticket-ink/60">{formatPrecip(d.precipMm, units)}</span>
-          <span className="text-ticket-ink/60">{formatWind(d.windKmh, units)}</span>
-          {d.sunshineH !== undefined && (
-            <span className="w-10 text-right text-ticket-ink/60" title="Sunshine">
-              ☀ {d.sunshineH}h
-            </span>
-          )}
-          {d.uvMax !== undefined && (
-            <span className="w-12 text-right text-ticket-ink/60" title="Peak UV index">
-              UV {d.uvMax}
-            </span>
-          )}
-        </li>
-      ))}
-    </ul>
+          Hide day by day
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -131,7 +174,9 @@ function CityRow({ c, units }: { c: CityForecast; units: UnitSystem }) {
         )}
       </div>
       </div>
-      {hasDaily && open && <DayBreakdown days={c.daily!} units={units} />}
+      {hasDaily && open && (
+        <DayBreakdown days={c.daily!} units={units} onHide={() => setOpen(false)} />
+      )}
     </div>
   );
 }
