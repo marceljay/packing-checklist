@@ -244,13 +244,15 @@ describe('summarizeWeather', () => {
     expect(s.windMaxKmh).toBe(13); // 12.6 -> 13
   });
 
-  it('includes average sunshine hours and UV when present, omits them otherwise', () => {
-    const withSun = summarizeWeather(daily({ tMax: [22, 24], tMin: [12, 13], precip: [0, 0], wind: [5, 6], sunshineH: [7, 9], uvMax: [5, 7] }));
+  it('includes average sunshine hours and a UV range when present, omits them otherwise', () => {
+    const withSun = summarizeWeather(daily({ tMax: [22, 24], tMin: [12, 13], precip: [0, 0], wind: [5, 6], sunshineH: [7, 9], uvMax: [5, 8] }));
     expect(withSun.sunshineH).toBe(8); // avg(7,9)
-    expect(withSun.uv).toBe(6); // avg(5,7)
+    expect(withSun.uvMin).toBe(5); // min daily-peak
+    expect(withSun.uvMax).toBe(8); // max daily-peak
     const noSun = summarizeWeather(daily({ tMax: [22, 24], tMin: [12, 13], precip: [0, 0], wind: [5, 6] }));
     expect(noSun.sunshineH).toBeUndefined();
-    expect(noSun.uv).toBeUndefined();
+    expect(noSun.uvMin).toBeUndefined();
+    expect(noSun.uvMax).toBeUndefined();
   });
 
   it('returns zeros and no days for empty data', () => {

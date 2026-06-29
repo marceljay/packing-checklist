@@ -76,8 +76,10 @@ export interface WeatherSummary {
   windMaxKmh: number;
   /** Average sunshine hours per day, when available (else undefined). */
   sunshineH?: number;
-  /** Representative UV (average of daily max), when available (forecast only). */
-  uv?: number;
+  /** Lowest daily-peak UV over the window, when available (forecast only). */
+  uvMin?: number;
+  /** Highest daily-peak UV over the window, when available (forecast only). */
+  uvMax?: number;
   /** Number of days summarized. */
   days: number;
 }
@@ -100,7 +102,7 @@ export function summarizeWeather(d: DailyWeather): WeatherSummary {
     precipMm: Math.round(sum(d.precip)),
     windMaxKmh: Math.round(Math.max(...d.wind)),
     ...(sun.length > 0 ? { sunshineH: Math.round(avg(sun)) } : {}),
-    ...(uv.length > 0 ? { uv: Math.round(avg(uv)) } : {}),
+    ...(uv.length > 0 ? { uvMin: Math.round(Math.min(...uv)), uvMax: Math.round(Math.max(...uv)) } : {}),
     days,
   };
 }

@@ -35,6 +35,11 @@ function relativeTime(ts: number): string {
   return `${Math.round(hrs / 24)}d ago`;
 }
 
+/** "5" when the daily peak is flat, "4–8" for a range. */
+function fmtUv(min: number | undefined, max: number): string {
+  return min === undefined || min === max ? `${max}` : `${min}–${max}`;
+}
+
 function fmtDay(iso: string): string {
   return new Date(iso + 'T00:00:00').toLocaleDateString(undefined, {
     weekday: 'short',
@@ -60,6 +65,16 @@ function DayBreakdown({ days, units }: { days: CityDay[]; units: UnitSystem }) {
           </span>
           <span className="text-ticket-ink/60">{formatPrecip(d.precipMm, units)}</span>
           <span className="text-ticket-ink/60">{formatWind(d.windKmh, units)}</span>
+          {d.sunshineH !== undefined && (
+            <span className="w-10 text-right text-ticket-ink/60" title="Sunshine">
+              ☀ {d.sunshineH}h
+            </span>
+          )}
+          {d.uvMax !== undefined && (
+            <span className="w-12 text-right text-ticket-ink/60" title="Peak UV index">
+              UV {d.uvMax}
+            </span>
+          )}
         </li>
       ))}
     </ul>
@@ -95,6 +110,16 @@ function CityRow({ c, units }: { c: CityForecast; units: UnitSystem }) {
         </span>
         <span className="text-ticket-ink/70">{formatPrecip(c.precipMm, units)}</span>
         <span className="text-ticket-ink/70">{formatWind(c.windMaxKmh, units)}</span>
+        {c.sunshineH !== undefined && (
+          <span className="text-ticket-ink/70" title="Average sunshine per day">
+            ☀ {c.sunshineH}h
+          </span>
+        )}
+        {c.uvMax !== undefined && (
+          <span className="text-ticket-ink/70" title="Daily-peak UV index range">
+            UV {fmtUv(c.uvMin, c.uvMax)}
+          </span>
+        )}
         {hasDaily && (
           <button
             className="font-mono text-[0.625rem] uppercase tracking-code text-ticket-ink/50 underline-offset-2 hover:text-ticket-ink hover:underline sm:ml-auto"

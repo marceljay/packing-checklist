@@ -95,6 +95,8 @@ export function buildCityDays(daily: DailyWeather | undefined): CityDay[] | unde
     lowC: Math.round(daily.tMin[i]),
     precipMm: Math.round(daily.precip[i]),
     windKmh: Math.round(daily.wind[i]),
+    ...(daily.sunshineH ? { sunshineH: Math.round(daily.sunshineH[i]) } : {}),
+    ...(daily.uvMax ? { uvMax: Math.round(daily.uvMax[i]) } : {}),
   }));
 }
 
@@ -125,6 +127,9 @@ export function applyWeather(
       minC: c.summary.minC,
       precipMm: c.summary.precipMm,
       windMaxKmh: c.summary.windMaxKmh,
+      ...(c.summary.sunshineH !== undefined ? { sunshineH: c.summary.sunshineH } : {}),
+      ...(c.summary.uvMin !== undefined ? { uvMin: c.summary.uvMin } : {}),
+      ...(c.summary.uvMax !== undefined ? { uvMax: c.summary.uvMax } : {}),
     })),
   };
 }

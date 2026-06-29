@@ -141,6 +141,10 @@ export interface CityDay {
   lowC: number;
   precipMm: number;
   windKmh: number;
+  /** Sunshine hours this day, when available (absent offline). */
+  sunshineH?: number;
+  /** Peak UV index this day, when available (forecast only). */
+  uvMax?: number;
 }
 
 /** Forecast summary for one destination (SPEC §6). Temps °C, precip mm. */
@@ -163,6 +167,12 @@ export interface CityForecast {
   minC: number;
   precipMm: number;
   windMaxKmh: number;
+  /** Average sunshine hours per day over the window, when available. */
+  sunshineH?: number;
+  /** Lowest daily-peak UV over the window, when available (forecast only). */
+  uvMin?: number;
+  /** Highest daily-peak UV over the window, when available (forecast only). */
+  uvMax?: number;
 }
 
 /** Cached weather for the trip's destinations, shown in the forecast card. */
