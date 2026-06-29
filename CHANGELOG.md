@@ -9,7 +9,8 @@ All notable changes to this project are documented here.
   insurance** and a **traveller-declarations** reminder (ESTA/eTA, customs/health
   forms) alongside the existing visa/passport checks. The visa-check item also
   carries a note that some visas or entry permits must be printed. Catalog items
-  can now seed a default note into the library.
+  can now seed a default note into the library. Recommended items with notes show
+  an info button so you can read the note before adding them.
 - **Search-or-add item card.** The Add-item card now leads with a single
   "Search or add item" field that matches your existing library first (tap a
   result to add it); only when nothing matches the typed name does "+ Add new

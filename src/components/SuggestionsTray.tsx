@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import type { Trip, LibraryItem } from '../types';
 import { rememberItem } from '../db/library';
 import { suggestItems, type Suggestion } from '../engine/suggest';
-import { ChevronIcon } from './icons';
+import { ChevronIcon, InfoIcon } from './icons';
 
 interface Props {
   trip: Trip;
@@ -13,6 +13,8 @@ interface Props {
 
 export default function SuggestionsTray({ trip, update, library }: Props) {
   const [open, setOpen] = useState(true);
+  // Which suggestion's notes panel is expanded (only items with notes get a button).
+  const [infoId, setInfoId] = useState<string | null>(null);
 
   // Suggestions are drawn from the whole library (defaults + customs), so edits
   // and removals there flow straight through. Already-listed items are excluded.
@@ -76,41 +78,56 @@ export default function SuggestionsTray({ trip, update, library }: Props) {
         ) : (
             <ul className="max-h-80 divide-y divide-line/60 overflow-y-auto border-t border-line">
                 {suggestions.map((s) => (
-                  <li
-                    key={s.item.id}
-                    className="flex items-center gap-3 px-4 py-2 transition-colors hover:bg-paper-sunk"
-                  >
-                    <button
-                      className="btn-secondary h-7 w-7 shrink-0 p-0 text-base leading-none"
-                      aria-label={`Add ${s.item.name}`}
-                      onClick={() => void add(s)}
-                    >
-                      +
-                    </button>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-baseline gap-1.5">
-                        <span className="truncate text-sm">{s.item.name}</span>
-                        {s.quantity > 1 && (
-                          <span className="font-mono text-xs tabular-nums text-ink-faint">
-                            ×{s.quantity}
-                          </span>
-                        )}
-                      </div>
-                      <div className="mt-0.5 flex flex-wrap gap-1">
-                        {s.essential ? (
-                          <span className="chip bg-paper-sunk text-ink-faint">Essential</span>
-                        ) : (
-                          s.reasonTags.map((t) => (
-                            <span key={t.id} className="chip bg-stamp-soft text-stamp">
-                              {t.label}
+                  <li key={s.item.id} className="transition-colors hover:bg-paper-sunk">
+                    <div className="flex items-center gap-3 px-4 py-2">
+                      <button
+                        className="btn-secondary h-7 w-7 shrink-0 p-0 text-base leading-none"
+                        aria-label={`Add ${s.item.name}`}
+                        onClick={() => void add(s)}
+                      >
+                        +
+                      </button>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-baseline gap-1.5">
+                          <span className="truncate text-sm">{s.item.name}</span>
+                          {s.quantity > 1 && (
+                            <span className="font-mono text-xs tabular-nums text-ink-faint">
+                              ×{s.quantity}
                             </span>
-                          ))
-                        )}
+                          )}
+                        </div>
+                        <div className="mt-0.5 flex flex-wrap gap-1">
+                          {s.essential ? (
+                            <span className="chip bg-paper-sunk text-ink-faint">Essential</span>
+                          ) : (
+                            s.reasonTags.map((t) => (
+                              <span key={t.id} className="chip bg-stamp-soft text-stamp">
+                                {t.label}
+                              </span>
+                            ))
+                          )}
+                        </div>
                       </div>
+                      {s.item.notes && (
+                        <button
+                          className="btn-ghost shrink-0 px-1.5 py-1"
+                          aria-label={`Info about ${s.item.name}`}
+                          aria-expanded={infoId === s.item.id}
+                          title="Item details"
+                          onClick={() => setInfoId((id) => (id === s.item.id ? null : s.item.id))}
+                        >
+                          <InfoIcon />
+                        </button>
+                      )}
+                      <span className="shrink-0 font-mono text-[0.625rem] uppercase tracking-wide text-ink-faint">
+                        {s.item.category}
+                      </span>
                     </div>
-                    <span className="shrink-0 font-mono text-[0.625rem] uppercase tracking-wide text-ink-faint">
-                      {s.item.category}
-                    </span>
+                    {s.item.notes && infoId === s.item.id && (
+                      <p className="whitespace-pre-wrap border-t border-line/60 bg-paper-sunk/40 px-4 py-2 text-sm text-ink-soft">
+                        {s.item.notes}
+                      </p>
+                    )}
                   </li>
                 ))}
               </ul>
