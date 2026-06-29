@@ -4,6 +4,16 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+### Changed
+- **Docs refreshed.** Added `docs/architecture.md` (layers, state/persistence,
+  suggestions, and the weather pipeline — sources, signal thresholds, sunshine/UV);
+  README now points there instead of the retired `SPEC.md`; trimmed obsolete
+  historical sections from `DATA_MODEL.md`.
+- **History cleaned.** Rewrote git history to purge local-only working paths
+  (`STATUS.md`, `docs/superpowers/`, `.claude/`, `.superpowers/`, `_planning/`,
+  `.devcontainer/`, `BOILERPLATE.md`) from every commit, preserving author and
+  committer timestamps.
+
 ## [0.8.0] — 2026-06-28
 
 First versioned release. Highlights since the early builds: the item library as a
