@@ -124,9 +124,7 @@ export default function ItemRow({
         {(showCategory || item.essential || item.tagKeys.length > 0) && (
           <div className="flex flex-wrap items-center gap-1.5">
             {item.essential && (
-              <span className="chip bg-vermilion/10 font-mono text-[0.625rem] uppercase tracking-wide text-vermilion">
-                Essential
-              </span>
+              <span className="chip bg-paper-sunk text-ink-faint">Essential</span>
             )}
             {showCategory && (
               <span className="chip bg-paper-sunk font-mono text-[0.625rem] uppercase tracking-wide text-ink-faint">
