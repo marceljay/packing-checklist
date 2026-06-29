@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation, Trans } from "react-i18next";
 import type {
   Trip,
   TagType,
@@ -60,10 +61,10 @@ function tagTypeForGroup(group: TagGroup): TagType {
   return group === "other" ? "custom" : group;
 }
 
-const GROUP_LABELS: { group: TagGroup; label: string }[] = [
-  { group: "activity", label: "Activities" },
-  { group: "weather", label: "Weather" },
-  { group: "other", label: "Other" },
+const GROUP_LABELS: { group: TagGroup; labelKey: string }[] = [
+  { group: "activity", labelKey: "context.groupActivities" },
+  { group: "weather", labelKey: "context.groupWeather" },
+  { group: "other", labelKey: "context.groupOther" },
 ];
 
 /** A labelled, wrapping palette of quick-add tag chips. */
@@ -105,6 +106,7 @@ export default function ContextPanel({
   weatherMsg,
   setWeatherMsg,
 }: Props) {
+  const { t } = useTranslation();
   // Pending destination-removal confirmation (in-app dialog).
   const [pendingRemoval, setPendingRemoval] = useState<{
     dest: Destination;
@@ -169,14 +171,12 @@ export default function ContextPanel({
           setWeatherStatus("idle");
         } else {
           setWeatherStatus("error");
-          setWeatherMsg("Add trip dates to look up the forecast.");
+          setWeatherMsg(t("context.wxNoDates"));
         }
         return;
       case "no-match":
         setWeatherStatus("error");
-        setWeatherMsg(
-          "Couldn’t find weather for those places. Add weather tags manually.",
-        );
+        setWeatherMsg(t("context.wxNoMatch"));
         return;
       case "error":
         if (opts.auto) {
@@ -184,9 +184,7 @@ export default function ContextPanel({
           setWeatherStatus("idle");
         } else {
           setWeatherStatus("error");
-          setWeatherMsg(
-            "Forecast lookup failed (offline?). Add weather tags manually.",
-          );
+          setWeatherMsg(t("context.wxError"));
         }
         return;
       case "done":
@@ -194,8 +192,8 @@ export default function ContextPanel({
         setWeatherStatus("done");
         setWeatherMsg(
           outcome.result.tags.length > 0
-            ? `Weather tags: ${outcome.result.tags.join(", ")}`
-            : "No strong weather signal",
+            ? t("context.wxTags", { tags: outcome.result.tags.join(", ") })
+            : t("context.wxNoSignal"),
         );
     }
   }
@@ -215,8 +213,8 @@ export default function ContextPanel({
   // floor of 20, with the remainder behind a "more" toggle. Grouped for display.
   const { visible, rest } = selectQuickAddTags(tagMeta, activeKeys);
   const shown = showMore ? [...visible, ...rest] : visible;
-  const quickGroups = GROUP_LABELS.map(({ group, label }) => ({
-    label,
+  const quickGroups = GROUP_LABELS.map(({ group, labelKey }) => ({
+    label: t(labelKey),
     tags: shown
       .filter((m) => m.group === group)
       .map((m) => ({ key: m.key, type: tagTypeForGroup(m.group) }))
@@ -359,13 +357,13 @@ export default function ContextPanel({
 
   return (
     <aside className="card flex h-fit flex-col gap-6 p-5">
-      <p className="label -mb-2">Trip details</p>
+      <p className="label -mb-2">{t("context.tripDetails")}</p>
 
       {/* Name is edited in the boarding-pass header (PassHeader). */}
 
       {/* Dates */}
       <div>
-        <SectionLabel>Dates</SectionLabel>
+        <SectionLabel>{t("context.dates")}</SectionLabel>
         <DateRangeField
           start={trip.startDate}
           end={trip.endDate}
@@ -390,14 +388,14 @@ export default function ContextPanel({
         />
         {days != null && (
           <p className="mt-1.5 font-mono text-xs text-ink-soft">
-            {days} night{days === 1 ? "" : "s"}
+            {t("context.nights", { count: days })}
           </p>
         )}
       </div>
 
       {/* Destinations */}
       <div>
-        <SectionLabel>Destinations</SectionLabel>
+        <SectionLabel>{t("context.destinations")}</SectionLabel>
         <ul className="mt-1.5 space-y-1">
           {trip.destinations.map((dest) => (
             <li key={dest.id} className="flex items-center gap-2 text-sm">
@@ -406,7 +404,7 @@ export default function ContextPanel({
               </span>
               <button
                 className={`chip shrink-0 ${dest.isPrimary ? "bg-vermilion-soft text-vermilion-deep" : "bg-paper-sunk text-ink-faint hover:text-ink"}`}
-                title="Set as primary destination"
+                title={t("context.setPrimaryTitle")}
                 onClick={() =>
                   update((d) => {
                     d.destinations.forEach(
@@ -415,11 +413,11 @@ export default function ContextPanel({
                   })
                 }
               >
-                {dest.isPrimary ? "Primary" : "Set primary"}
+                {dest.isPrimary ? t("context.primary") : t("context.setPrimary")}
               </button>
               <button
                 className="btn-ghost shrink-0 px-1.5 py-0.5"
-                aria-label={`Remove ${dest.label}`}
+                aria-label={t("context.removeDest", { label: dest.label })}
                 onClick={() => removeDestination(dest)}
               >
                 ✕
@@ -432,14 +430,14 @@ export default function ContextPanel({
 
       {/* Tags */}
       <div>
-        <SectionLabel>Tags</SectionLabel>
+        <SectionLabel>{t("context.tags")}</SectionLabel>
         <p className="mt-1 text-xs text-ink-soft">
-          Tags drive your suggestions. Tap one to add it.
+          {t("context.tagsHelp")}
         </p>
         <div className="mt-2 flex flex-wrap gap-1.5">
           {trip.tags.length === 0 && (
             <span className="font-mono text-xs text-ink-faint">
-              No tags yet
+              {t("context.noTags")}
             </span>
           )}
           {trip.tags.map((tag) => (
@@ -447,7 +445,7 @@ export default function ContextPanel({
               {tag.label}
               <button
                 className="ml-0.5 opacity-60 hover:opacity-100"
-                aria-label={`Remove tag ${tag.label}`}
+                aria-label={t("context.removeTag", { label: tag.label })}
                 onClick={() =>
                   update(
                     (d) =>
@@ -469,27 +467,27 @@ export default function ContextPanel({
             className="mt-3 font-mono text-[0.625rem] uppercase tracking-code text-ink-faint hover:text-ink-soft"
             onClick={() => setShowMore((v) => !v)}
           >
-            {showMore ? "− Fewer tags" : `+ ${rest.length} more tag${rest.length === 1 ? "" : "s"}`}
+            {showMore ? t("context.fewerTags") : t("context.moreTags", { count: rest.length })}
           </button>
         )}
       </div>
 
       {/* Weather lookup (Open-Meteo, user-triggered) */}
       <div>
-        <SectionLabel>Forecast</SectionLabel>
+        <SectionLabel>{t("context.forecast")}</SectionLabel>
         <button
           className="btn-secondary mt-1.5 w-full"
           onClick={() => void suggestWeather()}
           disabled={!hasDestinations || weatherStatus === "loading"}
-          title={!hasDestinations ? "Add a destination first" : undefined}
+          title={!hasDestinations ? t("context.addDestFirst") : undefined}
         >
           {weatherStatus === "loading"
-            ? "Checking forecast…"
-            : "☀ Refresh forecast"}
+            ? t("context.checkingForecast")
+            : t("context.refreshForecast")}
         </button>
         {hasDestinations && (
           <p className="mt-1.5 text-xs text-ink-faint">
-            Looked up automatically when you add a place or set dates.
+            {t("context.autoLookup")}
           </p>
         )}
         {weatherMsg && (
@@ -505,14 +503,14 @@ export default function ContextPanel({
         )}
         {!hasDestinations && (
           <p className="mt-1.5 text-xs text-ink-faint">
-            Add a destination to check its forecast.
+            {t("context.addDestForecast")}
           </p>
         )}
       </div>
 
       {/* Trip type — international + power/adapters */}
       <div className="border-t border-line pt-4">
-        <SectionLabel>Trip type</SectionLabel>
+        <SectionLabel>{t("context.tripType")}</SectionLabel>
         <label className="mt-1.5 flex items-start gap-2.5 text-sm">
           <input
             type="checkbox"
@@ -521,11 +519,11 @@ export default function ContextPanel({
             onChange={(e) => setInternational(e.target.checked)}
           />
           <span>
-            International trip
+            {t("context.international")}
             <span className="block text-xs text-ink-faint">
               {autoDetected
-                ? "Detected — destinations span multiple countries."
-                : "Tick if this trip crosses a border (adds plug & adapter info)."}
+                ? t("context.intlDetected")
+                : t("context.intlHint")}
             </span>
           </span>
         </label>
@@ -534,11 +532,11 @@ export default function ContextPanel({
           <div className="mt-3">
             {power.known.length === 0 && power.unknown.length === 0 ? (
               <p className="text-xs text-ink-faint">
-                Add a destination with a country to see plug types and voltage.
+                {t("context.addCountryForPlugs")}
               </p>
             ) : (
               <>
-                <p className="label mb-1.5">Power &amp; plugs</p>
+                <p className="label mb-1.5">{t("context.powerPlugs")}</p>
                 <ul className="space-y-1 text-sm">
                   {power.known.map((k) => (
                     <li
@@ -547,7 +545,7 @@ export default function ContextPanel({
                     >
                       <span className="min-w-0 truncate">{k.info.name}</span>
                       <span className="shrink-0 font-mono text-xs text-ink-soft">
-                        Type {k.info.types.join("/")} · {k.info.voltage}V
+                        {t("context.typePrefix")} {k.info.types.join("/")} · {k.info.voltage}V
                       </span>
                     </li>
                   ))}
@@ -558,15 +556,14 @@ export default function ContextPanel({
                     >
                       <span className="min-w-0 truncate">{countryName(code)}</span>
                       <span className="shrink-0 font-mono text-xs">
-                        no plug data
+                        {t("context.noPlugData")}
                       </span>
                     </li>
                   ))}
                 </ul>
                 {power.voltages.length > 0 && (
                   <p className="mt-1.5 text-xs text-ink-faint">
-                    Mains {power.voltages.join(" / ")}V — check your devices’
-                    range.
+                    {t("context.mains", { voltages: power.voltages.join(" / ") })}
                   </p>
                 )}
 
@@ -576,7 +573,7 @@ export default function ContextPanel({
                     htmlFor="home-country"
                     className="label mb-1.5 block"
                   >
-                    Your home country
+                    {t("context.homeCountry")}
                   </label>
                   <select
                     id="home-country"
@@ -584,7 +581,7 @@ export default function ContextPanel({
                     value={homeCountry}
                     onChange={(e) => setHomeCountry(e.target.value)}
                   >
-                    <option value="">Select…</option>
+                    <option value="">{t("context.selectPlaceholder")}</option>
                     {countryOptions.map((c) => (
                       <option key={c.code} value={c.code}>
                         {c.name}
@@ -596,16 +593,18 @@ export default function ContextPanel({
                     <ul className="mt-2 space-y-1 text-xs text-vermilion-deep">
                       {advice.needsAdapter && (
                         <li>
-                          Bring a plug adapter — destinations use type{" "}
-                          {advice.adapterFor.join("/")}, which your{" "}
-                          {advice.home.info.name} plugs don’t fit.
+                          {t("context.adviceAdapter", {
+                            types: advice.adapterFor.join("/"),
+                            home: advice.home.info.name,
+                          })}
                         </li>
                       )}
                       {advice.needsConverter && (
                         <li>
-                          Voltage differs ({advice.home.info.voltage}V at home vs{" "}
-                          {advice.voltageMismatch.join("/")}V) — check your
-                          devices are dual-voltage or bring a converter.
+                          {t("context.adviceConverter", {
+                            homeV: advice.home.info.voltage,
+                            destV: advice.voltageMismatch.join("/"),
+                          })}
                         </li>
                       )}
                     </ul>
@@ -615,8 +614,7 @@ export default function ContextPanel({
                     !advice.needsConverter &&
                     power.known.length > 0 && (
                       <p className="mt-2 text-xs text-ink-faint">
-                        Your plugs and voltage work at every destination — no
-                        adapter or converter needed.
+                        {t("context.adviceNone")}
                       </p>
                     )}
                 </div>
@@ -624,7 +622,7 @@ export default function ContextPanel({
                 {adapters.length > 0 && (
                   <div className="mt-3">
                     <p className="label mb-1.5">
-                      {advice.home ? "Adapters to pack" : "Adapters by plug type"}
+                      {advice.home ? t("context.adaptersToPack") : t("context.adaptersByType")}
                     </p>
                     <ul className="space-y-1.5">
                       {adapters.map((need) => {
@@ -635,7 +633,7 @@ export default function ContextPanel({
                             className="flex items-center justify-between gap-2"
                           >
                             <span className="min-w-0 text-xs">
-                              <span className="font-mono">Type {need.types.join("/")}</span>
+                              <span className="font-mono">{t("context.typePrefix")} {need.types.join("/")}</span>
                               <span className="block truncate text-ink-faint">
                                 {need.tripCountries.join(", ")}
                               </span>
@@ -645,7 +643,7 @@ export default function ContextPanel({
                               onClick={() => addAdapter(need)}
                               disabled={added}
                             >
-                              {added ? "Added" : "+ Add"}
+                              {added ? t("context.added") : t("context.add")}
                             </button>
                           </li>
                         );
@@ -670,20 +668,19 @@ export default function ContextPanel({
           }
         />
         <span>
-          I’ll do laundry on this trip
+          {t("context.laundry")}
           <span className="block text-xs text-ink-faint">
-            Packs fewer clothes. Leave off to pack full quantities even if laundry
-            is available.
+            {t("context.laundryHint")}
           </span>
         </span>
       </label>
 
       {pendingRemoval && (
         <ConfirmDialog
-          title={`Remove ${pendingRemoval.dest.label.split(",")[0]}?`}
-          confirmLabel={`Remove location with ${pendingRemoval.items.length} item${pendingRemoval.items.length === 1 ? "" : "s"}`}
+          title={t("context.removeTitle", { city: pendingRemoval.dest.label.split(",")[0] })}
+          confirmLabel={t("context.removeWithItems", { count: pendingRemoval.items.length })}
           secondary={{
-            label: "Remove location but keep items",
+            label: t("context.removeKeepItems"),
             onClick: () =>
               performRemoval(
                 pendingRemoval.dest,
@@ -692,7 +689,7 @@ export default function ContextPanel({
                 false,
               ),
           }}
-          cancelLabel="Cancel"
+          cancelLabel={t("common.cancel")}
           tone="danger"
           onConfirm={() =>
             performRemoval(
@@ -706,9 +703,11 @@ export default function ContextPanel({
           onCancel={() => setPendingRemoval(null)}
         >
           <p>
-            That leaves no destination needing{" "}
-            <strong>{pendingRemoval.dropped.join(", ")}</strong>. These items
-            were added for it — remove them with the city?
+            <Trans
+              i18nKey="context.removeBody"
+              values={{ tags: pendingRemoval.dropped.join(", ") }}
+              components={{ strong: <strong /> }}
+            />
           </p>
           <ul className="mt-2 flex flex-wrap gap-1.5">
             {pendingRemoval.items.map((i) => (

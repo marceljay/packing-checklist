@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { DayPicker, type DateRange } from 'react-day-picker';
 import 'react-day-picker/style.css';
 
@@ -39,6 +40,7 @@ const calendarTheme = {
 } as React.CSSProperties;
 
 export default function DateRangeField({ start, end, onChange }: Props) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -67,7 +69,7 @@ export default function DateRangeField({ start, end, onChange }: Props) {
 
   const label = from
     ? `${short(from)}${to ? ` → ${short(to)} ${to.getFullYear()}` : ' → …'}`
-    : 'Add dates';
+    : t('dates.addDates');
 
   function handleSelect(range: DateRange | undefined) {
     onChange(toISO(range?.from), toISO(range?.to));
@@ -91,7 +93,7 @@ export default function DateRangeField({ start, end, onChange }: Props) {
       {open && (
         <div
           role="dialog"
-          aria-label="Choose trip dates"
+          aria-label={t('dates.chooseAria')}
           className="rdp-popover absolute left-0 z-20 mt-1.5 max-w-[calc(100vw-2rem)] rounded-xl border border-line bg-paper-raised p-3 shadow-pass"
         >
           <DayPicker
@@ -112,7 +114,7 @@ export default function DateRangeField({ start, end, onChange }: Props) {
                 className="btn-ghost px-2 py-1 text-xs"
                 onClick={() => onChange(undefined, undefined)}
               >
-                Clear
+                {t('dates.clear')}
               </button>
             </div>
           )}

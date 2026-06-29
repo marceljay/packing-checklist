@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import type { Item, LibraryItem, WeightBandKey } from '../types';
 import { tripWeightGrams, weightBand } from '../types';
 import { useUnits, formatWeight } from '../lib/units';
@@ -21,12 +22,18 @@ export default function WeightSummary({
   items: Item[];
   library: Map<string, LibraryItem>;
 }) {
+  const { t } = useTranslation();
   const units = useUnits();
   const thresholds = useWeightThresholds();
   const grams = tripWeightGrams(items, library);
   if (grams <= 0) return null;
   const band = weightBand(grams, thresholds);
   const style = BAND_STYLE[band.key];
+  const ADVICE: Record<WeightBandKey, string> = {
+    light: 'weight.adviceLight',
+    medium: 'weight.adviceMedium',
+    heavy: 'weight.adviceHeavy',
+  };
 
   return (
     <section className="card flex items-center gap-4 p-4">
@@ -34,8 +41,8 @@ export default function WeightSummary({
         <span aria-hidden className="text-lg">{style.icon}</span>
         <span className="font-display text-xl font-bold tabular-nums">{formatWeight(grams, units)}</span>
       </div>
-      <span className={`chip ${style.chip}`}>{band.label}</span>
-      <p className="min-w-0 flex-1 text-sm text-ink-soft">{band.advice}</p>
+      <span className={`chip ${style.chip}`}>{t(`weight.${band.key}`)}</span>
+      <p className="min-w-0 flex-1 text-sm text-ink-soft">{t(ADVICE[band.key])}</p>
     </section>
   );
 }

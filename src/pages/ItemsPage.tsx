@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useTranslation, Trans } from 'react-i18next';
 import { useAppData } from '../db/store';
 import { orderedCategories, type Category, type LibraryItem } from '../types';
 import { searchLibrary } from '../types';
@@ -30,6 +31,7 @@ function LibraryItemRow({
   suggestions: string[];
   categories: Category[];
 }) {
+  const { t } = useTranslation();
   const [panel, setPanel] = useState<'none' | 'info' | 'edit'>('none');
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -65,7 +67,7 @@ function LibraryItemRow({
         <div className="flex shrink-0 items-center gap-1">
           <button
             className="btn-ghost px-1.5 py-1"
-            aria-label={`Info about ${item.name}`}
+            aria-label={t('items.infoAria', { name: item.name })}
             aria-expanded={panel === 'info'}
             onClick={() => setPanel((p) => (p === 'info' ? 'none' : 'info'))}
           >
@@ -73,14 +75,14 @@ function LibraryItemRow({
           </button>
           <button
             className="btn-ghost px-1.5 py-1"
-            aria-label={`Edit ${item.name}`}
+            aria-label={t('items.editAria', { name: item.name })}
             onClick={() => setPanel('edit')}
           >
             <EditIcon />
           </button>
           <button
             className="btn-danger px-1.5 py-1"
-            aria-label={`Remove ${item.name} from your library`}
+            aria-label={t('items.removeAria', { name: item.name })}
             onClick={() => setConfirmDelete(true)}
           >
             <DeleteIcon />
@@ -90,43 +92,43 @@ function LibraryItemRow({
 
       {panel === 'info' && (
         <dl className="grid grid-cols-[5rem_1fr] gap-x-3 gap-y-1 border-t border-line bg-paper-sunk/40 px-4 py-3 text-sm">
-          <dt className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">Type</dt>
-          <dd className="text-ink-soft">{item.custom ? 'User created (Custom)' : 'App default item'}</dd>
-          <dt className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">Category</dt>
+          <dt className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">{t('items.type')}</dt>
+          <dd className="text-ink-soft">{item.custom ? t('items.typeCustom') : t('items.typeDefault')}</dd>
+          <dt className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">{t('items.categoryLabel')}</dt>
           <dd className="text-ink-soft">{item.category}</dd>
           {item.essential && (
             <>
-              <dt className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">Essential</dt>
-              <dd className="text-ink-soft">Suggested on every trip</dd>
+              <dt className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">{t('items.essential')}</dt>
+              <dd className="text-ink-soft">{t('items.essentialDesc')}</dd>
             </>
           )}
           {item.quantity?.kind === 'perTrip' && (
             <>
-              <dt className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">Default qty</dt>
+              <dt className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">{t('items.defaultQty')}</dt>
               <dd className="text-ink-soft">{item.quantity.count}</dd>
             </>
           )}
           {typeof item.weight === 'number' && (
             <>
-              <dt className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">Weight</dt>
+              <dt className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">{t('items.weightLabel')}</dt>
               <dd className="text-ink-soft">{item.weight} g</dd>
             </>
           )}
           {item.count > 0 && (
             <>
-              <dt className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">Used</dt>
+              <dt className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">{t('items.used')}</dt>
               <dd className="text-ink-soft">{item.count}×</dd>
             </>
           )}
-          <dt className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">Notes</dt>
+          <dt className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">{t('items.notesLabel')}</dt>
           <dd className="whitespace-pre-wrap text-ink-soft">{item.notes || '—'}</dd>
         </dl>
       )}
 
       {confirmDelete && (
         <ConfirmDialog
-          title={`Remove “${item.name}”?`}
-          confirmLabel="Remove item"
+          title={t('items.removeTitle', { name: item.name })}
+          confirmLabel={t('items.removeConfirm')}
           tone="danger"
           onCancel={() => setConfirmDelete(false)}
           onConfirm={() => {
@@ -135,8 +137,8 @@ function LibraryItemRow({
           }}
         >
           <p>
-            Removes <strong>{item.name}</strong> from your library. It stays on any trip that
-            already has it.{item.custom ? '' : ' You can bring built-in items back with “Return to defaults”.'}
+            <Trans i18nKey="items.removeBody" values={{ name: item.name }} components={{ strong: <strong /> }} />
+            {item.custom ? '' : ` ${t('items.removeBodyDefault')}`}
           </p>
         </ConfirmDialog>
       )}
@@ -156,6 +158,7 @@ function LibraryItemEdit({
   categories: Category[];
   onDone: () => void;
 }) {
+  const { t } = useTranslation();
   const [name, setName] = useState(item.name);
   const [category, setCategory] = useState<Category>(item.category);
   const [tags, setTags] = useState<string[]>(item.tagKeys);
@@ -188,7 +191,7 @@ function LibraryItemEdit({
     }
     const res = editLibraryItem(item.id, patch);
     if (!res.ok) {
-      setError('Another item already has that name.');
+      setError(t('items.nameTaken'));
       return;
     }
     onDone();
@@ -201,7 +204,7 @@ function LibraryItemEdit({
           className="input min-w-0"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          aria-label="Item name"
+          aria-label={t('items.nameAria')}
           autoFocus
         />
         <Select
@@ -209,7 +212,7 @@ function LibraryItemEdit({
           value={category}
           onChange={(v) => setCategory(v as Category)}
           options={categories}
-          ariaLabel="Category"
+          ariaLabel={t('items.category')}
         />
         <input
           type="number"
@@ -218,9 +221,9 @@ function LibraryItemEdit({
           className="input min-w-0"
           value={qty}
           onChange={(e) => setQty(e.target.value)}
-          placeholder="Qty"
-          aria-label="Default quantity"
-          title="Default quantity when added to a trip (blank = 1, or its built-in rule)"
+          placeholder={t('items.qtyPlaceholder')}
+          aria-label={t('items.qtyAria')}
+          title={t('items.qtyTip')}
         />
         <input
           type="number"
@@ -229,18 +232,18 @@ function LibraryItemEdit({
           className="input min-w-0"
           value={weight}
           onChange={(e) => setWeight(e.target.value)}
-          placeholder="Weight g"
-          aria-label="Weight in grams"
-          title="Per-unit weight in grams (blank = unset)"
+          placeholder={t('items.weightPlaceholder')}
+          aria-label={t('items.weightAria')}
+          title={t('items.weightTip')}
         />
       </div>
-      <TagEditor value={tags} onChange={setTags} suggestions={suggestions} ariaLabel={`Tags for ${item.name}`} />
+      <TagEditor value={tags} onChange={setTags} suggestions={suggestions} ariaLabel={t('items.tagsAria', { name: item.name })} />
       <textarea
         className="input min-h-[3rem] resize-y"
         value={notes}
         onChange={(e) => setNotes(e.target.value)}
-        placeholder="Notes / description (optional)"
-        aria-label={`Notes for ${item.name}`}
+        placeholder={t('items.notesPlaceholder')}
+        aria-label={t('items.notesAria', { name: item.name })}
       />
       <label className="flex items-center gap-2 text-sm">
         <input
@@ -250,17 +253,17 @@ function LibraryItemEdit({
           onChange={(e) => setEssential(e.target.checked)}
         />
         <span>
-          Essential
-          <span className="ml-1.5 text-xs text-ink-faint">suggested on every trip</span>
+          {t('items.essential')}
+          <span className="ml-1.5 text-xs text-ink-faint">{t('items.essentialSuffix')}</span>
         </span>
       </label>
       {error && <p className="font-mono text-xs text-vermilion">{error}</p>}
       <div className="flex items-center justify-end gap-2">
         <button className="btn-ghost text-xs" onClick={onDone}>
-          Cancel
+          {t('common.cancel')}
         </button>
         <button className="btn-primary text-xs" onClick={save} disabled={!name.trim()}>
-          Save
+          {t('common.save')}
         </button>
       </div>
     </div>
@@ -309,6 +312,7 @@ function Section({
 // ---------------------------------------------------------------------------
 
 function AddItemForm({ suggestions, categories }: { suggestions: string[]; categories: Category[] }) {
+  const { t } = useTranslation();
   const [name, setName] = useState('');
   const [category, setCategory] = useState<Category>(categories[0]);
   const [tags, setTags] = useState<string[]>([]);
@@ -331,7 +335,7 @@ function AddItemForm({ suggestions, categories }: { suggestions: string[]; categ
     <section className="card overflow-hidden">
       <div className="flex items-center gap-2.5 p-4">
         <span aria-hidden className="h-4 w-1 rounded-full bg-vermilion" />
-        <h2 className="font-display text-base font-bold">Add custom item</h2>
+        <h2 className="font-display text-base font-bold">{t('items.addCustom')}</h2>
       </div>
       <form
         onSubmit={handleSubmit}
@@ -339,12 +343,12 @@ function AddItemForm({ suggestions, categories }: { suggestions: string[]; categ
       >
         <div>
           <label className="label mb-1" htmlFor="add-item-name">
-            Name
+            {t('items.name')}
           </label>
           <input
             id="add-item-name"
             className="input"
-            placeholder="e.g. Packing cubes"
+            placeholder={t('items.namePlaceholder')}
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
@@ -352,23 +356,23 @@ function AddItemForm({ suggestions, categories }: { suggestions: string[]; categ
         </div>
         <div>
           <label className="label mb-1" htmlFor="add-item-category">
-            Category
+            {t('items.category')}
           </label>
           <Select
             id="add-item-category"
             value={category}
             onChange={(v) => setCategory(v as Category)}
             options={categories}
-            ariaLabel="Category"
+            ariaLabel={t('items.category')}
           />
         </div>
         <div>
-          <span className="label mb-1 block">Tags</span>
-          <TagEditor value={tags} onChange={setTags} suggestions={suggestions} ariaLabel="Tags for new item" />
+          <span className="label mb-1 block">{t('items.tags')}</span>
+          <TagEditor value={tags} onChange={setTags} suggestions={suggestions} ariaLabel={t('items.tagsNewAria')} />
         </div>
         <div>
           <label className="label mb-1" htmlFor="add-item-weight">
-            Weight (g)
+            {t('items.weightG')}
           </label>
           <input
             id="add-item-weight"
@@ -376,13 +380,13 @@ function AddItemForm({ suggestions, categories }: { suggestions: string[]; categ
             min="1"
             inputMode="numeric"
             className="input"
-            placeholder="e.g. 150"
+            placeholder={t('items.weightPlaceholder')}
             value={weight}
             onChange={(e) => setWeight(e.target.value)}
           />
         </div>
         <button type="submit" className="btn-primary sm:mt-[1.4rem]">
-          Add
+          {t('items.add')}
         </button>
       </form>
     </section>
@@ -394,6 +398,7 @@ function AddItemForm({ suggestions, categories }: { suggestions: string[]; categ
 // ---------------------------------------------------------------------------
 
 export default function ItemsPage() {
+  const { t } = useTranslation();
   const data = useAppData();
   const library = useMemo(
     () => data.library.map((r) => ({ ...r, tagKeys: r.tagKeys ?? [], custom: r.custom ?? true })),
@@ -413,7 +418,7 @@ export default function ItemsPage() {
 
   const results = useMemo(() => {
     let r = searchLibrary(library, query);
-    if (selectedTags.length > 0) r = r.filter((i) => selectedTags.some((t) => i.tagKeys.includes(t)));
+    if (selectedTags.length > 0) r = r.filter((i) => selectedTags.some((tg) => i.tagKeys.includes(tg)));
     if (essentialOnly) r = r.filter((i) => i.essential);
     return r;
   }, [library, query, selectedTags, essentialOnly]);
@@ -427,8 +432,8 @@ export default function ItemsPage() {
     }))
     .filter((g) => g.items.length > 0);
 
-  function toggleTag(t: string) {
-    setSelectedTags((cur) => (cur.includes(t) ? cur.filter((x) => x !== t) : [...cur, t]));
+  function toggleTag(tg: string) {
+    setSelectedTags((cur) => (cur.includes(tg) ? cur.filter((x) => x !== tg) : [...cur, tg]));
   }
 
   return (
@@ -441,10 +446,10 @@ export default function ItemsPage() {
           <input
             type="search"
             className="input pl-8"
-            placeholder="Search items, tags…"
+            placeholder={t('items.searchPlaceholder')}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            aria-label="Search items"
+            aria-label={t('items.searchAria')}
           />
           <span
             aria-hidden
@@ -454,7 +459,7 @@ export default function ItemsPage() {
           </span>
         </div>
         <button className="btn-secondary shrink-0 text-sm" onClick={() => setManagerOpen(true)}>
-          Edit tags &amp; categories
+          {t('items.editTagsCats')}
         </button>
       </div>
 
@@ -462,7 +467,7 @@ export default function ItemsPage() {
           not a tag, but it filters here alongside tags). */}
       {(tagKeys.length > 0 || hasEssentials) && (
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="label mr-1">Filter</span>
+          <span className="label mr-1">{t('items.filter')}</span>
           {hasEssentials && (
             <button
               aria-pressed={essentialOnly}
@@ -473,21 +478,21 @@ export default function ItemsPage() {
                   : 'bg-vermilion-soft text-vermilion-deep hover:bg-vermilion/20'
               }`}
             >
-              essentials
+              {t('items.essentials')}
             </button>
           )}
-          {tagKeys.map((t) => {
-            const on = selectedTags.includes(t);
+          {tagKeys.map((tg) => {
+            const on = selectedTags.includes(tg);
             return (
               <button
-                key={t}
+                key={tg}
                 aria-pressed={on}
-                onClick={() => toggleTag(t)}
+                onClick={() => toggleTag(tg)}
                 className={`chip transition-colors ${
                   on ? 'bg-ink text-paper-raised' : 'bg-paper-sunk text-ink-soft hover:bg-line'
                 }`}
               >
-                {t}
+                {tg}
               </button>
             );
           })}
@@ -499,16 +504,16 @@ export default function ItemsPage() {
                 setEssentialOnly(false);
               }}
             >
-              Clear
+              {t('items.clear')}
             </button>
           )}
         </div>
       )}
 
       {library.length === 0 ? (
-        <p className="text-sm text-ink-soft">No items yet — add one above.</p>
+        <p className="text-sm text-ink-soft">{t('items.emptyNone')}</p>
       ) : filtering && results.length === 0 ? (
-        <p className="text-sm text-ink-soft">No items match your filter.</p>
+        <p className="text-sm text-ink-soft">{t('items.emptyFilter')}</p>
       ) : (
         // Two-column masonry on wider screens, single column on phones. Multi-
         // column (not grid) so collapsing one card doesn't leave a tall gap.

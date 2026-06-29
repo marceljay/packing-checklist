@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation, Trans } from 'react-i18next';
 import { tagKey, type TagGroup } from '../types';
 import { useAppData } from '../db/store';
 import { setTagGroup, setTagDefault, renameTag, deleteTag } from '../db/tags';
@@ -12,13 +13,7 @@ interface Props {
   onClose: () => void;
 }
 
-const GROUPS: { value: TagGroup; label: string }[] = [
-  { value: 'activity', label: 'Activity' },
-  { value: 'weather', label: 'Weather' },
-  { value: 'other', label: 'Other' },
-];
-const labelFor = (g: TagGroup) => GROUPS.find((x) => x.value === g)?.label ?? 'Other';
-const groupFor = (label: string) => GROUPS.find((x) => x.label === label)?.value ?? 'other';
+const GROUP_VALUES: TagGroup[] = ['activity', 'weather', 'other'];
 
 /**
  * Edit one tag's registry metadata: its group, whether it's a trip-page default,
@@ -27,10 +22,20 @@ const groupFor = (label: string) => GROUPS.find((x) => x.label === label)?.value
  * Reads the live registry so external edits stay in sync; rename/delete close it.
  */
 export default function TagEditorDialog({ tag, onClose }: Props) {
+  const { t } = useTranslation();
   const { tagMeta } = useAppData();
   const meta = tagMeta.find((m) => m.key === tag);
   const group = meta?.group ?? 'other';
   const isDefault = meta?.default ?? false;
+
+  // Group labels are localised; map between the displayed label and the stored value.
+  const groupLabel: Record<TagGroup, string> = {
+    activity: t('tagDialog.groupActivity'),
+    weather: t('tagDialog.groupWeather'),
+    other: t('tagDialog.groupOther'),
+  };
+  const labelFor = (g: TagGroup) => groupLabel[g] ?? groupLabel.other;
+  const groupFor = (label: string) => GROUP_VALUES.find((v) => groupLabel[v] === label) ?? 'other';
 
   const [name, setName] = useState(tag);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -57,8 +62,8 @@ export default function TagEditorDialog({ tag, onClose }: Props) {
   if (confirmDelete) {
     return (
       <ConfirmDialog
-        title={`Delete “${tag}”?`}
-        confirmLabel="Delete tag"
+        title={t('tagDialog.deleteTitle', { tag })}
+        confirmLabel={t('tagDialog.deleteConfirm')}
         tone="danger"
         onCancel={() => setConfirmDelete(false)}
         onConfirm={() => {
@@ -67,8 +72,7 @@ export default function TagEditorDialog({ tag, onClose }: Props) {
         }}
       >
         <p>
-          Removes <strong>{tag}</strong> from all trips and items. Items keep their place; any
-          item left with no tags moves to <strong>misc</strong>.
+          <Trans i18nKey="tagDialog.deleteBody" values={{ tag }} components={{ strong: <strong /> }} />
         </p>
       </ConfirmDialog>
     );
@@ -81,25 +85,25 @@ export default function TagEditorDialog({ tag, onClose }: Props) {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div role="dialog" aria-modal="true" aria-label={`Edit tag ${tag}`} className="card w-full max-w-sm overflow-hidden">
+      <div role="dialog" aria-modal="true" aria-label={t('tagDialog.editTagAria', { tag })} className="card w-full max-w-sm overflow-hidden">
         <div aria-hidden className="airmail h-1 w-full" />
         <div className="flex flex-col gap-4 p-5">
           <div className="flex items-center justify-between gap-2">
-            <h2 className="font-display text-lg font-bold leading-tight">Edit tag</h2>
+            <h2 className="font-display text-lg font-bold leading-tight">{t('tagDialog.title')}</h2>
             <span className="chip bg-airblue-soft text-airblue">{tag}</span>
           </div>
 
           {/* Group */}
           <div>
-            <span className="label mb-1 block">Group</span>
+            <span className="label mb-1 block">{t('tagDialog.group')}</span>
             <Select
               value={labelFor(group)}
               onChange={(v) => setTagGroup(tag, groupFor(v))}
-              options={GROUPS.map((g) => g.label)}
-              ariaLabel="Tag group"
+              options={GROUP_VALUES.map((g) => groupLabel[g])}
+              ariaLabel={t('tagDialog.tagGroupAria')}
             />
             <p className="mt-1 text-xs text-ink-faint">
-              Groups the chip on the trip page (Activities / Weather / Other).
+              {t('tagDialog.groupHelp')}
             </p>
           </div>
 
@@ -119,16 +123,16 @@ export default function TagEditorDialog({ tag, onClose }: Props) {
               <path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z" />
             </svg>
             <span>
-              {isDefault ? 'Pinned to the trip page' : 'Pin to the trip page'}
+              {isDefault ? t('tagDialog.pinned') : t('tagDialog.pin')}
               <span className="block text-xs opacity-80">
-                Default tags show as quick-add chips on every trip.
+                {t('tagDialog.pinHelp')}
               </span>
             </span>
           </button>
 
           {/* Rename */}
           <div>
-            <span className="label mb-1 block">Rename</span>
+            <span className="label mb-1 block">{t('tagDialog.rename')}</span>
             <div className="flex gap-2">
               <input
                 className="input min-w-0 flex-1"
@@ -140,24 +144,24 @@ export default function TagEditorDialog({ tag, onClose }: Props) {
                     saveRename();
                   }
                 }}
-                aria-label="Tag name"
+                aria-label={t('tagDialog.nameAria')}
               />
               <button className="btn-secondary text-sm" onClick={saveRename} disabled={!canRename}>
-                Save
+                {t('common.save')}
               </button>
             </div>
             <p className="mt-1 text-xs text-ink-faint">
-              Renames everywhere — on every trip and library item.
+              {t('tagDialog.renameHelp')}
             </p>
           </div>
 
           {/* Footer: delete + done */}
           <div className="mt-1 flex items-center justify-between gap-2 border-t border-line pt-3">
             <button className="btn-danger text-sm" onClick={() => setConfirmDelete(true)}>
-              Delete
+              {t('tagDialog.delete')}
             </button>
             <button ref={closeRef} className="btn-primary text-sm" onClick={onClose}>
-              Done
+              {t('tagDialog.done')}
             </button>
           </div>
         </div>

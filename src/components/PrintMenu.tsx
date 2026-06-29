@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   /** Both items run this — the browser print dialog is also where "Save as PDF" lives. */
@@ -11,6 +12,7 @@ interface Props {
 /** "Print ▾" dropdown offering Print and Save as PDF (both open the print dialog).
  *  Closes on outside-click / Escape, mirroring SettingsMenu. */
 export default function PrintMenu({ onPrint, disabled = false, triggerClassName = '' }: Props) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -43,10 +45,10 @@ export default function PrintMenu({ onPrint, disabled = false, triggerClassName 
         aria-haspopup="menu"
         aria-expanded={open}
         disabled={disabled}
-        title={disabled ? 'Add items first' : undefined}
+        title={disabled ? t('printMenu.addItemsFirst') : undefined}
         onClick={() => setOpen((o) => !o)}
       >
-        Print
+        {t('printMenu.print')}
         <span aria-hidden className="text-[0.625rem]">
           ▾
         </span>
@@ -57,8 +59,8 @@ export default function PrintMenu({ onPrint, disabled = false, triggerClassName 
           role="menu"
           className="absolute right-0 top-full z-20 mt-2 w-44 overflow-hidden rounded border border-line bg-paper-raised shadow-pass"
         >
-          <MenuItem onClick={run}>Print…</MenuItem>
-          <MenuItem onClick={run}>Save as PDF…</MenuItem>
+          <MenuItem onClick={run}>{t('printMenu.printItem')}</MenuItem>
+          <MenuItem onClick={run}>{t('printMenu.savePdf')}</MenuItem>
         </div>
       )}
     </div>

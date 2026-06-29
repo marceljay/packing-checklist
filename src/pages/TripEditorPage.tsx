@@ -191,7 +191,7 @@ export default function TripEditorPage() {
             <span className="hidden sm:inline">{t('editor.allTrips')}</span>
           </Link>
 
-          <div role="tablist" aria-label="Editor mode" className="contents">
+          <div role="tablist" aria-label={t('editor.modeAria')} className="contents">
             {(['plan', 'checklist'] as EditorMode[]).map((m) => (
               <button
                 key={m}

@@ -73,7 +73,7 @@ export default function SettingsMenu() {
       if (!res.ok) throw new Error();
       downloadBlob('packing-checklist.html', await res.blob());
     } catch {
-      alert('The offline app file isn’t available here.');
+      alert(t('settingsMenu.offlineUnavailable'));
     }
   }
 
@@ -85,7 +85,7 @@ export default function SettingsMenu() {
       const id = await importTripFromText(text);
       navigate(`/trip/${id}`);
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Could not import that file.');
+      alert(e instanceof Error ? e.message : t('settingsMenu.importFail'));
     }
   }
 
@@ -105,9 +105,9 @@ export default function SettingsMenu() {
     if (text == null) return;
     try {
       const n = importAllTripsFromText(text);
-      alert(n > 0 ? `Imported ${n} trip${n === 1 ? '' : 's'}.` : 'No trips found in that file.');
+      alert(n > 0 ? t('settingsMenu.importedTrips', { count: n }) : t('settingsMenu.noTripsInFile'));
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Could not import that file.');
+      alert(e instanceof Error ? e.message : t('settingsMenu.importFail'));
     }
   }
 
@@ -119,7 +119,7 @@ export default function SettingsMenu() {
       const incoming = parseLibrary(text);
       setLibImport({ plan: planLibraryImport(incoming.items, listLibrary()), incoming });
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Could not import that file.');
+      alert(e instanceof Error ? e.message : t('settingsMenu.importFail'));
     }
   }
 
@@ -127,13 +127,13 @@ export default function SettingsMenu() {
     if (!libImport) return;
     const { plan, incoming } = libImport;
     const newCatsLine = (cats: string[]) =>
-      cats.length > 0 ? `\n\n➕ New categories created: ${cats.join(', ')}` : '';
+      cats.length > 0 ? `\n\n${t('settingsMenu.newCats', { cats: cats.join(', ') })}` : '';
     if (mode === 'replace') {
       const { count, newCategories } = replaceLibrary(incoming.items, incoming.tagMeta, incoming.customCategories);
-      alert(`Replaced your library with ${count} item${count === 1 ? '' : 's'}.${newCatsLine(newCategories)}`);
+      alert(`${t('settingsMenu.replacedLib', { count })}${newCatsLine(newCategories)}`);
     } else {
       const { added, replaced, skipped, newCategories } = applyLibraryImport(plan, resolutions, incoming.tagMeta, incoming.customCategories);
-      alert(`Imported: ${added} added, ${replaced} replaced, ${skipped} skipped.${newCatsLine(newCategories)}`);
+      alert(`${t('settingsMenu.importedLib', { added, replaced, skipped })}${newCatsLine(newCategories)}`);
     }
     setLibImport(null);
   }

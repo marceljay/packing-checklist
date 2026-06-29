@@ -4,15 +4,18 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [0.9.0] — 2026-06-29
+
 ### Added
-- **UI language swapper (in progress).** The interface can switch between
-  English, German, French, Spanish, and Portuguese (react-i18next), chosen from
-  the header menu and remembered per browser; on first visit it follows the
-  browser language. Only UI chrome is translated — item names, categories, tags,
-  and notes stay in their original language. This first pass covers the header,
-  trips list, trip editor (boarding pass, weather card, recommended, add-item,
-  checklist), and settings/about; the planning sidebar, library manager, and
-  secondary dialogs are still to come.
+- **UI language swapper.** The interface can switch between English, German,
+  French, Spanish, and Portuguese (react-i18next), chosen from the header menu
+  and remembered per browser; on first visit it follows the browser language.
+  Coverage spans the whole UI — header, trips list, the full trip editor
+  (boarding pass, weather card incl. tooltips, planning sidebar, recommended,
+  add-item, checklist), the item-library manager, print sheet, and every dialog.
+  Only UI chrome is translated: item names, categories, tags, and notes stay in
+  their original language (that text is data, not chrome). A test keeps the five
+  locale files in sync.
 - **More international essentials.** International trips now suggest **travel
   insurance** and a **traveller-declarations** reminder (ESTA/eTA, customs/health
   forms) alongside the existing visa/passport checks. The visa-check item also

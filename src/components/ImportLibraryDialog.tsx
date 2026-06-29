@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation, Trans } from 'react-i18next';
 import type { LibraryImportPlan, ConflictResolution } from '../db/libraryTransfer';
 
 type Mode = 'merge' | 'replace';
@@ -12,14 +13,15 @@ interface Props {
   onApply: (mode: Mode, resolutions: ConflictResolution[]) => void;
 }
 
-const CHOICES: { value: ConflictResolution; label: string }[] = [
-  { value: 'mine', label: 'Mine' },
-  { value: 'both', label: 'Both' },
-  { value: 'theirs', label: 'Theirs' },
+const CHOICES: { value: ConflictResolution; labelKey: string }[] = [
+  { value: 'mine', labelKey: 'importLib.choiceMine' },
+  { value: 'both', labelKey: 'importLib.choiceBoth' },
+  { value: 'theirs', labelKey: 'importLib.choiceTheirs' },
 ];
 
 /** Import-library picker: choose merge (with per-conflict resolution) or replace-all. */
 export default function ImportLibraryDialog({ plan, incomingCount, onCancel, onApply }: Props) {
+  const { t } = useTranslation();
   const [mode, setMode] = useState<Mode>('merge');
   // Default conflicts to "both" — the only non-destructive choice (keeps mine, adds theirs).
   const [resolutions, setResolutions] = useState<ConflictResolution[]>(
@@ -51,12 +53,12 @@ export default function ImportLibraryDialog({ plan, incomingCount, onCancel, onA
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Import library"
+        aria-label={t('importLib.title')}
         className="card flex max-h-[85vh] w-full max-w-md flex-col overflow-hidden"
       >
         <div aria-hidden className="airmail h-1 w-full" />
         <div className="flex flex-col gap-4 overflow-y-auto p-5">
-          <h2 className="font-display text-lg font-bold leading-tight">Import library</h2>
+          <h2 className="font-display text-lg font-bold leading-tight">{t('importLib.title')}</h2>
 
           {/* Mode */}
           <div className="flex rounded-full border border-line p-0.5 text-sm font-medium">
@@ -69,7 +71,7 @@ export default function ImportLibraryDialog({ plan, incomingCount, onCancel, onA
                   mode === m ? 'bg-ink text-paper-raised' : 'text-ink-soft hover:text-ink'
                 }`}
               >
-                {m === 'merge' ? 'Merge' : 'Replace all'}
+                {m === 'merge' ? t('importLib.merge') : t('importLib.replaceAll')}
               </button>
             ))}
           </div>
@@ -77,37 +79,34 @@ export default function ImportLibraryDialog({ plan, incomingCount, onCancel, onA
           {mode === 'replace' ? (
             <div className="text-sm text-ink-soft">
               <p>
-                Replace your current library with the <strong>{incomingCount}</strong> items in this
-                file.
+                <Trans i18nKey="importLib.replaceBody" values={{ count: incomingCount }} components={{ strong: <strong /> }} />
               </p>
               <p className="mt-1.5 text-xs text-vermilion-deep">
-                Items your trips use that aren’t in this file will show as missing until re-added.
-                Built-in defaults reappear on next load.
+                {t('importLib.replaceWarn')}
               </p>
             </div>
           ) : (
             <div className="flex flex-col gap-3 text-sm">
               <p className="text-ink-soft">
-                <strong>{plan.fresh.length}</strong> new item{plan.fresh.length === 1 ? '' : 's'} to
-                add
-                {plan.idMatches.length > 0 && `, ${plan.idMatches.length} already in your library`}.
+                {t('importLib.mergeNew', { count: plan.fresh.length })}
+                {plan.idMatches.length > 0 && t('importLib.mergeAlsoExisting', { count: plan.idMatches.length })}.
               </p>
 
               {plan.conflicts.length > 0 && (
                 <div>
                   <div className="mb-1.5 flex items-center justify-between gap-2">
                     <span className="label">
-                      {plan.conflicts.length} name conflict{plan.conflicts.length === 1 ? '' : 's'}
+                      {t('importLib.nameConflicts', { count: plan.conflicts.length })}
                     </span>
                     <span className="flex items-center gap-1 font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">
-                      all:
+                      {t('importLib.all')}
                       {CHOICES.map((c) => (
                         <button
                           key={c.value}
                           className="rounded px-1 py-0.5 hover:bg-paper-sunk hover:text-ink"
                           onClick={() => setAll(c.value)}
                         >
-                          {c.label}
+                          {t(c.labelKey)}
                         </button>
                       ))}
                     </span>
@@ -133,7 +132,7 @@ export default function ImportLibraryDialog({ plan, incomingCount, onCancel, onA
                                   : 'text-ink-soft hover:bg-paper-sunk'
                               }`}
                             >
-                              {choice.label}
+                              {t(choice.labelKey)}
                             </button>
                           ))}
                         </div>
@@ -141,7 +140,7 @@ export default function ImportLibraryDialog({ plan, incomingCount, onCancel, onA
                     ))}
                   </ul>
                   <p className="mt-1.5 text-xs text-ink-faint">
-                    Mine = keep yours · Theirs = overwrite with imported · Both = keep as two items.
+                    {t('importLib.conflictHelp')}
                   </p>
                 </div>
               )}
@@ -150,10 +149,10 @@ export default function ImportLibraryDialog({ plan, incomingCount, onCancel, onA
 
           <div className="flex items-center justify-end gap-2">
             <button className="btn-ghost text-sm" onClick={onCancel}>
-              Cancel
+              {t('common.cancel')}
             </button>
             <button className="btn-primary text-sm" onClick={() => onApply(mode, resolutions)}>
-              {mode === 'replace' ? 'Replace library' : 'Import'}
+              {mode === 'replace' ? t('importLib.replaceLibrary') : t('importLib.import')}
             </button>
           </div>
         </div>

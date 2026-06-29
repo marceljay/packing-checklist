@@ -1,4 +1,5 @@
-import type { Trip, LibraryItem, CityForecast, WeatherBasis } from '../types';
+import { useTranslation } from 'react-i18next';
+import type { Trip, LibraryItem, CityForecast, WeatherBasis, WeightBandKey } from '../types';
 import {
   resolveItems,
   resolvedByCategory,
@@ -15,10 +16,16 @@ interface Props {
   library: Map<string, LibraryItem>;
 }
 
-const BASIS_LABEL: Record<WeatherBasis, string> = {
-  forecast: 'Forecast',
-  typical: 'Typical',
-  mixed: 'Forecast + typical',
+const BASIS_KEY: Record<WeatherBasis, string> = {
+  forecast: 'weather.basisForecast',
+  typical: 'weather.basisTypical',
+  mixed: 'weather.basisMixed',
+};
+
+const BAND_KEY: Record<WeightBandKey, string> = {
+  light: 'weight.light',
+  medium: 'weight.medium',
+  heavy: 'weight.heavy',
 };
 
 function fmt(d?: string): string {
@@ -37,12 +44,13 @@ function fmt(d?: string): string {
  * browser's print dialog — outputs just this clean, hand-checkable sheet.
  */
 export default function PrintSheet({ trip, library }: Props) {
+  const { t } = useTranslation();
   const units = useUnits();
   const groups = resolvedByCategory(resolveItems(trip.items, library));
   const days = tripDurationDays(trip);
   const dateLine = [fmt(trip.startDate), fmt(trip.endDate)].join(' → ');
   const cities = trip.weather?.cities ?? [];
-  const t = (celsius: number) => convTemp(celsius, units);
+  const temp = (celsius: number) => convTemp(celsius, units);
   const thresholds = useWeightThresholds();
   const grams = tripWeightGrams(trip.items, library);
   const band = weightBand(grams, thresholds);
@@ -53,19 +61,19 @@ export default function PrintSheet({ trip, library }: Props) {
         <div className="flex items-end justify-between">
           <div>
             <p className="font-mono text-[0.625rem] uppercase tracking-code text-ink-soft">
-              Packing list
+              {t('pass.packingList')}
             </p>
-            <h1 className="font-display text-2xl font-bold">{trip.name || 'Untitled trip'}</h1>
+            <h1 className="font-display text-2xl font-bold">{trip.name || t('print.untitled')}</h1>
             <p className="mt-1 font-mono text-xs text-ink-soft">
               {dateLine}
-              {days != null ? ` · ${days} night${days === 1 ? '' : 's'}` : ''}
+              {days != null ? ` · ${t('context.nights', { count: days })}` : ''}
             </p>
           </div>
           <span className="code text-3xl">{destinationCode(trip)}</span>
         </div>
         {trip.tags.length > 0 && (
           <p className="mt-2 font-mono text-[0.6875rem] uppercase tracking-wide text-ink-soft">
-            {trip.tags.map((t) => t.label).join(' · ')}
+            {trip.tags.map((tag) => tag.label).join(' · ')}
           </p>
         )}
       </header>
@@ -73,12 +81,12 @@ export default function PrintSheet({ trip, library }: Props) {
       {grams > 0 && (
         <section className="mb-5 break-inside-avoid">
           <h2 className="mb-1.5 font-mono text-[0.6875rem] font-bold uppercase tracking-code text-ink">
-            Load
+            {t('print.load')}
           </h2>
           <p className="flex flex-wrap items-baseline gap-x-3 text-sm">
             <span className="font-display text-base font-bold tabular-nums">{formatWeight(grams, units)}</span>
-            <span className="font-mono text-[0.625rem] uppercase tracking-wide text-ink-soft">{band.label}</span>
-            <span className="text-ink-soft">{band.advice}</span>
+            <span className="font-mono text-[0.625rem] uppercase tracking-wide text-ink-soft">{t(BAND_KEY[band.key])}</span>
+            <span className="text-ink-soft">{t(`weight.advice${band.key.charAt(0).toUpperCase()}${band.key.slice(1)}`)}</span>
           </p>
         </section>
       )}
@@ -86,7 +94,7 @@ export default function PrintSheet({ trip, library }: Props) {
       {cities.length > 0 && (
         <section className="mb-5 break-inside-avoid">
           <h2 className="mb-1.5 font-mono text-[0.6875rem] font-bold uppercase tracking-code text-ink">
-            Destinations / Forecast
+            {t('weather.title')}
           </h2>
           <ul className="space-y-1">
             {cities.map((c: CityForecast) => (
@@ -96,11 +104,11 @@ export default function PrintSheet({ trip, library }: Props) {
               >
                 <span className="font-display font-bold">{c.place}</span>
                 <span className="font-mono text-[0.625rem] uppercase tracking-wide text-ink-soft">
-                  {BASIS_LABEL[c.basis]} · {c.days}d
-                  {c.offline && ` · offline${c.approxFrom ? ` ≈ ${c.approxFrom}` : ''}`}
+                  {t(BASIS_KEY[c.basis])} · {c.days}d
+                  {c.offline && ` · ${t('weather.offline')}${c.approxFrom ? ` ≈ ${c.approxFrom}` : ''}`}
                 </span>
                 <span className="font-mono tabular-nums text-ink-soft">
-                  ↑ {t(c.highC)}° ↓ {t(c.lowC)}° · {t(c.minC)}–{t(c.maxC)}° ·{' '}
+                  ↑ {temp(c.highC)}° ↓ {temp(c.lowC)}° · {temp(c.minC)}–{temp(c.maxC)}° ·{' '}
                   {formatPrecip(c.precipMm, units)} · {formatWind(c.windAvgKmh, units)}
                 </span>
               </li>
@@ -110,7 +118,7 @@ export default function PrintSheet({ trip, library }: Props) {
       )}
 
       {groups.length === 0 ? (
-        <p className="text-sm text-ink-soft">No items on this list yet.</p>
+        <p className="text-sm text-ink-soft">{t('print.noItems')}</p>
       ) : (
         <div className="columns-2 gap-8">
           {groups.map((g) => (
@@ -142,7 +150,7 @@ export default function PrintSheet({ trip, library }: Props) {
       )}
 
       <footer className="mt-6 border-t border-line pt-2 font-mono text-[0.625rem] uppercase tracking-wide text-ink-faint">
-        Packing Checklist · private · offline
+        {t('print.footer')}
       </footer>
     </div>
   );

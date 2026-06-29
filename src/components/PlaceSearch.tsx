@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { searchPlaces, type GeoResult } from '../engine/weather';
 
 interface Props {
@@ -10,6 +11,7 @@ interface Props {
  *  fallback to the bundled city list). Only a recognized match can be added —
  *  there is no free-text add, so every destination has coordinates for weather. */
 export default function PlaceSearch({ onSelect }: Props) {
+  const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<GeoResult[]>([]);
   const [open, setOpen] = useState(false);
@@ -27,7 +29,7 @@ export default function PlaceSearch({ onSelect }: Props) {
     }
     const controller = new AbortController();
     setLoading(true);
-    const t = setTimeout(() => {
+    const timer = setTimeout(() => {
       searchPlaces(q, 8, controller.signal)
         .then((r) => {
           setResults(r);
@@ -40,7 +42,7 @@ export default function PlaceSearch({ onSelect }: Props) {
         .finally(() => setLoading(false));
     }, 250);
     return () => {
-      clearTimeout(t);
+      clearTimeout(timer);
       controller.abort();
     };
   }, [query]);
@@ -94,11 +96,11 @@ export default function PlaceSearch({ onSelect }: Props) {
         role="combobox"
         aria-expanded={showDropdown}
         aria-autocomplete="list"
-        aria-label="Search for a place"
+        aria-label={t('place.searchAria')}
         onChange={(e) => setQuery(e.target.value)}
         onFocus={() => results.length > 0 && setOpen(true)}
         onKeyDown={onKeyDown}
-        placeholder="Search a place…"
+        placeholder={t('place.placeholder')}
       />
 
       {showDropdown && (
@@ -107,12 +109,11 @@ export default function PlaceSearch({ onSelect }: Props) {
           className="absolute z-20 mt-1.5 max-h-64 w-full overflow-auto rounded-xl border border-line bg-paper-raised py-1 shadow-pass"
         >
           {loading && results.length === 0 && (
-            <li className="px-3 py-2 font-mono text-xs text-ink-faint">Searching…</li>
+            <li className="px-3 py-2 font-mono text-xs text-ink-faint">{t('place.searching')}</li>
           )}
           {!loading && results.length === 0 && (
             <li className="px-3 py-2 text-xs text-ink-soft">
-              No matches for “{query.trim()}”. Try a different spelling — only
-              recognized places can be added (they carry the coordinates weather needs).
+              {t('place.noMatches', { query: query.trim() })}
             </li>
           )}
           {results.map((r, i) => (

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation, Trans } from 'react-i18next';
 import type { TagGroup } from '../types';
 import { useAppData } from '../db/store';
 import {
@@ -13,10 +14,10 @@ import TagEditorDialog from './TagEditorDialog';
 import ConfirmDialog from './ConfirmDialog';
 import { EditIcon, DeleteIcon } from './icons';
 
-const GROUP_LABELS: { group: TagGroup; label: string }[] = [
-  { group: 'activity', label: 'Activities' },
-  { group: 'weather', label: 'Weather' },
-  { group: 'other', label: 'Other' },
+const GROUP_LABELS: { group: TagGroup; labelKey: string }[] = [
+  { group: 'activity', labelKey: 'context.groupActivities' },
+  { group: 'weather', labelKey: 'context.groupWeather' },
+  { group: 'other', labelKey: 'context.groupOther' },
 ];
 
 /**
@@ -26,6 +27,7 @@ const GROUP_LABELS: { group: TagGroup; label: string }[] = [
  * Reads the live document so edits reflect immediately.
  */
 export default function TagCategoryManager({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation();
   const { tagMeta } = useAppData();
   const [tab, setTab] = useState<'tags' | 'categories'>('tags');
   const [editingTag, setEditingTag] = useState<string | null>(null);
@@ -47,11 +49,11 @@ export default function TagCategoryManager({ onClose }: { onClose: () => void })
     return () => document.removeEventListener('keydown', onKey);
   }, [onClose]);
 
-  const grouped = GROUP_LABELS.map(({ group, label }) => ({
-    label,
+  const grouped = GROUP_LABELS.map(({ group, labelKey }) => ({
+    label: t(labelKey),
     tags: tagMeta
-      .filter((t) => t.group === group)
-      .map((t) => t.key)
+      .filter((tm) => tm.group === group)
+      .map((tm) => tm.key)
       .sort((a, b) => a.localeCompare(b)),
   })).filter((g) => g.tags.length > 0);
 
@@ -80,30 +82,30 @@ export default function TagCategoryManager({ onClose }: { onClose: () => void })
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Edit tags and categories"
+        aria-label={t('manager.title')}
         className="card flex max-h-[85vh] w-full max-w-md flex-col overflow-hidden"
       >
         <div aria-hidden className="airmail h-1 w-full" />
         <div className="flex items-center justify-between gap-2 p-5 pb-0">
-          <h2 className="font-display text-lg font-bold leading-tight">Edit tags &amp; categories</h2>
-          <button className="btn-ghost px-2 py-1 text-sm" aria-label="Close" onClick={onClose}>
+          <h2 className="font-display text-lg font-bold leading-tight">{t('manager.title')}</h2>
+          <button className="btn-ghost px-2 py-1 text-sm" aria-label={t('common.close')} onClick={onClose}>
             ✕
           </button>
         </div>
 
         {/* Tabs */}
-        <div role="tablist" aria-label="Manager tabs" className="flex gap-1 px-5 pt-3">
-          {(['tags', 'categories'] as const).map((t) => (
+        <div role="tablist" aria-label={t('manager.tabsAria')} className="flex gap-1 px-5 pt-3">
+          {(['tags', 'categories'] as const).map((tb) => (
             <button
-              key={t}
+              key={tb}
               role="tab"
-              aria-selected={tab === t}
-              onClick={() => setTab(t)}
+              aria-selected={tab === tb}
+              onClick={() => setTab(tb)}
               className={`chip capitalize transition-colors ${
-                tab === t ? 'bg-ink text-paper-raised' : 'bg-paper-sunk text-ink-soft hover:bg-line'
+                tab === tb ? 'bg-ink text-paper-raised' : 'bg-paper-sunk text-ink-soft hover:bg-line'
               }`}
             >
-              {t}
+              {tb === 'tags' ? t('manager.tabTags') : t('manager.tabCategories')}
             </button>
           ))}
         </div>
@@ -111,7 +113,7 @@ export default function TagCategoryManager({ onClose }: { onClose: () => void })
         <div className="min-h-0 flex-1 overflow-y-auto p-5">
           {tab === 'tags' ? (
             grouped.length === 0 ? (
-              <p className="text-sm text-ink-soft">No tags yet.</p>
+              <p className="text-sm text-ink-soft">{t('manager.noTags')}</p>
             ) : (
               <div className="flex flex-col gap-4">
                 {grouped.map((g) => (
@@ -122,7 +124,7 @@ export default function TagCategoryManager({ onClose }: { onClose: () => void })
                         <button
                           key={k}
                           onClick={() => setEditingTag(k)}
-                          title={`Edit tag “${k}”`}
+                          title={t('manager.editTagTitle', { tag: k })}
                           className="chip bg-airblue-soft text-airblue transition-colors hover:bg-airblue/20"
                         >
                           {k}
@@ -132,7 +134,7 @@ export default function TagCategoryManager({ onClose }: { onClose: () => void })
                   </div>
                 ))}
                 <p className="text-xs text-ink-faint">
-                  Tap a tag to change its group, pin it to the trip page, rename, or delete it.
+                  {t('manager.tagsHelp')}
                 </p>
               </div>
             )
@@ -142,7 +144,7 @@ export default function TagCategoryManager({ onClose }: { onClose: () => void })
               <div className="flex gap-2">
                 <input
                   className="input min-w-0 flex-1"
-                  placeholder="New category…"
+                  placeholder={t('manager.newCatPlaceholder')}
                   value={newCat}
                   onChange={(e) => setNewCat(e.target.value)}
                   onKeyDown={(e) => {
@@ -151,10 +153,10 @@ export default function TagCategoryManager({ onClose }: { onClose: () => void })
                       commitAdd();
                     }
                   }}
-                  aria-label="New category name"
+                  aria-label={t('manager.newCatAria')}
                 />
                 <button className="btn-secondary text-sm" onClick={commitAdd} disabled={!newCat.trim()}>
-                  Add
+                  {t('manager.add')}
                 </button>
               </div>
 
@@ -177,13 +179,13 @@ export default function TagCategoryManager({ onClose }: { onClose: () => void })
                               setRenaming(null);
                             }
                           }}
-                          aria-label={`Rename ${c}`}
+                          aria-label={t('manager.renameAria', { cat: c })}
                         />
                         <button className="btn-secondary px-2 py-1 text-xs" onClick={() => commitRename(c)}>
-                          Save
+                          {t('common.save')}
                         </button>
                         <button className="btn-ghost px-2 py-1 text-xs" onClick={() => setRenaming(null)}>
-                          Cancel
+                          {t('common.cancel')}
                         </button>
                       </>
                     ) : (
@@ -191,7 +193,7 @@ export default function TagCategoryManager({ onClose }: { onClose: () => void })
                         <span className="min-w-0 flex-1 truncate">{c}</span>
                         <button
                           className="btn-ghost px-1.5 py-1"
-                          aria-label={`Rename ${c}`}
+                          aria-label={t('manager.renameAria', { cat: c })}
                           onClick={() => {
                             setRenaming(c);
                             setRenameVal(c);
@@ -202,7 +204,7 @@ export default function TagCategoryManager({ onClose }: { onClose: () => void })
                         {c !== FALLBACK_CATEGORY && (
                           <button
                             className="btn-danger px-1.5 py-1"
-                            aria-label={`Delete ${c}`}
+                            aria-label={t('manager.deleteAria', { cat: c })}
                             onClick={() => setConfirmDel(c)}
                           >
                             <DeleteIcon />
@@ -214,7 +216,7 @@ export default function TagCategoryManager({ onClose }: { onClose: () => void })
                 ))}
               </ul>
               <p className="text-xs text-ink-faint">
-                Renaming keeps every item in place. Deleting a category moves its items to “{FALLBACK_CATEGORY}”.
+                {t('manager.catHelp', { fallback: FALLBACK_CATEGORY })}
               </p>
             </div>
           )}
@@ -225,8 +227,8 @@ export default function TagCategoryManager({ onClose }: { onClose: () => void })
 
       {confirmDel && (
         <ConfirmDialog
-          title={`Delete “${confirmDel}”?`}
-          confirmLabel="Delete category"
+          title={t('manager.deleteCatTitle', { cat: confirmDel })}
+          confirmLabel={t('manager.deleteCatConfirm')}
           tone="danger"
           onCancel={() => setConfirmDel(null)}
           onConfirm={() => {
@@ -235,8 +237,7 @@ export default function TagCategoryManager({ onClose }: { onClose: () => void })
           }}
         >
           <p>
-            Moves every item in <strong>{confirmDel}</strong> to <strong>{FALLBACK_CATEGORY}</strong>. No items are
-            lost.
+            <Trans i18nKey="manager.deleteCatBody" values={{ cat: confirmDel, fallback: FALLBACK_CATEGORY }} components={{ strong: <strong /> }} />
           </p>
         </ConfirmDialog>
       )}

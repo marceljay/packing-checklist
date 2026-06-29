@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
 import { tagKey } from '../types';
 
 interface Props {
@@ -20,7 +21,9 @@ type Pos = { left: number; width: number; top?: number; bottom?: number; maxHeig
  * confirming creates it. The panel is portalled with fixed positioning so it is
  * never clipped by the surrounding `overflow-hidden` cards.
  */
-export default function TagEditor({ value, onChange, suggestions = [], ariaLabel = 'Tags' }: Props) {
+export default function TagEditor({ value, onChange, suggestions = [], ariaLabel }: Props) {
+  const { t } = useTranslation();
+  const label = ariaLabel ?? t('items.tags');
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [pos, setPos] = useState<Pos | null>(null);
@@ -52,8 +55,8 @@ export default function TagEditor({ value, onChange, suggestions = [], ariaLabel
     if (!open) return;
     searchRef.current?.focus();
     function onDown(e: MouseEvent) {
-      const t = e.target as Node;
-      if (!controlRef.current?.contains(t) && !panelRef.current?.contains(t)) setOpen(false);
+      const target = e.target as Node;
+      if (!controlRef.current?.contains(target) && !panelRef.current?.contains(target)) setOpen(false);
     }
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape') setOpen(false);
@@ -99,7 +102,7 @@ export default function TagEditor({ value, onChange, suggestions = [], ariaLabel
         className="input flex min-h-[2.5rem] cursor-text flex-wrap items-center gap-1.5"
         onClick={() => setOpen(true)}
       >
-        {value.length === 0 && <span className="text-sm text-ink-faint">Add tags…</span>}
+        {value.length === 0 && <span className="text-sm text-ink-faint">{t('tagEditor.addTags')}</span>}
         {value.map((k) => (
           <span key={k} className="chip bg-airblue-soft text-airblue">
             {k}
@@ -109,7 +112,7 @@ export default function TagEditor({ value, onChange, suggestions = [], ariaLabel
                 e.stopPropagation();
                 remove(k);
               }}
-              aria-label={`Remove tag ${k}`}
+              aria-label={t('tagEditor.removeTag', { tag: k })}
               className="ml-0.5 rounded-full text-airblue/70 hover:text-airblue"
             >
               ✕
@@ -124,7 +127,7 @@ export default function TagEditor({ value, onChange, suggestions = [], ariaLabel
           }}
           aria-haspopup="listbox"
           aria-expanded={open}
-          aria-label={ariaLabel}
+          aria-label={label}
           className="ml-auto text-ink-faint transition-colors hover:text-ink-soft"
         >
           <svg viewBox="0 0 24 24" width={16} height={16} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -140,7 +143,7 @@ export default function TagEditor({ value, onChange, suggestions = [], ariaLabel
             ref={panelRef}
             role="listbox"
             aria-multiselectable="true"
-            aria-label={ariaLabel}
+            aria-label={label}
             className="fixed z-50 flex flex-col overflow-hidden rounded-md border border-line bg-paper-raised shadow-pass"
             style={{ left: pos.left, width: pos.width, top: pos.top, bottom: pos.bottom, maxHeight: pos.maxHeight }}
           >
@@ -148,7 +151,7 @@ export default function TagEditor({ value, onChange, suggestions = [], ariaLabel
               <input
                 ref={searchRef}
                 className="input h-8 py-1 text-sm"
-                placeholder="Search or add a tag…"
+                placeholder={t('tagEditor.searchAdd')}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={(e) => {
@@ -158,7 +161,7 @@ export default function TagEditor({ value, onChange, suggestions = [], ariaLabel
                     else if (filtered.length === 1) toggle(filtered[0]);
                   }
                 }}
-                aria-label={`Search ${ariaLabel.toLowerCase()}`}
+                aria-label={t('tagEditor.searchAria', { label: label.toLowerCase() })}
               />
             </div>
             <ul className="min-h-0 flex-1 overflow-y-auto py-1">
@@ -190,12 +193,12 @@ export default function TagEditor({ value, onChange, suggestions = [], ariaLabel
                     className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm font-medium text-airblue hover:bg-paper-sunk"
                   >
                     <span aria-hidden className="text-base leading-none">+</span>
-                    Create “{q}”
+                    {t('tagEditor.create', { tag: q })}
                   </button>
                 </li>
               )}
               {filtered.length === 0 && !canCreate && (
-                <li className="px-3 py-2 text-sm text-ink-faint">No tags yet — type to add one.</li>
+                <li className="px-3 py-2 text-sm text-ink-faint">{t('tagEditor.empty')}</li>
               )}
             </ul>
           </div>,
