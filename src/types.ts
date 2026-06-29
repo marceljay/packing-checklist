@@ -511,6 +511,8 @@ export interface CatalogItem {
   quantity: QuantityRule;
   /** Per-unit weight in grams (the built-in default; editable once seeded). */
   weightG?: number;
+  /** Optional default note / longer description, seeded into the library item. */
+  notes?: string;
 }
 
 /** Whether a conditional essential applies to international or domestic trips. */

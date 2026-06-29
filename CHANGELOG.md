@@ -5,6 +5,11 @@ All notable changes to this project are documented here.
 ## [Unreleased]
 
 ### Added
+- **More international essentials.** International trips now suggest **travel
+  insurance** and a **traveller-declarations** reminder (ESTA/eTA, customs/health
+  forms) alongside the existing visa/passport checks. The visa-check item also
+  carries a note that some visas or entry permits must be printed. Catalog items
+  can now seed a default note into the library.
 - **Search-or-add item card.** The Add-item card now leads with a single
   "Search or add item" field that matches your existing library first (tap a
   result to add it); only when nothing matches the typed name does "+ Add new

@@ -21,7 +21,9 @@ export const CATALOG: CatalogItem[] = [
   // --- Essentials (always) ---
   { id: 'passport', name: 'Passport', category: 'Documents', always: true, essentialWhen: 'international', tagKeys: [], quantity: perTrip(1), weightG: 35 },
   { id: 'id-card', name: 'ID / driving licence', category: 'Documents', always: true, essentialWhen: 'domestic', tagKeys: [], quantity: perTrip(1), weightG: 10 },
-  { id: 'visa-check', name: 'Check visa & entry rules', category: 'Documents', always: true, essentialWhen: 'international', tagKeys: [], quantity: none() },
+  { id: 'visa-check', name: 'Check visa & entry rules', category: 'Documents', always: true, essentialWhen: 'international', tagKeys: [], quantity: none(), notes: 'Some visas or entry permits must be printed — check your destination’s rules and bring a paper copy if required.' },
+  { id: 'travel-insurance', name: 'Travel insurance', category: 'Documents', always: true, essentialWhen: 'international', tagKeys: [], quantity: none(), notes: 'Arrange travel/health insurance and carry the policy number and 24h emergency contact.' },
+  { id: 'traveller-declarations', name: 'Traveller declarations', category: 'Documents', always: true, essentialWhen: 'international', tagKeys: [], quantity: none(), notes: 'Check for required entry declarations (e.g. ESTA, eTA, customs or health forms) and complete them before you travel — some must be printed.' },
   { id: 'wallet', name: 'Wallet & cards', category: 'Money & Cards', always: true, tagKeys: [], quantity: perTrip(1), weightG: 120 },
   { id: 'cash', name: 'Some cash', category: 'Money & Cards', always: true, tagKeys: [], quantity: none(), weightG: 20 },
   { id: 'phone', name: 'Phone', category: 'Electronics', always: true, tagKeys: [], quantity: perTrip(1), weightG: 190 },
