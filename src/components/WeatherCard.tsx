@@ -96,7 +96,7 @@ function DayBreakdown({
         {days.slice(0, shown).map((d) => (
           <li
             key={d.date}
-            className="flex flex-col gap-0.5 py-1.5 font-mono text-xs tabular-nums text-ticket-ink/80 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3"
+            className="flex flex-col gap-0.5 py-1.5 font-mono text-xs tabular-nums text-ticket-ink/80 [word-spacing:-0.15em] sm:flex-row sm:items-baseline sm:justify-between sm:gap-3"
           >
             {/* Line 1 on mobile: day + temps. On sm the wrappers dissolve
                 (display:contents) so every span lays out in one row. */}
@@ -168,7 +168,7 @@ function CityRow({ c, units }: { c: CityForecast; units: UnitSystem }) {
   return (
     <div className="px-5 py-3">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-4">
-        <div className="min-w-0 sm:w-40">
+        <div className="min-w-0 sm:flex-1">
           <p className="truncate font-display font-bold" title={c.place}>
             {shortPlace(c.place)}
           </p>
@@ -182,7 +182,7 @@ function CityRow({ c, units }: { c: CityForecast; units: UnitSystem }) {
             )}
           </p>
         </div>
-        <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 font-mono text-sm tabular-nums">
+        <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 font-mono text-sm tabular-nums [word-spacing:-0.15em] sm:shrink-0">
           <span title="Average daily high / low across the trip">
             <span className="text-ticket-ink/50">↑</span> {t(c.highC)}°{" "}
             <span className="text-ticket-ink/50">↓</span> {t(c.lowC)}°
@@ -220,7 +220,7 @@ function CityRow({ c, units }: { c: CityForecast; units: UnitSystem }) {
           )}
           {hasDaily && (
             <button
-              className="font-mono text-[0.625rem] uppercase tracking-code text-ticket-ink/50 underline-offset-2 hover:text-ticket-ink hover:underline sm:ml-auto"
+              className="font-mono text-[0.625rem] uppercase tracking-code text-ticket-ink/50 underline-offset-2 [word-spacing:normal] hover:text-ticket-ink hover:underline sm:ml-auto"
               aria-expanded={open}
               onClick={() => setOpen((v) => !v)}
             >
