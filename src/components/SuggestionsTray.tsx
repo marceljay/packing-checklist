@@ -15,7 +15,7 @@ interface Props {
 
 export default function SuggestionsTray({ trip, update, library }: Props) {
   const { t } = useTranslation();
-  const { tTag, tCategory } = useLabels();
+  const { tTag, tCategory, tItemName, tItemNotes } = useLabels();
   const [open, setOpen] = useState(true);
   // Which suggestion's notes panel is expanded (only items with notes get a button).
   const [infoId, setInfoId] = useState<string | null>(null);
@@ -85,14 +85,14 @@ export default function SuggestionsTray({ trip, update, library }: Props) {
                     <div className="flex items-center gap-3 px-4 py-2">
                       <button
                         className="btn-secondary h-7 w-7 shrink-0 p-0 text-base leading-none"
-                        aria-label={t('suggestions.addAria', { name: s.item.name })}
+                        aria-label={t('suggestions.addAria', { name: tItemName(s.item.id, s.item.name) })}
                         onClick={() => void add(s)}
                       >
                         +
                       </button>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-baseline gap-1.5">
-                          <span className="truncate text-sm">{s.item.name}</span>
+                          <span className="truncate text-sm">{tItemName(s.item.id, s.item.name)}</span>
                           {s.quantity > 1 && (
                             <span className="font-mono text-xs tabular-nums text-ink-faint">
                               ×{s.quantity}
@@ -114,7 +114,7 @@ export default function SuggestionsTray({ trip, update, library }: Props) {
                       {s.item.notes && (
                         <button
                           className="btn-ghost shrink-0 px-1.5 py-1"
-                          aria-label={t('suggestions.infoAria', { name: s.item.name })}
+                          aria-label={t('suggestions.infoAria', { name: tItemName(s.item.id, s.item.name) })}
                           aria-expanded={infoId === s.item.id}
                           title={t('suggestions.itemDetails')}
                           onClick={() => setInfoId((id) => (id === s.item.id ? null : s.item.id))}
@@ -128,7 +128,7 @@ export default function SuggestionsTray({ trip, update, library }: Props) {
                     </div>
                     {s.item.notes && infoId === s.item.id && (
                       <p className="whitespace-pre-wrap border-t border-line/60 bg-paper-sunk/40 px-4 py-2 text-sm text-ink-soft">
-                        {s.item.notes}
+                        {tItemNotes(s.item.id, s.item.notes)}
                       </p>
                     )}
                   </li>

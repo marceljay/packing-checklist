@@ -46,7 +46,7 @@ function fmt(d?: string): string {
  */
 export default function PrintSheet({ trip, library }: Props) {
   const { t } = useTranslation();
-  const { tTag, tCategory } = useLabels();
+  const { tTag, tCategory, tItemName } = useLabels();
   const units = useUnits();
   const groups = resolvedByCategory(resolveItems(trip.items, library));
   const days = tripDurationDays(trip);
@@ -141,7 +141,7 @@ export default function PrintSheet({ trip, library }: Props) {
                       {i.quantityTaken > 1 && (
                         <span className="font-mono font-bold">{i.quantityTaken}× </span>
                       )}
-                      {i.name}
+                      {tItemName(i.libraryId, i.name)}
                     </span>
                   </li>
                 ))}

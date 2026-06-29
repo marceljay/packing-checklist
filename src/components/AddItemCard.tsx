@@ -29,7 +29,7 @@ interface Props {
  */
 export default function AddItemCard({ trip, update, library, tagSuggestions = [], categories }: Props) {
   const { t } = useTranslation();
-  const { tCategory } = useLabels();
+  const { tCategory, tItemName } = useLabels();
   const [open, setOpen] = useState(true);
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<Category>('Comfort & Misc');
@@ -137,7 +137,7 @@ export default function AddItemCard({ trip, update, library, tagSuggestions = []
                     onClick={() => addExisting(item)}
                   >
                     <span className="text-base leading-none text-ink-soft">+</span>
-                    <span className="min-w-0 flex-1 truncate">{item.name}</span>
+                    <span className="min-w-0 flex-1 truncate">{tItemName(item.id, item.name)}</span>
                     <span className="shrink-0 font-mono text-[0.625rem] uppercase tracking-wide text-ink-faint">
                       {tCategory(item.category)}
                     </span>

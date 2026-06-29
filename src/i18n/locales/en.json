@@ -441,5 +441,259 @@
     "sunny": "sunny",
     "windy": "windy",
     "tropical": "tropical"
+  },
+  "catalogItems": {
+    "passport": {
+      "name": "Passport"
+    },
+    "id-card": {
+      "name": "ID / driving licence"
+    },
+    "visa-check": {
+      "name": "Check visa & entry rules",
+      "notes": "Some visas or entry permits must be printed — check your destination’s rules and bring a paper copy if required."
+    },
+    "travel-insurance": {
+      "name": "Travel insurance",
+      "notes": "Arrange travel/health insurance and carry the policy number and 24h emergency contact."
+    },
+    "traveller-declarations": {
+      "name": "Traveller declarations",
+      "notes": "Check for required entry declarations (e.g. ESTA, eTA, customs or health forms) and complete them before you travel — some must be printed."
+    },
+    "wallet": {
+      "name": "Wallet & cards"
+    },
+    "cash": {
+      "name": "Some cash"
+    },
+    "phone": {
+      "name": "Phone"
+    },
+    "phone-charger": {
+      "name": "Phone charger"
+    },
+    "keys": {
+      "name": "Keys"
+    },
+    "meds": {
+      "name": "Medications"
+    },
+    "toothbrush": {
+      "name": "Toothbrush"
+    },
+    "toothpaste": {
+      "name": "Toothpaste"
+    },
+    "deodorant": {
+      "name": "Deodorant"
+    },
+    "shampoo": {
+      "name": "Shampoo / soap"
+    },
+    "underwear": {
+      "name": "Underwear"
+    },
+    "socks": {
+      "name": "Socks"
+    },
+    "tshirts": {
+      "name": "T-shirts"
+    },
+    "trousers": {
+      "name": "Trousers"
+    },
+    "sleepwear": {
+      "name": "Sleepwear"
+    },
+    "everyday-shoes": {
+      "name": "Everyday shoes"
+    },
+    "swimwear": {
+      "name": "Swimwear"
+    },
+    "beach-towel": {
+      "name": "Beach towel"
+    },
+    "flip-flops": {
+      "name": "Flip-flops"
+    },
+    "goggles": {
+      "name": "Swim goggles"
+    },
+    "hiking-boots": {
+      "name": "Hiking boots"
+    },
+    "hiking-socks": {
+      "name": "Hiking socks"
+    },
+    "daypack": {
+      "name": "Daypack"
+    },
+    "water-bottle": {
+      "name": "Water bottle"
+    },
+    "merino": {
+      "name": "Merino base layer"
+    },
+    "trekking-poles": {
+      "name": "Trekking poles"
+    },
+    "boardshorts": {
+      "name": "Boardshorts"
+    },
+    "wetsuit": {
+      "name": "Wetsuit"
+    },
+    "rashguard": {
+      "name": "Rash guard"
+    },
+    "ski-jacket": {
+      "name": "Ski jacket"
+    },
+    "ski-gloves": {
+      "name": "Ski gloves"
+    },
+    "goggles-ski": {
+      "name": "Ski goggles"
+    },
+    "beanie": {
+      "name": "Beanie"
+    },
+    "tent": {
+      "name": "Tent"
+    },
+    "sleeping-bag": {
+      "name": "Sleeping bag"
+    },
+    "headlamp": {
+      "name": "Headlamp"
+    },
+    "camp-stove": {
+      "name": "Camping stove"
+    },
+    "running-shoes": {
+      "name": "Running shoes"
+    },
+    "sportswear": {
+      "name": "Sportswear"
+    },
+    "helmet": {
+      "name": "Helmet"
+    },
+    "laptop": {
+      "name": "Laptop"
+    },
+    "laptop-charger": {
+      "name": "Laptop charger"
+    },
+    "dress-shirt": {
+      "name": "Dress shirt"
+    },
+    "dress-shoes": {
+      "name": "Dress shoes"
+    },
+    "formal-outfit": {
+      "name": "Formal outfit"
+    },
+    "camera": {
+      "name": "Camera"
+    },
+    "camera-charger": {
+      "name": "Camera charger & cards"
+    },
+    "climbing-shoes": {
+      "name": "Climbing shoes"
+    },
+    "harness": {
+      "name": "Climbing harness"
+    },
+    "chalk-bag": {
+      "name": "Chalk bag"
+    },
+    "belay-device": {
+      "name": "Belay device"
+    },
+    "bbq-tools": {
+      "name": "BBQ tools & tongs"
+    },
+    "lighter": {
+      "name": "Lighter / matches"
+    },
+    "apron": {
+      "name": "Apron"
+    },
+    "car-charger": {
+      "name": "Car phone charger"
+    },
+    "snacks": {
+      "name": "Road snacks"
+    },
+    "cooler": {
+      "name": "Cool box"
+    },
+    "earplugs": {
+      "name": "Earplugs"
+    },
+    "poncho": {
+      "name": "Rain poncho"
+    },
+    "wellies": {
+      "name": "Wellington boots"
+    },
+    "hand-sanitizer": {
+      "name": "Hand sanitizer"
+    },
+    "power-bank": {
+      "name": "Power bank"
+    },
+    "first-aid": {
+      "name": "First-aid kit"
+    },
+    "sunscreen": {
+      "name": "Sunscreen"
+    },
+    "sunglasses": {
+      "name": "Sunglasses"
+    },
+    "sun-hat": {
+      "name": "Sun hat"
+    },
+    "sandals": {
+      "name": "Sandals"
+    },
+    "warm-jacket": {
+      "name": "Warm jacket"
+    },
+    "gloves": {
+      "name": "Gloves"
+    },
+    "scarf": {
+      "name": "Scarf"
+    },
+    "rain-jacket": {
+      "name": "Rain jacket"
+    },
+    "umbrella": {
+      "name": "Umbrella"
+    },
+    "windbreaker": {
+      "name": "Windbreaker"
+    },
+    "insect-repellent": {
+      "name": "Insect repellent"
+    },
+    "mosquito-net": {
+      "name": "Mosquito net"
+    },
+    "rehydration-salts": {
+      "name": "Rehydration salts"
+    },
+    "light-long-sleeve": {
+      "name": "Light long-sleeve top"
+    },
+    "vaccination-check": {
+      "name": "Check vaccinations & travel clinic"
+    }
   }
 }

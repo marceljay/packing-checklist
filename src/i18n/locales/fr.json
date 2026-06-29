@@ -441,5 +441,259 @@
     "sunny": "ensoleillé",
     "windy": "venteux",
     "tropical": "tropical"
+  },
+  "catalogItems": {
+    "passport": {
+      "name": "Passeport"
+    },
+    "id-card": {
+      "name": "Carte d'identité / permis"
+    },
+    "visa-check": {
+      "name": "Vérifier le visa et les règles d'entrée",
+      "notes": "Certains visas ou autorisations d'entrée doivent être imprimés — vérifiez les règles de votre destination et emportez une copie papier si nécessaire."
+    },
+    "travel-insurance": {
+      "name": "Assurance voyage",
+      "notes": "Souscrivez une assurance voyage/santé et conservez le numéro de police ainsi que le contact d'urgence 24h/24."
+    },
+    "traveller-declarations": {
+      "name": "Déclarations d'entrée",
+      "notes": "Vérifiez les déclarations d'entrée requises (ESTA, eTA, formulaires douaniers ou sanitaires) et remplissez-les avant le départ — certaines doivent être imprimées."
+    },
+    "wallet": {
+      "name": "Portefeuille & cartes"
+    },
+    "cash": {
+      "name": "Un peu d'espèces"
+    },
+    "phone": {
+      "name": "Téléphone"
+    },
+    "phone-charger": {
+      "name": "Chargeur de téléphone"
+    },
+    "keys": {
+      "name": "Clés"
+    },
+    "meds": {
+      "name": "Médicaments"
+    },
+    "toothbrush": {
+      "name": "Brosse à dents"
+    },
+    "toothpaste": {
+      "name": "Dentifrice"
+    },
+    "deodorant": {
+      "name": "Déodorant"
+    },
+    "shampoo": {
+      "name": "Shampoing / savon"
+    },
+    "underwear": {
+      "name": "Sous-vêtements"
+    },
+    "socks": {
+      "name": "Chaussettes"
+    },
+    "tshirts": {
+      "name": "T-shirts"
+    },
+    "trousers": {
+      "name": "Pantalons"
+    },
+    "sleepwear": {
+      "name": "Vêtements de nuit"
+    },
+    "everyday-shoes": {
+      "name": "Chaussures de tous les jours"
+    },
+    "swimwear": {
+      "name": "Maillot de bain"
+    },
+    "beach-towel": {
+      "name": "Serviette de plage"
+    },
+    "flip-flops": {
+      "name": "Tongs"
+    },
+    "goggles": {
+      "name": "Lunettes de natation"
+    },
+    "hiking-boots": {
+      "name": "Chaussures de randonnée"
+    },
+    "hiking-socks": {
+      "name": "Chaussettes de randonnée"
+    },
+    "daypack": {
+      "name": "Sac à dos"
+    },
+    "water-bottle": {
+      "name": "Gourde"
+    },
+    "merino": {
+      "name": "Sous-couche en mérinos"
+    },
+    "trekking-poles": {
+      "name": "Bâtons de marche"
+    },
+    "boardshorts": {
+      "name": "Boardshort"
+    },
+    "wetsuit": {
+      "name": "Combinaison"
+    },
+    "rashguard": {
+      "name": "Lycra"
+    },
+    "ski-jacket": {
+      "name": "Veste de ski"
+    },
+    "ski-gloves": {
+      "name": "Gants de ski"
+    },
+    "goggles-ski": {
+      "name": "Masque de ski"
+    },
+    "beanie": {
+      "name": "Bonnet"
+    },
+    "tent": {
+      "name": "Tente"
+    },
+    "sleeping-bag": {
+      "name": "Sac de couchage"
+    },
+    "headlamp": {
+      "name": "Lampe frontale"
+    },
+    "camp-stove": {
+      "name": "Réchaud de camping"
+    },
+    "running-shoes": {
+      "name": "Chaussures de course"
+    },
+    "sportswear": {
+      "name": "Tenue de sport"
+    },
+    "helmet": {
+      "name": "Casque"
+    },
+    "laptop": {
+      "name": "Ordinateur portable"
+    },
+    "laptop-charger": {
+      "name": "Chargeur d'ordinateur"
+    },
+    "dress-shirt": {
+      "name": "Chemise"
+    },
+    "dress-shoes": {
+      "name": "Chaussures habillées"
+    },
+    "formal-outfit": {
+      "name": "Tenue de soirée"
+    },
+    "camera": {
+      "name": "Appareil photo"
+    },
+    "camera-charger": {
+      "name": "Chargeur & cartes d'appareil photo"
+    },
+    "climbing-shoes": {
+      "name": "Chaussons d'escalade"
+    },
+    "harness": {
+      "name": "Baudrier"
+    },
+    "chalk-bag": {
+      "name": "Sac à magnésie"
+    },
+    "belay-device": {
+      "name": "Descendeur"
+    },
+    "bbq-tools": {
+      "name": "Ustensiles & pinces de barbecue"
+    },
+    "lighter": {
+      "name": "Briquet / allumettes"
+    },
+    "apron": {
+      "name": "Tablier"
+    },
+    "car-charger": {
+      "name": "Chargeur voiture"
+    },
+    "snacks": {
+      "name": "En-cas pour la route"
+    },
+    "cooler": {
+      "name": "Glacière"
+    },
+    "earplugs": {
+      "name": "Bouchons d'oreille"
+    },
+    "poncho": {
+      "name": "Poncho de pluie"
+    },
+    "wellies": {
+      "name": "Bottes en caoutchouc"
+    },
+    "hand-sanitizer": {
+      "name": "Gel hydroalcoolique"
+    },
+    "power-bank": {
+      "name": "Batterie externe"
+    },
+    "first-aid": {
+      "name": "Trousse de premiers secours"
+    },
+    "sunscreen": {
+      "name": "Crème solaire"
+    },
+    "sunglasses": {
+      "name": "Lunettes de soleil"
+    },
+    "sun-hat": {
+      "name": "Chapeau de soleil"
+    },
+    "sandals": {
+      "name": "Sandales"
+    },
+    "warm-jacket": {
+      "name": "Veste chaude"
+    },
+    "gloves": {
+      "name": "Gants"
+    },
+    "scarf": {
+      "name": "Écharpe"
+    },
+    "rain-jacket": {
+      "name": "Veste de pluie"
+    },
+    "umbrella": {
+      "name": "Parapluie"
+    },
+    "windbreaker": {
+      "name": "Coupe-vent"
+    },
+    "insect-repellent": {
+      "name": "Anti-moustiques"
+    },
+    "mosquito-net": {
+      "name": "Moustiquaire"
+    },
+    "rehydration-salts": {
+      "name": "Sels de réhydratation"
+    },
+    "light-long-sleeve": {
+      "name": "Haut léger à manches longues"
+    },
+    "vaccination-check": {
+      "name": "Vérifier vaccins & clinique de voyage"
+    }
   }
 }

@@ -109,7 +109,7 @@ export default function ContextPanel({
   setWeatherMsg,
 }: Props) {
   const { t } = useTranslation();
-  const { tTag } = useLabels();
+  const { tTag, tItemName } = useLabels();
   // Pending destination-removal confirmation (in-app dialog).
   const [pendingRemoval, setPendingRemoval] = useState<{
     dest: Destination;
@@ -195,7 +195,7 @@ export default function ContextPanel({
         setWeatherStatus("done");
         setWeatherMsg(
           outcome.result.tags.length > 0
-            ? t("context.wxTags", { tags: outcome.result.tags.join(", ") })
+            ? t("context.wxTags", { tags: outcome.result.tags.map(tTag).join(", ") })
             : t("context.wxNoSignal"),
         );
     }
@@ -708,7 +708,7 @@ export default function ContextPanel({
           <p>
             <Trans
               i18nKey="context.removeBody"
-              values={{ tags: pendingRemoval.dropped.join(", ") }}
+              values={{ tags: pendingRemoval.dropped.map(tTag).join(", ") }}
               components={{ strong: <strong /> }}
             />
           </p>
@@ -718,7 +718,7 @@ export default function ContextPanel({
                 key={i.libraryId}
                 className="chip bg-paper-sunk text-ink-soft"
               >
-                {i.name}
+                {tItemName(i.libraryId, i.name)}
               </li>
             ))}
           </ul>

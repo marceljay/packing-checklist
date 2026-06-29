@@ -33,7 +33,9 @@ function LibraryItemRow({
   categories: Category[];
 }) {
   const { t } = useTranslation();
-  const { tTag, tCategory } = useLabels();
+  const { tTag, tCategory, tItemName, tItemNotes } = useLabels();
+  const name = tItemName(item.id, item.name);
+  const notes = tItemNotes(item.id, item.notes);
   const [panel, setPanel] = useState<'none' | 'info' | 'edit'>('none');
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -54,7 +56,7 @@ function LibraryItemRow({
     <li className="flex flex-col">
       <div className="flex items-start gap-3 px-4 py-3">
         <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-          <span className="font-display text-sm font-medium text-ink">{item.name}</span>
+          <span className="font-display text-sm font-medium text-ink">{name}</span>
           {item.tagKeys.length > 0 && (
             <div className="flex flex-wrap gap-1">
               {item.tagKeys.map((k) => (
@@ -69,7 +71,7 @@ function LibraryItemRow({
         <div className="flex shrink-0 items-center gap-1">
           <button
             className="btn-ghost px-1.5 py-1"
-            aria-label={t('items.infoAria', { name: item.name })}
+            aria-label={t('items.infoAria', { name })}
             aria-expanded={panel === 'info'}
             onClick={() => setPanel((p) => (p === 'info' ? 'none' : 'info'))}
           >
@@ -77,14 +79,14 @@ function LibraryItemRow({
           </button>
           <button
             className="btn-ghost px-1.5 py-1"
-            aria-label={t('items.editAria', { name: item.name })}
+            aria-label={t('items.editAria', { name })}
             onClick={() => setPanel('edit')}
           >
             <EditIcon />
           </button>
           <button
             className="btn-danger px-1.5 py-1"
-            aria-label={t('items.removeAria', { name: item.name })}
+            aria-label={t('items.removeAria', { name })}
             onClick={() => setConfirmDelete(true)}
           >
             <DeleteIcon />
@@ -123,13 +125,13 @@ function LibraryItemRow({
             </>
           )}
           <dt className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">{t('items.notesLabel')}</dt>
-          <dd className="whitespace-pre-wrap text-ink-soft">{item.notes || '—'}</dd>
+          <dd className="whitespace-pre-wrap text-ink-soft">{notes || '—'}</dd>
         </dl>
       )}
 
       {confirmDelete && (
         <ConfirmDialog
-          title={t('items.removeTitle', { name: item.name })}
+          title={t('items.removeTitle', { name })}
           confirmLabel={t('items.removeConfirm')}
           tone="danger"
           onCancel={() => setConfirmDelete(false)}
@@ -139,7 +141,7 @@ function LibraryItemRow({
           }}
         >
           <p>
-            <Trans i18nKey="items.removeBody" values={{ name: item.name }} components={{ strong: <strong /> }} />
+            <Trans i18nKey="items.removeBody" values={{ name }} components={{ strong: <strong /> }} />
             {item.custom ? '' : ` ${t('items.removeBodyDefault')}`}
           </p>
         </ConfirmDialog>

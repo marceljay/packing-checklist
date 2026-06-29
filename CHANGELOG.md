@@ -12,6 +12,14 @@ All notable changes to this project are documented here.
   identity used for suggestions, filtering, grouping, and import/export), and
   custom/imported categories and tags pass through unchanged. A few names are kept
   as-is where that reads more naturally (e.g. *business* and *surfing* in German).
+- **Translated default items.** All 83 built-in catalog items (names, plus the
+  notes on the visa/insurance/declarations reminders) now display in the chosen UI
+  language across the planning list, checklist, recommended tray, item library,
+  add-item search, and print sheet. Display-only and on the same basis as tags and
+  categories: the stored item name/key stays English (the identity used for search,
+  dedup, suggestions and import/export), and the translation is shown only while a
+  default is unedited — if you rename a built-in, your name is kept. Custom items
+  are never touched.
 
 ## [0.9.0] — 2026-06-29
 

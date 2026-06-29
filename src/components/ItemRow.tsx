@@ -30,8 +30,10 @@ export default function ItemRow({
   mode = 'plan',
 }: Props) {
   const { t } = useTranslation();
-  const { tTag, tCategory } = useLabels();
+  const { tTag, tCategory, tItemName, tItemNotes } = useLabels();
   const [editing, setEditing] = useState(false);
+  const name = tItemName(item.libraryId, item.name);
+  const notes = tItemNotes(item.libraryId, item.notes);
   const [info, setInfo] = useState(false);
 
   /** Patch this trip's reference (per-trip state: quantity / packed). */
@@ -57,7 +59,7 @@ export default function ItemRow({
           type="checkbox"
           className="mt-1 h-5 w-5 shrink-0 rounded border-line text-vermilion focus:ring-vermilion"
           checked={item.packed}
-          aria-label={t('itemRow.markPacked', { name: item.name })}
+          aria-label={t('itemRow.markPacked', { name })}
           onChange={(e) => patchRef((it) => void (it.packed = e.target.checked))}
         />
         <div className="flex min-w-0 flex-1 flex-col gap-1">
@@ -68,14 +70,14 @@ export default function ItemRow({
               </span>
             )}
             <span className={`text-sm ${item.packed ? 'text-ink-faint line-through' : 'text-ink'}`}>
-              {item.name}
+              {name}
             </span>
           </div>
           {item.tagKeys.length > 0 && (
             <div className="flex flex-wrap gap-1">
               {item.tagKeys.map((k) => (
                 <span key={k} className="chip bg-paper-sunk text-ink-faint">
-                  {k}
+                  {tTag(k)}
                 </span>
               ))}
             </div>
@@ -97,7 +99,7 @@ export default function ItemRow({
         {/* Line 1: name + quantity stepper */}
         <div className="flex items-center gap-2">
           <span className={`min-w-0 flex-1 truncate text-sm ${item.missing ? 'text-ink-faint italic' : 'text-ink'}`}>
-            {item.name}
+            {name}
           </span>
           <div className="flex shrink-0 items-center gap-2" aria-label={t('itemRow.quantityAria')}>
             <span className="min-w-[2rem] text-right font-mono text-sm tabular-nums text-ink-soft">
@@ -150,7 +152,7 @@ export default function ItemRow({
         {!item.missing && (
           <button
             className="btn-ghost mt-0.5 px-1.5 py-1"
-            aria-label={t('itemRow.infoAria', { name: item.name })}
+            aria-label={t('itemRow.infoAria', { name })}
             aria-expanded={info}
             title={t('itemRow.itemDetails')}
             onClick={() => setInfo((v) => !v)}
@@ -161,7 +163,7 @@ export default function ItemRow({
         {!item.missing && (
           <button
             className="btn-ghost mt-0.5 hidden px-1.5 py-1 sm:inline-flex"
-            aria-label={t('itemRow.editAria', { name: item.name })}
+            aria-label={t('itemRow.editAria', { name })}
             title={t('itemRow.editTip')}
             onClick={() => setEditing(true)}
           >
@@ -170,7 +172,7 @@ export default function ItemRow({
         )}
         <button
           className={`btn-danger mt-0.5 px-1.5 py-1 ${item.missing ? '' : 'hidden sm:inline-flex'}`}
-          aria-label={t('itemRow.deleteAria', { name: item.name })}
+          aria-label={t('itemRow.deleteAria', { name })}
           title={t('itemRow.removeTip')}
           onClick={removeFromTrip}
         >
@@ -197,7 +199,7 @@ export default function ItemRow({
               </>
             )}
             <dt className="font-mono text-[0.625rem] uppercase tracking-code text-ink-faint">{t('itemRow.notesLabel')}</dt>
-            <dd className="whitespace-pre-wrap text-ink-soft">{item.notes || '—'}</dd>
+            <dd className="whitespace-pre-wrap text-ink-soft">{notes || '—'}</dd>
           </dl>
 
           {/* On tight rows edit/delete live here (hidden once they fit inline at sm+). */}
