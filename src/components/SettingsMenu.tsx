@@ -16,7 +16,6 @@ import { downloadText, downloadBlob, pickTextFile } from '../lib/file';
 import { useDevMode, setDevMode } from '../lib/devMode';
 import { useUnits, setUnits, type UnitSystem } from '../lib/units';
 import { SUPPORTED_LANGUAGES } from '../i18n';
-import Select from './Select';
 import ExportDialog from './ExportDialog';
 import SettingsDialog from './SettingsDialog';
 import AboutDialog from './AboutDialog';
@@ -192,18 +191,24 @@ export default function SettingsMenu() {
           >
             {t('settingsMenu.settings')}
           </MenuItem>
-          <div className="flex items-center justify-between gap-2 px-3 py-2 text-sm text-ink">
-            <span>{t('settingsMenu.language')}</span>
-            <Select
-              className="w-32"
-              ariaLabel={t('settingsMenu.language')}
-              value={currentLang.label}
-              options={SUPPORTED_LANGUAGES.map((l) => l.label)}
-              onChange={(label) => {
-                const lang = SUPPORTED_LANGUAGES.find((l) => l.label === label);
-                if (lang) void i18n.changeLanguage(lang.code);
-              }}
-            />
+          <div className="px-3 py-2 text-sm text-ink">
+            <span className="mb-1.5 block">{t('settingsMenu.language')}</span>
+            <div role="group" aria-label={t('settingsMenu.language')} className="flex flex-wrap gap-1">
+              {SUPPORTED_LANGUAGES.map((l) => (
+                <button
+                  key={l.code}
+                  aria-pressed={currentLang.code === l.code}
+                  onClick={() => void i18n.changeLanguage(l.code)}
+                  className={`rounded-full border px-2.5 py-0.5 text-xs transition-colors ${
+                    currentLang.code === l.code
+                      ? 'border-ink bg-ink text-paper-raised'
+                      : 'border-line text-ink-soft hover:text-ink'
+                  }`}
+                >
+                  {l.label}
+                </button>
+              ))}
+            </div>
           </div>
           <div className="flex items-center justify-between px-3 py-2 text-sm text-ink">
             <span>{t('settingsMenu.temperature')}</span>
