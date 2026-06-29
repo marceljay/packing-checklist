@@ -2,8 +2,8 @@ import type { Trip, LibraryItem, TagGroup, TagMeta } from '../types';
 
 /**
  * The whole app state as one JSON document (persisted in localStorage by
- * `store.ts`). Replaces the Dexie/IndexedDB stores: migrations are pure object
- * transforms here, not schema upgrades.
+ * `store.ts`). On load, `migrate()` normalizes a parsed object in memory; there is
+ * no versioned schema-upgrade machinery.
  */
 export interface AppData {
   schemaVersion: number;

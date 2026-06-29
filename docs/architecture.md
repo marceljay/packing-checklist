@@ -4,7 +4,7 @@ A client-only React SPA (Vite + TypeScript + Tailwind). There is no backend: the
 whole app state is one versioned JSON document in `localStorage`, and the only
 network calls are weather/geocoding lookups to Open-Meteo (with a bundled offline
 fallback). This doc covers how the pieces fit; for the persisted shape and entity
-relationships see [`DATA_MODEL.md`](../DATA_MODEL.md).
+relationships see [`DATA_MODEL.md`](DATA_MODEL.md).
 
 ## Layers
 
@@ -26,10 +26,13 @@ in components and the `useTripEditor` hook.
 
 - **One JSON document** (`localStorage` key `packing-checklist`) owned by
   `src/db/store.ts`: a synchronous in-memory copy exposed to React via
-  `useSyncExternalStore` (`useAppData`). No IndexedDB/Dexie.
-- **Migrations are pure object transforms** (`migrate` in `src/db/appData.ts`),
-  not schema upgrades — they only tolerate missing/garbage fields and seed
-  built-ins idempotently. Current `schemaVersion` is 3.
+  `useSyncExternalStore` (`useAppData`).
+- **Loading normalizes, it doesn't upgrade.** On load, `migrate()` (`src/db/appData.ts`)
+  takes the parsed JSON and coerces it into a valid document in memory — defaulting
+  missing fields and dropping garbage — so a corrupt or older document can't crash
+  the app. There is no versioned schema-upgrade machinery; `schemaVersion`
+  (currently 3) is stamped on save and the field exists for future transforms.
+  Built-ins are seeded idempotently on boot.
 - **Editable registries** for tags (`src/db/tags.ts`) and categories
   (`src/db/categories.ts`): rename/delete are global and rewrite every
   referencing item and trip so associations never drift. Tombstones
@@ -38,13 +41,13 @@ in components and the `useTripEditor` hook.
 
 ## Item library & suggestions
 
-- The **library is the single source of truth**: built-in defaults are *seeded*
+- The **library is the single source of truth**: built-in defaults are _seeded_
   into it (`custom:false`), user items are `custom:true`, and a trip's `Item` is a
   thin reference (`libraryId` + per-trip `quantityTaken`/`quantitySuggested`/
   `packed`) resolved at render by `resolveItems`. See `DATA_MODEL.md` for identity
   and reference-integrity details.
 - **Suggestions** (`src/engine/suggest.ts`): an item is suggested if it is an
-  *essential* or any of its `tagKeys` matches an active trip tag. Score is the
+  _essential_ or any of its `tagKeys` matches an active trip tag. Score is the
   count of matched tags (no per-tag weights), ties break by usage count then name.
   Quantities come from `computeQuantity` (per-day / per-trip / bucket rules scaled
   to trip length and reduced when laundry is available).
@@ -74,13 +77,13 @@ series come back empty and every downstream step tolerates their absence.
 
 ### Derived tags (`deriveWeatherTags`)
 
-| Tag | Rule |
-| --- | --- |
-| **hot** | more than 20% of days have a high > 25 °C |
-| **cold** | avg low ≤ 5 °C, or any day ≤ 0 °C |
-| **rainy** | ≥ 40% of days wet (≥ 1 mm), or ≥ 20 mm total |
+| Tag       | Rule                                                                  |
+| --------- | --------------------------------------------------------------------- |
+| **hot**   | more than 20% of days have a high > 25 °C                             |
+| **cold**  | avg low ≤ 5 °C, or any day ≤ 0 °C                                     |
+| **rainy** | ≥ 40% of days wet (≥ 1 mm), or ≥ 20 mm total                          |
 | **sunny** | avg sunshine > 5 h/day, plus avg daily-peak UV ≥ 5 when UV is present |
-| **windy** | any day with gusts ≥ 35 km/h |
+| **windy** | any day with gusts ≥ 35 km/h                                          |
 
 `sunny` always needs sunshine; when UV is present (forecast) it must also clear 5.
 The historical archive has no UV, so it falls back to **sunshine alone**; offline
@@ -114,7 +117,7 @@ advice. Passport/visa-check items are gated to international trips via
   modes). Hash routing keeps it deployable on any static host.
 - **Units** (`src/lib/units.ts`): values are stored in metric and converted for
   display via a `useUnits` store; a header toggle switches °C/°F (metric/imperial).
-- **Theme** (`src/lib/theme.ts`): light / dark / system, persisted; *system*
+- **Theme** (`src/lib/theme.ts`): light / dark / system, persisted; _system_
   follows `prefers-color-scheme`.
 - **Dev mode** (`src/lib/devMode.ts`): ticket-design / field-style overrides for
   iterating on the "Manifest" visual identity.
@@ -142,5 +145,5 @@ monthly climate normals for 104 of them (nearest within a 750 km cap).
   `sunny` tags can't fire offline, and climate coverage is sparse (104 cities).
 - Some code comments still reference the removed `SPEC.md` section numbers; the
   spec was retired in favour of this doc + `DATA_MODEL.md`.
-</content>
-</invoke>
+  </content>
+  </invoke>

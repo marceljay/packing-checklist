@@ -3,8 +3,8 @@ import { migrate, emptyData, type AppData } from './appData';
 
 /**
  * The whole app state is one JSON document in localStorage. This module owns it:
- * a synchronous in-memory copy, persistence, and subscription for React. Replaces
- * Dexie/IndexedDB — there is no schema to migrate, just `migrate()` on load.
+ * a synchronous in-memory copy, persistence, and subscription for React. There is
+ * no schema to migrate, just `migrate()` normalizing the parsed JSON on load.
  */
 
 const KEY = 'packing-checklist';
@@ -59,8 +59,8 @@ export function subscribe(listener: () => void): () => void {
   };
 }
 
-/** Reactive read of the whole document (replaces Dexie's useLiveQuery). The
- *  snapshot ref only changes when `setData` runs, so selectors can `useMemo`. */
+/** Reactive read of the whole document. The snapshot ref only changes when
+ *  `setData` runs, so selectors can `useMemo`. */
 export function useAppData(): AppData {
   return useSyncExternalStore(subscribe, getData, getData);
 }

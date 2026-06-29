@@ -235,7 +235,8 @@ export interface LibraryItem {
    *  {@link defaultId}); customs: `c:<random>` (see {@link customId}). Trips
    *  reference this; it survives renames. */
   id: ID;
-  /** Normalized name, the Dexie primary key and the de-dupe handle. */
+  /** Normalized name; the de-dupe handle for the typed-add "reuse same-named row"
+   *  path and search. */
   nameKey: string;
   name: string;
   category: Category;
