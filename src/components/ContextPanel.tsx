@@ -17,7 +17,7 @@ import {
 } from "../types";
 import { uid, useAppData } from "../db/store";
 import { rememberItem, editLibraryItem } from "../db/library";
-import { PLUGS, powerSummary, travelPowerAdvice, adapterNeeds, type AdapterNeed } from "../data/plugs";
+import { PLUGS, powerSummary, travelPowerAdvice, adapterNeeds, countryName, type AdapterNeed } from "../data/plugs";
 import { useHomeCountry, setHomeCountry } from "../lib/homeCountry";
 import { placeLabel, shortPlace, type GeoResult } from "../engine/weather";
 import {
@@ -556,7 +556,7 @@ export default function ContextPanel({
                       key={code}
                       className="flex items-baseline justify-between gap-2 text-ink-faint"
                     >
-                      <span>{code}</span>
+                      <span className="min-w-0 truncate">{countryName(code)}</span>
                       <span className="shrink-0 font-mono text-xs">
                         no plug data
                       </span>

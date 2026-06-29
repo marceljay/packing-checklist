@@ -108,11 +108,70 @@ export const PLUGS: Record<string, PlugInfo> = {
   GH: { name: 'Ghana', types: ['D', 'G'], voltage: 230, region: 'Africa' },
   TN: { name: 'Tunisia', types: ['C', 'E'], voltage: 230, region: 'Africa' },
   DZ: { name: 'Algeria', types: ['C', 'F'], voltage: 230, region: 'Africa' },
+  // --- Further coverage: common gaps ---------------------------------------
+  // Middle East
+  IQ: { name: 'Iraq', types: ['C', 'D', 'G'], voltage: 230, region: 'Middle East' },
+  IR: { name: 'Iran', types: ['C', 'F'], voltage: 230, region: 'Middle East' },
+  LB: { name: 'Lebanon', types: ['A', 'B', 'C', 'D', 'G'], voltage: 230, region: 'Middle East' },
+  // Europe / Caucasus / Balkans
+  GE: { name: 'Georgia', types: ['C', 'F'], voltage: 220, region: 'Europe' },
+  AM: { name: 'Armenia', types: ['C', 'F'], voltage: 230, region: 'Europe' },
+  AZ: { name: 'Azerbaijan', types: ['C', 'F'], voltage: 220, region: 'Europe' },
+  AL: { name: 'Albania', types: ['C', 'F'], voltage: 230, region: 'Europe' },
+  BA: { name: 'Bosnia & Herzegovina', types: ['C', 'F'], voltage: 230, region: 'Europe' },
+  MK: { name: 'North Macedonia', types: ['C', 'F'], voltage: 230, region: 'Europe' },
+  ME: { name: 'Montenegro', types: ['C', 'F'], voltage: 230, region: 'Europe' },
+  MD: { name: 'Moldova', types: ['C', 'F'], voltage: 230, region: 'Europe' },
+  BY: { name: 'Belarus', types: ['C', 'F'], voltage: 230, region: 'Europe' },
+  // Asia
+  MM: { name: 'Myanmar', types: ['C', 'D', 'F', 'G'], voltage: 230, region: 'Southeast Asia' },
+  LA: { name: 'Laos', types: ['A', 'B', 'C', 'E', 'F'], voltage: 230, region: 'Southeast Asia' },
+  BN: { name: 'Brunei', types: ['G'], voltage: 240, region: 'Southeast Asia' },
+  MN: { name: 'Mongolia', types: ['C', 'E'], voltage: 230, region: 'East Asia' },
+  UZ: { name: 'Uzbekistan', types: ['C', 'F'], voltage: 220, region: 'Central Asia' },
+  KG: { name: 'Kyrgyzstan', types: ['C', 'F'], voltage: 220, region: 'Central Asia' },
+  // Americas
+  BO: { name: 'Bolivia', types: ['A', 'C'], voltage: 230, region: 'South America' },
+  PY: { name: 'Paraguay', types: ['C'], voltage: 220, region: 'South America' },
+  VE: { name: 'Venezuela', types: ['A', 'B'], voltage: 120, region: 'South America' },
+  JM: { name: 'Jamaica', types: ['A', 'B'], voltage: 110, region: 'Central America & Caribbean' },
+  CU: { name: 'Cuba', types: ['A', 'B', 'C', 'L'], voltage: 110, region: 'Central America & Caribbean' },
+  TT: { name: 'Trinidad & Tobago', types: ['A', 'B'], voltage: 115, region: 'Central America & Caribbean' },
+  NI: { name: 'Nicaragua', types: ['A', 'B'], voltage: 120, region: 'Central America & Caribbean' },
+  HN: { name: 'Honduras', types: ['A', 'B'], voltage: 120, region: 'Central America & Caribbean' },
+  SV: { name: 'El Salvador', types: ['A', 'B'], voltage: 120, region: 'Central America & Caribbean' },
+  BS: { name: 'Bahamas', types: ['A', 'B'], voltage: 120, region: 'Central America & Caribbean' },
+  // Africa
+  ET: { name: 'Ethiopia', types: ['C', 'E', 'F', 'L'], voltage: 220, region: 'Africa' },
+  UG: { name: 'Uganda', types: ['G'], voltage: 240, region: 'Africa' },
+  ZW: { name: 'Zimbabwe', types: ['D', 'G'], voltage: 220, region: 'Africa' },
+  ZM: { name: 'Zambia', types: ['C', 'D', 'G'], voltage: 230, region: 'Africa' },
+  SN: { name: 'Senegal', types: ['C', 'D', 'E', 'K'], voltage: 230, region: 'Africa' },
+  CM: { name: 'Cameroon', types: ['C', 'E'], voltage: 220, region: 'Africa' },
+  AO: { name: 'Angola', types: ['C'], voltage: 220, region: 'Africa' },
+  MZ: { name: 'Mozambique', types: ['C', 'F', 'M'], voltage: 220, region: 'Africa' },
+  RW: { name: 'Rwanda', types: ['C', 'J'], voltage: 230, region: 'Africa' },
+  MU: { name: 'Mauritius', types: ['C', 'G'], voltage: 230, region: 'Africa' },
+  NA: { name: 'Namibia', types: ['D', 'M'], voltage: 220, region: 'Africa' },
+  BW: { name: 'Botswana', types: ['D', 'G', 'M'], voltage: 230, region: 'Africa' },
 };
 
 /** Plug/voltage info for a country code (case-insensitive), or undefined if unknown. */
 export function plugInfo(code?: string): PlugInfo | undefined {
   return code ? PLUGS[code.toUpperCase()] : undefined;
+}
+
+/** Display name for an ISO-3166 country code: the dataset's curated name when we
+ *  have one, else the runtime's region name (Intl, offline), else the bare code
+ *  — so a country with no plug data still reads "Iraq", not "IQ". */
+export function countryName(code: string): string {
+  const cc = code.toUpperCase();
+  if (PLUGS[cc]) return PLUGS[cc].name;
+  try {
+    return new Intl.DisplayNames(['en'], { type: 'region' }).of(cc) ?? cc;
+  } catch {
+    return cc;
+  }
 }
 
 export interface PowerSummary {

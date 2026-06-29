@@ -5,6 +5,10 @@ All notable changes to this project are documented here.
 ## [Unreleased]
 
 ### Added
+- **Wider plug coverage + named countries.** Added plug/voltage data for ~40 more
+  countries (Iraq, Iran, the Caucasus, the Balkans, more of Africa, the Americas,
+  and SE Asia). Destinations still without data now show the full country name
+  (via the runtime's region names) instead of a bare code like "IQ".
 - **Per-plug-type travel adapters.** International trips now offer a separate
   adapter item for each plug type you actually need (the destination types your
   home plug doesn't fit; every destination type when no home country is set),
