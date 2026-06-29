@@ -48,11 +48,28 @@ describe('deriveWeatherTags', () => {
     expect(tags).not.toContain('sunny');
   });
 
-  it('flags sunny for mild, dry days', () => {
-    const tags = deriveWeatherTags(
-      daily({ tMax: [21, 22], tMin: [12, 13], precip: [0, 0], wind: [10, 8] }),
-    );
-    expect(tags).toEqual(['sunny']);
+  it('flags hot only when more than 20% of days exceed 25C', () => {
+    // 1 of 5 days > 25C = 20%, not over → not hot
+    expect(
+      deriveWeatherTags(daily({ tMax: [26, 24, 24, 24, 24], tMin: [15, 15, 15, 15, 15], precip: [0, 0, 0, 0, 0], wind: [5, 5, 5, 5, 5] })),
+    ).not.toContain('hot');
+    // 2 of 5 days > 25C = 40% → hot
+    expect(
+      deriveWeatherTags(daily({ tMax: [26, 26, 24, 24, 24], tMin: [15, 15, 15, 15, 15], precip: [0, 0, 0, 0, 0], wind: [5, 5, 5, 5, 5] })),
+    ).toContain('hot');
+  });
+
+  it('flags sunny only when sunshine > 5h/day AND UV >= 5', () => {
+    const base = { tMax: [22, 23], tMin: [12, 13], precip: [0, 0], wind: [10, 8] };
+    // both conditions met
+    expect(deriveWeatherTags(daily({ ...base, sunshineH: [8, 9], uvMax: [6, 7] }))).toContain('sunny');
+    // sunshine high but UV low → not sunny
+    expect(deriveWeatherTags(daily({ ...base, sunshineH: [8, 9], uvMax: [3, 4] }))).not.toContain('sunny');
+    // UV high but sunshine low → not sunny
+    expect(deriveWeatherTags(daily({ ...base, sunshineH: [3, 4], uvMax: [6, 7] }))).not.toContain('sunny');
+    // missing series (e.g. historical UV / offline) → not sunny
+    expect(deriveWeatherTags(daily({ ...base, sunshineH: [8, 9] }))).not.toContain('sunny');
+    expect(deriveWeatherTags(daily(base))).not.toContain('sunny');
   });
 
   it('flags windy when any day is gusty', () => {
@@ -222,6 +239,15 @@ describe('summarizeWeather', () => {
     expect(s.lowC).toBe(10); // 9.5 -> 10
     expect(s.precipMm).toBe(1); // 1.4 -> 1
     expect(s.windMaxKmh).toBe(13); // 12.6 -> 13
+  });
+
+  it('includes average sunshine hours and UV when present, omits them otherwise', () => {
+    const withSun = summarizeWeather(daily({ tMax: [22, 24], tMin: [12, 13], precip: [0, 0], wind: [5, 6], sunshineH: [7, 9], uvMax: [5, 7] }));
+    expect(withSun.sunshineH).toBe(8); // avg(7,9)
+    expect(withSun.uv).toBe(6); // avg(5,7)
+    const noSun = summarizeWeather(daily({ tMax: [22, 24], tMin: [12, 13], precip: [0, 0], wind: [5, 6] }));
+    expect(noSun.sunshineH).toBeUndefined();
+    expect(noSun.uv).toBeUndefined();
   });
 
   it('returns zeros and no days for empty data', () => {

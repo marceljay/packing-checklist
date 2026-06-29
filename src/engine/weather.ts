@@ -12,6 +12,10 @@ export interface DailyWeather {
   tMin: number[];
   precip: number[];
   wind: number[];
+  /** Sunshine hours per day (sunshine_duration / 3600). Absent offline. */
+  sunshineH?: number[];
+  /** Daily max UV index. Forecast only — absent for the historical archive and offline. */
+  uvMax?: number[];
   /** ISO date per day, parallel to the metric arrays. Optional — present for
    *  online forecasts and bundled climate normals; drives the per-day breakdown. */
   dates?: string[];
@@ -24,23 +28,28 @@ export type WeatherTagKey = (typeof WEATHER_TAG_KEYS)[number];
 const avg = (xs: number[]): number => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
 
 /**
- * Derive weather tag keys from daily aggregates, in canonical order. Thresholds:
- * - hot   avg high ≥ 25°C or any day ≥ 30°C
+ * Derive weather tag keys from daily aggregates, in canonical order. Thresholds
+ * (see docs/superpowers/specs/2026-06-28-weather-signals.md):
+ * - hot   > 20% of days have a high > 25°C
  * - cold  avg low ≤ 5°C or any day ≤ 0°C
  * - rainy ≥ 40% of days wet (≥1mm) or ≥ 20mm total
- * - sunny mild & dry (not rainy and avg high ≥ 20°C)
+ * - sunny avg sunshine > 5h/day AND avg daily-max UV ≥ 5 (both required; when
+ *         either series is missing — historical UV, or offline — sunny is skipped)
  * - windy any day with gusts ≥ 35 km/h
  */
 export function deriveWeatherTags(d: DailyWeather): WeatherTagKey[] {
   if (d.tMax.length === 0 && d.tMin.length === 0) return [];
 
-  const hot = avg(d.tMax) >= 25 || Math.max(...d.tMax, -Infinity) >= 30;
+  const hotDays = d.tMax.filter((x) => x > 25).length;
+  const hot = d.tMax.length > 0 && hotDays / d.tMax.length > 0.2;
   const cold = avg(d.tMin) <= 5 || Math.min(...d.tMin, Infinity) <= 0;
   const wetDays = d.precip.filter((p) => p >= 1).length;
   const rainy =
     (d.precip.length > 0 && wetDays / d.precip.length >= 0.4) ||
     d.precip.reduce((a, b) => a + b, 0) >= 20;
-  const sunny = !rainy && avg(d.tMax) >= 20;
+  const sun = d.sunshineH ?? [];
+  const uv = d.uvMax ?? [];
+  const sunny = sun.length > 0 && uv.length > 0 && avg(sun) > 5 && avg(uv) >= 5;
   const windy = Math.max(...d.wind, -Infinity) >= 35;
 
   const flags: Record<WeatherTagKey, boolean> = { hot, cold, rainy, sunny, windy };
@@ -61,6 +70,10 @@ export interface WeatherSummary {
   precipMm: number;
   /** Strongest daily gust. */
   windMaxKmh: number;
+  /** Average sunshine hours per day, when available (else undefined). */
+  sunshineH?: number;
+  /** Representative UV (average of daily max), when available (forecast only). */
+  uv?: number;
   /** Number of days summarized. */
   days: number;
 }
@@ -73,6 +86,8 @@ export function summarizeWeather(d: DailyWeather): WeatherSummary {
   if (days === 0) {
     return { highC: 0, lowC: 0, maxC: 0, minC: 0, precipMm: 0, windMaxKmh: 0, days: 0 };
   }
+  const sun = d.sunshineH ?? [];
+  const uv = d.uvMax ?? [];
   return {
     highC: Math.round(avg(d.tMax)),
     lowC: Math.round(avg(d.tMin)),
@@ -80,6 +95,8 @@ export function summarizeWeather(d: DailyWeather): WeatherSummary {
     minC: Math.round(Math.min(...d.tMin)),
     precipMm: Math.round(sum(d.precip)),
     windMaxKmh: Math.round(Math.max(...d.wind)),
+    ...(sun.length > 0 ? { sunshineH: Math.round(avg(sun)) } : {}),
+    ...(uv.length > 0 ? { uv: Math.round(avg(uv)) } : {}),
     days,
   };
 }
@@ -143,11 +160,18 @@ export function averageDaily(perYear: DailyWeather[]): DailyWeather {
     perYear.reduce((a, d) => a + pick(d)[i], 0) / perYear.length;
   const series = (pick: (d: DailyWeather) => number[]) =>
     Array.from({ length: len }, (_, i) => mean(pick, i));
+  // Average an optional series only when every year provides it.
+  const optSeries = (pick: (d: DailyWeather) => number[] | undefined) =>
+    perYear.every((d) => (pick(d)?.length ?? 0) >= len)
+      ? series((d) => pick(d) as number[])
+      : undefined;
   return {
     tMax: series((d) => d.tMax),
     tMin: series((d) => d.tMin),
     precip: series((d) => d.precip),
     wind: series((d) => d.wind),
+    ...(optSeries((d) => d.sunshineH) ? { sunshineH: optSeries((d) => d.sunshineH) } : {}),
+    ...(optSeries((d) => d.uvMax) ? { uvMax: optSeries((d) => d.uvMax) } : {}),
     // Representative calendar dates come from the first year (caller may override
     // with the trip's own dates); truncated to the shared length.
     dates: perYear[0].dates?.slice(0, len),
@@ -158,11 +182,17 @@ function mergeDaily(parts: DailyWeather[]): DailyWeather {
   // Keep the dated breakdown only if every part carries dates, so the dates array
   // stays parallel to the metric arrays.
   const dates = parts.every((d) => d.dates) ? parts.flatMap((d) => d.dates!) : undefined;
+  // Concatenate an optional series only when every part has it, so it stays
+  // parallel (a mixed forecast+archive window thus drops UV, which the archive lacks).
+  const sunshineH = parts.every((d) => d.sunshineH) ? parts.flatMap((d) => d.sunshineH!) : undefined;
+  const uvMax = parts.every((d) => d.uvMax) ? parts.flatMap((d) => d.uvMax!) : undefined;
   return {
     tMax: parts.flatMap((d) => d.tMax),
     tMin: parts.flatMap((d) => d.tMin),
     precip: parts.flatMap((d) => d.precip),
     wind: parts.flatMap((d) => d.wind),
+    ...(sunshineH ? { sunshineH } : {}),
+    ...(uvMax ? { uvMax } : {}),
     dates,
   };
 }
@@ -319,7 +349,8 @@ export async function searchPlaces(
   }
 }
 
-const DAILY_VARS = 'temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max';
+const DAILY_VARS =
+  'temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,sunshine_duration,uv_index_max';
 
 async function fetchDaily(baseUrl: string, lat: number, lon: number, range: DateRange) {
   const params = new URLSearchParams({
@@ -339,6 +370,8 @@ async function fetchDaily(baseUrl: string, lat: number, lon: number, range: Date
       temperature_2m_min: number[];
       precipitation_sum: number[];
       wind_speed_10m_max: number[];
+      sunshine_duration?: number[];
+      uv_index_max?: number[];
     };
   };
   const day = data.daily;
@@ -347,6 +380,9 @@ async function fetchDaily(baseUrl: string, lat: number, lon: number, range: Date
     tMin: day?.temperature_2m_min ?? [],
     precip: day?.precipitation_sum ?? [],
     wind: day?.wind_speed_10m_max ?? [],
+    // sunshine_duration is seconds/day → hours; uv_index_max is forecast-only.
+    ...(day?.sunshine_duration ? { sunshineH: day.sunshine_duration.map((s) => s / 3600) } : {}),
+    ...(day?.uv_index_max ? { uvMax: day.uv_index_max } : {}),
     dates: day?.time ?? [],
   };
 }
