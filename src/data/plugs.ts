@@ -11,101 +11,103 @@ export interface PlugInfo {
   types: string[];
   /** Nominal mains voltage. */
   voltage: number;
+  /** Coarse world region, for grouping adapter guidance by plug type. */
+  region: string;
 }
 
 export const PLUGS: Record<string, PlugInfo> = {
-  US: { name: 'United States', types: ['A', 'B'], voltage: 120 },
-  CA: { name: 'Canada', types: ['A', 'B'], voltage: 120 },
-  MX: { name: 'Mexico', types: ['A', 'B'], voltage: 127 },
-  GB: { name: 'United Kingdom', types: ['G'], voltage: 230 },
-  IE: { name: 'Ireland', types: ['G'], voltage: 230 },
-  FR: { name: 'France', types: ['C', 'E'], voltage: 230 },
-  DE: { name: 'Germany', types: ['C', 'F'], voltage: 230 },
-  ES: { name: 'Spain', types: ['C', 'F'], voltage: 230 },
-  PT: { name: 'Portugal', types: ['C', 'F'], voltage: 230 },
-  IT: { name: 'Italy', types: ['C', 'F', 'L'], voltage: 230 },
-  NL: { name: 'Netherlands', types: ['C', 'F'], voltage: 230 },
-  BE: { name: 'Belgium', types: ['C', 'E'], voltage: 230 },
-  CH: { name: 'Switzerland', types: ['C', 'J'], voltage: 230 },
-  AT: { name: 'Austria', types: ['C', 'F'], voltage: 230 },
-  SE: { name: 'Sweden', types: ['C', 'F'], voltage: 230 },
-  NO: { name: 'Norway', types: ['C', 'F'], voltage: 230 },
-  DK: { name: 'Denmark', types: ['C', 'E', 'F', 'K'], voltage: 230 },
-  FI: { name: 'Finland', types: ['C', 'F'], voltage: 230 },
-  PL: { name: 'Poland', types: ['C', 'E'], voltage: 230 },
-  CZ: { name: 'Czechia', types: ['C', 'E'], voltage: 230 },
-  GR: { name: 'Greece', types: ['C', 'F'], voltage: 230 },
-  HU: { name: 'Hungary', types: ['C', 'F'], voltage: 230 },
-  RO: { name: 'Romania', types: ['C', 'F'], voltage: 230 },
-  HR: { name: 'Croatia', types: ['C', 'F'], voltage: 230 },
-  IS: { name: 'Iceland', types: ['C', 'F'], voltage: 230 },
-  RU: { name: 'Russia', types: ['C', 'F'], voltage: 230 },
-  TR: { name: 'Turkey', types: ['C', 'F'], voltage: 230 },
-  JP: { name: 'Japan', types: ['A', 'B'], voltage: 100 },
-  CN: { name: 'China', types: ['A', 'C', 'I'], voltage: 220 },
-  HK: { name: 'Hong Kong', types: ['G'], voltage: 220 },
-  KR: { name: 'South Korea', types: ['C', 'F'], voltage: 220 },
-  TW: { name: 'Taiwan', types: ['A', 'B'], voltage: 110 },
-  TH: { name: 'Thailand', types: ['A', 'B', 'C', 'O'], voltage: 230 },
-  VN: { name: 'Vietnam', types: ['A', 'C', 'F'], voltage: 220 },
-  IN: { name: 'India', types: ['C', 'D', 'M'], voltage: 230 },
-  ID: { name: 'Indonesia', types: ['C', 'F'], voltage: 230 },
-  MY: { name: 'Malaysia', types: ['G'], voltage: 240 },
-  SG: { name: 'Singapore', types: ['G'], voltage: 230 },
-  PH: { name: 'Philippines', types: ['A', 'B', 'C'], voltage: 220 },
-  AU: { name: 'Australia', types: ['I'], voltage: 230 },
-  NZ: { name: 'New Zealand', types: ['I'], voltage: 230 },
-  AE: { name: 'United Arab Emirates', types: ['G'], voltage: 230 },
-  SA: { name: 'Saudi Arabia', types: ['A', 'B', 'G'], voltage: 230 },
-  IL: { name: 'Israel', types: ['C', 'H', 'M'], voltage: 230 },
-  EG: { name: 'Egypt', types: ['C', 'F'], voltage: 220 },
-  ZA: { name: 'South Africa', types: ['C', 'D', 'M', 'N'], voltage: 230 },
-  MA: { name: 'Morocco', types: ['C', 'E'], voltage: 220 },
-  BR: { name: 'Brazil', types: ['C', 'N'], voltage: 127 },
-  AR: { name: 'Argentina', types: ['C', 'I'], voltage: 220 },
-  CL: { name: 'Chile', types: ['C', 'L'], voltage: 220 },
-  PE: { name: 'Peru', types: ['A', 'B', 'C'], voltage: 220 },
-  CO: { name: 'Colombia', types: ['A', 'B'], voltage: 110 },
+  US: { name: 'United States', types: ['A', 'B'], voltage: 120, region: 'North America' },
+  CA: { name: 'Canada', types: ['A', 'B'], voltage: 120, region: 'North America' },
+  MX: { name: 'Mexico', types: ['A', 'B'], voltage: 127, region: 'North America' },
+  GB: { name: 'United Kingdom', types: ['G'], voltage: 230, region: 'Europe' },
+  IE: { name: 'Ireland', types: ['G'], voltage: 230, region: 'Europe' },
+  FR: { name: 'France', types: ['C', 'E'], voltage: 230, region: 'Europe' },
+  DE: { name: 'Germany', types: ['C', 'F'], voltage: 230, region: 'Europe' },
+  ES: { name: 'Spain', types: ['C', 'F'], voltage: 230, region: 'Europe' },
+  PT: { name: 'Portugal', types: ['C', 'F'], voltage: 230, region: 'Europe' },
+  IT: { name: 'Italy', types: ['C', 'F', 'L'], voltage: 230, region: 'Europe' },
+  NL: { name: 'Netherlands', types: ['C', 'F'], voltage: 230, region: 'Europe' },
+  BE: { name: 'Belgium', types: ['C', 'E'], voltage: 230, region: 'Europe' },
+  CH: { name: 'Switzerland', types: ['C', 'J'], voltage: 230, region: 'Europe' },
+  AT: { name: 'Austria', types: ['C', 'F'], voltage: 230, region: 'Europe' },
+  SE: { name: 'Sweden', types: ['C', 'F'], voltage: 230, region: 'Europe' },
+  NO: { name: 'Norway', types: ['C', 'F'], voltage: 230, region: 'Europe' },
+  DK: { name: 'Denmark', types: ['C', 'E', 'F', 'K'], voltage: 230, region: 'Europe' },
+  FI: { name: 'Finland', types: ['C', 'F'], voltage: 230, region: 'Europe' },
+  PL: { name: 'Poland', types: ['C', 'E'], voltage: 230, region: 'Europe' },
+  CZ: { name: 'Czechia', types: ['C', 'E'], voltage: 230, region: 'Europe' },
+  GR: { name: 'Greece', types: ['C', 'F'], voltage: 230, region: 'Europe' },
+  HU: { name: 'Hungary', types: ['C', 'F'], voltage: 230, region: 'Europe' },
+  RO: { name: 'Romania', types: ['C', 'F'], voltage: 230, region: 'Europe' },
+  HR: { name: 'Croatia', types: ['C', 'F'], voltage: 230, region: 'Europe' },
+  IS: { name: 'Iceland', types: ['C', 'F'], voltage: 230, region: 'Europe' },
+  RU: { name: 'Russia', types: ['C', 'F'], voltage: 230, region: 'Europe' },
+  TR: { name: 'Turkey', types: ['C', 'F'], voltage: 230, region: 'Europe' },
+  JP: { name: 'Japan', types: ['A', 'B'], voltage: 100, region: 'East Asia' },
+  CN: { name: 'China', types: ['A', 'C', 'I'], voltage: 220, region: 'East Asia' },
+  HK: { name: 'Hong Kong', types: ['G'], voltage: 220, region: 'East Asia' },
+  KR: { name: 'South Korea', types: ['C', 'F'], voltage: 220, region: 'East Asia' },
+  TW: { name: 'Taiwan', types: ['A', 'B'], voltage: 110, region: 'East Asia' },
+  TH: { name: 'Thailand', types: ['A', 'B', 'C', 'O'], voltage: 230, region: 'Southeast Asia' },
+  VN: { name: 'Vietnam', types: ['A', 'C', 'F'], voltage: 220, region: 'Southeast Asia' },
+  IN: { name: 'India', types: ['C', 'D', 'M'], voltage: 230, region: 'South Asia' },
+  ID: { name: 'Indonesia', types: ['C', 'F'], voltage: 230, region: 'Southeast Asia' },
+  MY: { name: 'Malaysia', types: ['G'], voltage: 240, region: 'Southeast Asia' },
+  SG: { name: 'Singapore', types: ['G'], voltage: 230, region: 'Southeast Asia' },
+  PH: { name: 'Philippines', types: ['A', 'B', 'C'], voltage: 220, region: 'Southeast Asia' },
+  AU: { name: 'Australia', types: ['I'], voltage: 230, region: 'Oceania' },
+  NZ: { name: 'New Zealand', types: ['I'], voltage: 230, region: 'Oceania' },
+  AE: { name: 'United Arab Emirates', types: ['G'], voltage: 230, region: 'Middle East' },
+  SA: { name: 'Saudi Arabia', types: ['A', 'B', 'G'], voltage: 230, region: 'Middle East' },
+  IL: { name: 'Israel', types: ['C', 'H', 'M'], voltage: 230, region: 'Middle East' },
+  EG: { name: 'Egypt', types: ['C', 'F'], voltage: 220, region: 'Africa' },
+  ZA: { name: 'South Africa', types: ['C', 'D', 'M', 'N'], voltage: 230, region: 'Africa' },
+  MA: { name: 'Morocco', types: ['C', 'E'], voltage: 220, region: 'Africa' },
+  BR: { name: 'Brazil', types: ['C', 'N'], voltage: 127, region: 'South America' },
+  AR: { name: 'Argentina', types: ['C', 'I'], voltage: 220, region: 'South America' },
+  CL: { name: 'Chile', types: ['C', 'L'], voltage: 220, region: 'South America' },
+  PE: { name: 'Peru', types: ['A', 'B', 'C'], voltage: 220, region: 'South America' },
+  CO: { name: 'Colombia', types: ['A', 'B'], voltage: 110, region: 'South America' },
   // --- Expanded coverage ---------------------------------------------------
   // Europe
-  LU: { name: 'Luxembourg', types: ['C', 'F'], voltage: 230 },
-  SK: { name: 'Slovakia', types: ['C', 'E'], voltage: 230 },
-  SI: { name: 'Slovenia', types: ['C', 'F'], voltage: 230 },
-  BG: { name: 'Bulgaria', types: ['C', 'F'], voltage: 230 },
-  RS: { name: 'Serbia', types: ['C', 'F'], voltage: 230 },
-  UA: { name: 'Ukraine', types: ['C', 'F'], voltage: 230 },
-  EE: { name: 'Estonia', types: ['C', 'F'], voltage: 230 },
-  LV: { name: 'Latvia', types: ['C', 'F'], voltage: 230 },
-  LT: { name: 'Lithuania', types: ['C', 'F'], voltage: 230 },
-  CY: { name: 'Cyprus', types: ['G'], voltage: 230 },
-  MT: { name: 'Malta', types: ['G'], voltage: 230 },
+  LU: { name: 'Luxembourg', types: ['C', 'F'], voltage: 230, region: 'Europe' },
+  SK: { name: 'Slovakia', types: ['C', 'E'], voltage: 230, region: 'Europe' },
+  SI: { name: 'Slovenia', types: ['C', 'F'], voltage: 230, region: 'Europe' },
+  BG: { name: 'Bulgaria', types: ['C', 'F'], voltage: 230, region: 'Europe' },
+  RS: { name: 'Serbia', types: ['C', 'F'], voltage: 230, region: 'Europe' },
+  UA: { name: 'Ukraine', types: ['C', 'F'], voltage: 230, region: 'Europe' },
+  EE: { name: 'Estonia', types: ['C', 'F'], voltage: 230, region: 'Europe' },
+  LV: { name: 'Latvia', types: ['C', 'F'], voltage: 230, region: 'Europe' },
+  LT: { name: 'Lithuania', types: ['C', 'F'], voltage: 230, region: 'Europe' },
+  CY: { name: 'Cyprus', types: ['G'], voltage: 230, region: 'Europe' },
+  MT: { name: 'Malta', types: ['G'], voltage: 230, region: 'Europe' },
   // Americas
-  CR: { name: 'Costa Rica', types: ['A', 'B'], voltage: 120 },
-  PA: { name: 'Panama', types: ['A', 'B'], voltage: 120 },
-  EC: { name: 'Ecuador', types: ['A', 'B'], voltage: 120 },
-  UY: { name: 'Uruguay', types: ['C', 'F', 'L'], voltage: 230 },
-  DO: { name: 'Dominican Republic', types: ['A', 'B'], voltage: 120 },
-  GT: { name: 'Guatemala', types: ['A', 'B'], voltage: 120 },
+  CR: { name: 'Costa Rica', types: ['A', 'B'], voltage: 120, region: 'Central America & Caribbean' },
+  PA: { name: 'Panama', types: ['A', 'B'], voltage: 120, region: 'Central America & Caribbean' },
+  EC: { name: 'Ecuador', types: ['A', 'B'], voltage: 120, region: 'South America' },
+  UY: { name: 'Uruguay', types: ['C', 'F', 'L'], voltage: 230, region: 'South America' },
+  DO: { name: 'Dominican Republic', types: ['A', 'B'], voltage: 120, region: 'Central America & Caribbean' },
+  GT: { name: 'Guatemala', types: ['A', 'B'], voltage: 120, region: 'Central America & Caribbean' },
   // Asia
-  LK: { name: 'Sri Lanka', types: ['D', 'G', 'M'], voltage: 230 },
-  NP: { name: 'Nepal', types: ['C', 'D', 'M'], voltage: 230 },
-  PK: { name: 'Pakistan', types: ['C', 'D'], voltage: 230 },
-  BD: { name: 'Bangladesh', types: ['C', 'D', 'G'], voltage: 220 },
-  KH: { name: 'Cambodia', types: ['A', 'C', 'G'], voltage: 230 },
-  KZ: { name: 'Kazakhstan', types: ['C', 'F'], voltage: 220 },
+  LK: { name: 'Sri Lanka', types: ['D', 'G', 'M'], voltage: 230, region: 'South Asia' },
+  NP: { name: 'Nepal', types: ['C', 'D', 'M'], voltage: 230, region: 'South Asia' },
+  PK: { name: 'Pakistan', types: ['C', 'D'], voltage: 230, region: 'South Asia' },
+  BD: { name: 'Bangladesh', types: ['C', 'D', 'G'], voltage: 220, region: 'South Asia' },
+  KH: { name: 'Cambodia', types: ['A', 'C', 'G'], voltage: 230, region: 'Southeast Asia' },
+  KZ: { name: 'Kazakhstan', types: ['C', 'F'], voltage: 220, region: 'Central Asia' },
   // Middle East
-  QA: { name: 'Qatar', types: ['D', 'G'], voltage: 240 },
-  KW: { name: 'Kuwait', types: ['C', 'G'], voltage: 240 },
-  BH: { name: 'Bahrain', types: ['G'], voltage: 230 },
-  OM: { name: 'Oman', types: ['G'], voltage: 240 },
-  JO: { name: 'Jordan', types: ['C', 'F', 'G'], voltage: 230 },
+  QA: { name: 'Qatar', types: ['D', 'G'], voltage: 240, region: 'Middle East' },
+  KW: { name: 'Kuwait', types: ['C', 'G'], voltage: 240, region: 'Middle East' },
+  BH: { name: 'Bahrain', types: ['G'], voltage: 230, region: 'Middle East' },
+  OM: { name: 'Oman', types: ['G'], voltage: 240, region: 'Middle East' },
+  JO: { name: 'Jordan', types: ['C', 'F', 'G'], voltage: 230, region: 'Middle East' },
   // Africa
-  KE: { name: 'Kenya', types: ['G'], voltage: 240 },
-  NG: { name: 'Nigeria', types: ['D', 'G'], voltage: 230 },
-  TZ: { name: 'Tanzania', types: ['D', 'G'], voltage: 230 },
-  GH: { name: 'Ghana', types: ['D', 'G'], voltage: 230 },
-  TN: { name: 'Tunisia', types: ['C', 'E'], voltage: 230 },
-  DZ: { name: 'Algeria', types: ['C', 'F'], voltage: 230 },
+  KE: { name: 'Kenya', types: ['G'], voltage: 240, region: 'Africa' },
+  NG: { name: 'Nigeria', types: ['D', 'G'], voltage: 230, region: 'Africa' },
+  TZ: { name: 'Tanzania', types: ['D', 'G'], voltage: 230, region: 'Africa' },
+  GH: { name: 'Ghana', types: ['D', 'G'], voltage: 230, region: 'Africa' },
+  TN: { name: 'Tunisia', types: ['C', 'E'], voltage: 230, region: 'Africa' },
+  DZ: { name: 'Algeria', types: ['C', 'F'], voltage: 230, region: 'Africa' },
 };
 
 /** Plug/voltage info for a country code (case-insensitive), or undefined if unknown. */
@@ -200,4 +202,43 @@ export function powerSummary(countryCodes: string[]): PowerSummary {
   const plugTypes = [...new Set(known.flatMap((k) => k.info.types))].sort();
   const voltages = [...new Set(known.map((k) => k.info.voltage))].sort((a, b) => a - b);
   return { known, unknown, plugTypes, voltages };
+}
+
+/** Distinct world regions across the whole dataset where a plug type is used,
+ *  sorted alphabetically — the "broader region list" for an adapter's notes. */
+export function regionsForPlug(type: string): string[] {
+  const regions = new Set<string>();
+  for (const info of Object.values(PLUGS)) {
+    if (info.types.includes(type)) regions.add(info.region);
+  }
+  return [...regions].sort();
+}
+
+/** One plug type to pack a separate adapter for, with the context for its item. */
+export interface AdapterNeed {
+  /** Plug type letter, e.g. 'G'. */
+  type: string;
+  /** Destination countries on this trip that use this plug type (names). */
+  tripCountries: string[];
+  /** Distinct world regions (dataset-wide) where this plug type is common. */
+  regions: string[];
+}
+
+/**
+ * One {@link AdapterNeed} per plug type the traveller should pack an adapter for.
+ * With a known home country these are the destination plug types the home plug
+ * doesn't fit (via {@link travelPowerAdvice}); without one we can't tell what
+ * they already have, so every destination plug type is returned. Each need
+ * carries the trip's destination countries using it plus the broader regions
+ * where it's common — the info shown on the adapter item.
+ */
+export function adapterNeeds(homeCode: string | undefined, destCodes: string[]): AdapterNeed[] {
+  const summary = powerSummary(destCodes);
+  const advice = travelPowerAdvice(homeCode, destCodes);
+  const types = advice.home ? advice.adapterFor : summary.plugTypes;
+  return types.map((type) => ({
+    type,
+    tripCountries: summary.known.filter((k) => k.info.types.includes(type)).map((k) => k.info.name),
+    regions: regionsForPlug(type),
+  }));
 }

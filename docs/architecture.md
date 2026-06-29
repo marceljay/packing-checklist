@@ -104,11 +104,14 @@ and offers to drop the items that tag had pulled in.
 ## Internationalization of trips (adapters)
 
 A trip is flagged international when its destinations span more than one country
-(or the user ticks the box). `src/data/plugs.ts` maps countries to plug type(s)
-and mains voltage; the Trip-type panel surfaces them with one-tap "Add travel
-adapter", and home-country preference (`src/lib/homeCountry.ts`) tailors the
-advice. Passport/visa-check items are gated to international trips via
-`essentialWhen`.
+(or the user ticks the box). `src/data/plugs.ts` maps countries to plug type(s),
+mains voltage, and a coarse world region. The Trip-type panel surfaces them and,
+via `adapterNeeds()`, offers **one adapter item per plug type** the traveller
+actually needs (the destination types their home plug doesn't fit; every
+destination type when no home country is set). Each added item's notes record the
+trip countries using that type plus the broader regions where it's common.
+Home-country preference (`src/lib/homeCountry.ts`) tailors the advice;
+passport/visa-check items are gated to international trips via `essentialWhen`.
 
 ## Routing, units, theme
 

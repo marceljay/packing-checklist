@@ -16,8 +16,8 @@ import {
   selectQuickAddTags,
 } from "../types";
 import { uid, useAppData } from "../db/store";
-import { rememberItem } from "../db/library";
-import { PLUGS, powerSummary, travelPowerAdvice } from "../data/plugs";
+import { rememberItem, editLibraryItem } from "../db/library";
+import { PLUGS, powerSummary, travelPowerAdvice, adapterNeeds, type AdapterNeed } from "../data/plugs";
 import { useHomeCountry, setHomeCountry } from "../lib/homeCountry";
 import { placeLabel, shortPlace, type GeoResult } from "../engine/weather";
 import {
@@ -302,6 +302,7 @@ export default function ContextPanel({
   const power = powerSummary(tripCountryCodes(trip));
   const homeCountry = useHomeCountry();
   const advice = travelPowerAdvice(homeCountry, tripCountryCodes(trip));
+  const adapters = adapterNeeds(homeCountry, tripCountryCodes(trip));
   const countryOptions = useMemo(
     () =>
       Object.entries(PLUGS)
@@ -316,11 +317,34 @@ export default function ContextPanel({
     update((d) => void (d.settings.international = checked));
   }
 
-  /** Add a travel adapter to the trip (resolve/create the library item, add once). */
-  function addAdapter() {
-    const row = rememberItem("Travel adapter", "Electronics", [
-      "international",
-    ]);
+  const adapterName = (type: string) => `Travel adapter — Type ${type}`;
+
+  /** Whether an adapter item for this plug type is already on the trip. */
+  function adapterOnTrip(type: string): boolean {
+    const name = adapterName(type);
+    return trip.items.some((i) => library.get(i.libraryId)?.name === name);
+  }
+
+  /**
+   * Add a per-plug-type travel adapter (resolve/create its library item, add
+   * once). On first creation the item's notes record which trip countries use the
+   * type plus the broader regions where it's common; we never clobber an item the
+   * user already has (so manual edits to a reused adapter survive).
+   */
+  function addAdapter(need: AdapterNeed) {
+    const name = adapterName(need.type);
+    const isNew = ![...library.values()].some((it) => it.name === name);
+    const row = rememberItem(name, "Electronics", ["international"]);
+    if (isNew) {
+      const notes = [
+        `Type ${need.type} plug adapter.`,
+        need.tripCountries.length ? `For this trip: ${need.tripCountries.join(", ")}.` : "",
+        need.regions.length ? `Also common in: ${need.regions.join(", ")}.` : "",
+      ]
+        .filter(Boolean)
+        .join("\n");
+      editLibraryItem(row.id, { notes });
+    }
     update((d) => {
       if (!d.items.some((i) => i.libraryId === row.id)) {
         d.items.push({
@@ -597,12 +621,38 @@ export default function ContextPanel({
                     )}
                 </div>
 
-                <button
-                  className="btn-secondary mt-3 w-full text-xs"
-                  onClick={addAdapter}
-                >
-                  + Add travel adapter
-                </button>
+                {adapters.length > 0 && (
+                  <div className="mt-3">
+                    <p className="label mb-1.5">
+                      {advice.home ? "Adapters to pack" : "Adapters by plug type"}
+                    </p>
+                    <ul className="space-y-1.5">
+                      {adapters.map((need) => {
+                        const added = adapterOnTrip(need.type);
+                        return (
+                          <li
+                            key={need.type}
+                            className="flex items-center justify-between gap-2"
+                          >
+                            <span className="min-w-0 text-xs">
+                              <span className="font-mono">Type {need.type}</span>
+                              <span className="block truncate text-ink-faint">
+                                {need.tripCountries.join(", ")}
+                              </span>
+                            </span>
+                            <button
+                              className="btn-secondary shrink-0 px-2 py-1 text-xs disabled:opacity-50"
+                              onClick={() => addAdapter(need)}
+                              disabled={added}
+                            >
+                              {added ? "Added" : "+ Add"}
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                )}
               </>
             )}
           </div>

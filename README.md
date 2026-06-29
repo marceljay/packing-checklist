@@ -40,7 +40,9 @@ See [`docs/architecture.md`](./docs/architecture.md) for how the app is built an
   you've changed or removed.
 - **International trips & travel adapters** — flagged international automatically
   when destinations span more than one country (or tick the box yourself); shows
-  each country's plug type(s) and mains voltage, with one-tap "Add travel adapter".
+  each country's plug type(s) and mains voltage, and offers a separate one-tap
+  adapter item per plug type you actually need (each noting the countries and
+  regions that use it).
 - **Light / dark / system theme** — a header toggle; _system_ follows your OS.
 - **Backup & transfer** — an **Export** picker lets you choose which trips and/or
   the whole item library to download as JSON, and import them back later.
