@@ -407,7 +407,7 @@ function AddItemForm({ suggestions, categories }: { suggestions: string[]; categ
 
 export default function ItemsPage() {
   const { t } = useTranslation();
-  const { tTag, tCategory } = useLabels();
+  const { tTag, tCategory, itemSearchText } = useLabels();
   const data = useAppData();
   const library = useMemo(
     () => data.library.map((r) => ({ ...r, tagKeys: r.tagKeys ?? [], custom: r.custom ?? true })),
@@ -426,11 +426,11 @@ export default function ItemsPage() {
   const hasEssentials = useMemo(() => library.some((i) => i.essential), [library]);
 
   const results = useMemo(() => {
-    let r = searchLibrary(library, query);
+    let r = searchLibrary(library, query, itemSearchText);
     if (selectedTags.length > 0) r = r.filter((i) => selectedTags.some((tg) => i.tagKeys.includes(tg)));
     if (essentialOnly) r = r.filter((i) => i.essential);
     return r;
-  }, [library, query, selectedTags, essentialOnly]);
+  }, [library, query, selectedTags, essentialOnly, itemSearchText]);
 
   const filtering = query.trim() !== '' || selectedTags.length > 0 || essentialOnly;
 

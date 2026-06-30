@@ -19,7 +19,9 @@ All notable changes to this project are documented here.
   categories: the stored item name/key stays English (the identity used for search,
   dedup, suggestions and import/export), and the translation is shown only while a
   default is unedited — if you rename a built-in, your name is kept. Custom items
-  are never touched.
+  are never touched. The item-library and add-item search now also match the
+  translated text, so e.g. "Reisepass" finds *Passport* in German; the English
+  name still matches too, so search works in either language.
 
 ## [0.9.0] — 2026-06-29
 

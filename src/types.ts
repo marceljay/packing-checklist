@@ -314,15 +314,25 @@ export function libraryByTag(items: LibraryItem[]): { tag: string; items: Librar
 
 /** Filter library items by a free-text query, matching (case-insensitively) the
  *  item name, any of its tag keys, or its category. A blank query returns every
- *  item; input order is preserved. Used by the Item Library search box. */
-export function searchLibrary(items: LibraryItem[], query: string): LibraryItem[] {
+ *  item; input order is preserved. Used by the Item Library search box.
+ *
+ *  `localize` is an optional resolver for an item's translated searchable text
+ *  (name + category + tags in the active UI language); when given, the query is
+ *  matched against it too, so a search finds items by what the user sees. The
+ *  English identity is always matched as well, so either language works. */
+export function searchLibrary(
+  items: LibraryItem[],
+  query: string,
+  localize?: (item: LibraryItem) => string,
+): LibraryItem[] {
   const q = query.trim().toLowerCase();
   if (!q) return items;
   return items.filter(
     (i) =>
       i.name.toLowerCase().includes(q) ||
       i.category.toLowerCase().includes(q) ||
-      i.tagKeys.some((k) => k.includes(q)),
+      i.tagKeys.some((k) => k.includes(q)) ||
+      (localize !== undefined && localize(i).toLowerCase().includes(q)),
   );
 }
 

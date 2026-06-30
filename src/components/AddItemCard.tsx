@@ -29,7 +29,7 @@ interface Props {
  */
 export default function AddItemCard({ trip, update, library, tagSuggestions = [], categories }: Props) {
   const { t } = useTranslation();
-  const { tCategory, tItemName } = useLabels();
+  const { tCategory, tItemName, itemSearchText } = useLabels();
   const [open, setOpen] = useState(true);
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<Category>('Comfort & Misc');
@@ -43,10 +43,14 @@ export default function AddItemCard({ trip, update, library, tagSuggestions = []
   const allItems = useMemo(() => [...library.values()], [library]);
   // Library matches for the typed text, minus anything already on the trip.
   const matches = useMemo(
-    () => (q ? searchLibrary(allItems, q).filter((i) => !onTrip.has(i.id)).slice(0, 6) : []),
-    [allItems, q, onTrip],
+    () => (q ? searchLibrary(allItems, q, itemSearchText).filter((i) => !onTrip.has(i.id)).slice(0, 6) : []),
+    [allItems, q, onTrip, itemSearchText],
   );
-  const exact = q !== '' && allItems.some((i) => i.name.toLowerCase() === q.toLowerCase());
+  const exact =
+    q !== '' &&
+    allItems.some(
+      (i) => i.name.toLowerCase() === q.toLowerCase() || tItemName(i.id, i.name).toLowerCase() === q.toLowerCase(),
+    );
   const showAddNew = q !== '' && !exact;
 
   function reset() {
