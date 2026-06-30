@@ -4,6 +4,14 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+### Fixed
+- **Destination search localized + more reliable.** The geocoder now requests
+  results in the active UI language, so place and country names show in German,
+  French, etc. (live results only — the offline bundled list stays English). It
+  also back-fills from the bundled city list when the live geocoder returns
+  nothing, fixing the quirk where a partial query like "hamb" found cities but
+  "ham" found none.
+
 ### Added
 - **Language picker in the header.** A compact globe control next to the theme
   toggle shows the active language as its code (EN/DE/…) and opens a menu of

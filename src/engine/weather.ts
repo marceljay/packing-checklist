@@ -336,17 +336,22 @@ export async function searchPlaces(
   name: string,
   count = 8,
   signal?: AbortSignal,
+  language = 'en',
 ): Promise<GeoResult[]> {
   const q = name.trim();
   if (q.length < 2) return [];
   const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(
     q,
-  )}&count=${count}&language=en&format=json`;
+  )}&count=${count}&language=${encodeURIComponent(language)}&format=json`;
   try {
     const res = await fetch(url, { signal });
     if (!res.ok) throw new Error(`Place search failed (${res.status})`);
     const data = (await res.json()) as { results?: RawGeo[] };
-    return rankPlaces((data.results ?? []).map(toGeoResult));
+    const ranked = rankPlaces((data.results ?? []).map(toGeoResult));
+    // Open-Meteo's geocoder is prefix-based and inconsistently returns nothing
+    // for short/partial queries (e.g. "ham" finds nothing while "hamb" does).
+    // Back-fill from the bundled city list so a real place isn't hidden by that.
+    return ranked.length > 0 ? ranked : localSearchCities(q, count);
   } catch (e) {
     // A deliberate abort means a newer query is coming — don't mask it.
     if ((e as Error).name === 'AbortError') throw e;

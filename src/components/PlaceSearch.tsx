@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { searchPlaces, type GeoResult } from '../engine/weather';
+import { resolvedLang } from '../i18n';
 
 interface Props {
   /** A place was chosen from the suggestions (carries coordinates). */
@@ -11,7 +12,7 @@ interface Props {
  *  fallback to the bundled city list). Only a recognized match can be added —
  *  there is no free-text add, so every destination has coordinates for weather. */
 export default function PlaceSearch({ onSelect }: Props) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<GeoResult[]>([]);
   const [open, setOpen] = useState(false);
@@ -30,7 +31,7 @@ export default function PlaceSearch({ onSelect }: Props) {
     const controller = new AbortController();
     setLoading(true);
     const timer = setTimeout(() => {
-      searchPlaces(q, 8, controller.signal)
+      searchPlaces(q, 8, controller.signal, resolvedLang())
         .then((r) => {
           setResults(r);
           setActive(-1);
@@ -45,7 +46,7 @@ export default function PlaceSearch({ onSelect }: Props) {
       clearTimeout(timer);
       controller.abort();
     };
-  }, [query]);
+  }, [query, i18n.resolvedLanguage]);
 
   useEffect(() => {
     function onDocClick(e: MouseEvent) {
