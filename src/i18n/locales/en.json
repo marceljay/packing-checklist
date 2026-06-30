@@ -9,7 +9,8 @@
     "reset": "Reset",
     "close": "Close",
     "viewSource": "View source on GitHub",
-    "menu": "Menu"
+    "menu": "Menu",
+    "language": "Language"
   },
   "home": {
     "sections": "Sections",
@@ -152,7 +153,9 @@
     "notesAria": "Notes for {{name}}",
     "essentialSuffix": "suggested on every trip",
     "nameTaken": "Another item already has that name.",
-    "saveToLibrary": "Save to library"
+    "saveToLibrary": "Save to library",
+    "defaultItem": "Default item",
+    "defaultRenameHint": "Built-in item — renaming it stops it tracking the built-in name and its translations."
   },
   "settingsMenu": {
     "export": "Export…",
@@ -165,7 +168,6 @@
     "settings": "Settings…",
     "temperature": "Temperature",
     "temperatureUnits": "Temperature units",
-    "language": "Language",
     "devMode": "Dev mode",
     "on": "On",
     "off": "Off",
@@ -330,7 +332,9 @@
     "notesPlaceholder": "Notes / description (optional)",
     "notesAria": "Notes for {{name}}",
     "essentialSuffix": "suggested on every trip",
-    "nameTaken": "Another item already has that name."
+    "nameTaken": "Another item already has that name.",
+    "defaultItem": "Default item",
+    "defaultRenameHint": "Built-in item — renaming it stops it tracking the built-in name and its translations."
   },
   "tagEditor": {
     "addTags": "Add tags…",

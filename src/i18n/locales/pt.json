@@ -9,7 +9,8 @@
     "reset": "Repor",
     "close": "Fechar",
     "viewSource": "Ver o código-fonte no GitHub",
-    "menu": "Menu"
+    "menu": "Menu",
+    "language": "Idioma"
   },
   "home": {
     "sections": "Secções",
@@ -152,7 +153,9 @@
     "notesAria": "Notas para {{name}}",
     "essentialSuffix": "sugerido em todas as viagens",
     "nameTaken": "Outro artigo já tem esse nome.",
-    "saveToLibrary": "Guardar na biblioteca"
+    "saveToLibrary": "Guardar na biblioteca",
+    "defaultItem": "Artigo predefinido",
+    "defaultRenameHint": "Artigo integrado — ao renomeá-lo deixa de seguir o nome predefinido e as suas traduções."
   },
   "settingsMenu": {
     "export": "Exportar…",
@@ -165,7 +168,6 @@
     "settings": "Definições…",
     "temperature": "Temperatura",
     "temperatureUnits": "Unidades de temperatura",
-    "language": "Idioma",
     "devMode": "Modo de programador",
     "on": "Ligado",
     "off": "Desligado",
@@ -330,7 +332,9 @@
     "notesPlaceholder": "Notas / descrição (opcional)",
     "notesAria": "Notas para {{name}}",
     "essentialSuffix": "sugerido em todas as viagens",
-    "nameTaken": "Outro artigo já tem esse nome."
+    "nameTaken": "Outro artigo já tem esse nome.",
+    "defaultItem": "Artigo predefinido",
+    "defaultRenameHint": "Artigo integrado — ao renomeá-lo deixa de seguir o nome predefinido e as suas traduções."
   },
   "tagEditor": {
     "addTags": "Adicionar etiquetas…",

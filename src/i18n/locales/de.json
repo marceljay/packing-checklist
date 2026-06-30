@@ -9,7 +9,8 @@
     "reset": "Zurücksetzen",
     "close": "Schließen",
     "viewSource": "Quellcode auf GitHub ansehen",
-    "menu": "Menü"
+    "menu": "Menü",
+    "language": "Sprache"
   },
   "home": {
     "sections": "Bereiche",
@@ -152,7 +153,9 @@
     "notesAria": "Notizen für {{name}}",
     "essentialSuffix": "auf jeder Reise vorgeschlagen",
     "nameTaken": "Ein anderer Artikel hat bereits diesen Namen.",
-    "saveToLibrary": "In Bibliothek speichern"
+    "saveToLibrary": "In Bibliothek speichern",
+    "defaultItem": "Standardartikel",
+    "defaultRenameHint": "Integrierter Artikel — beim Umbenennen folgt er nicht mehr dem Standardnamen und dessen Übersetzungen."
   },
   "settingsMenu": {
     "export": "Exportieren…",
@@ -165,7 +168,6 @@
     "settings": "Einstellungen…",
     "temperature": "Temperatur",
     "temperatureUnits": "Temperatureinheiten",
-    "language": "Sprache",
     "devMode": "Entwicklermodus",
     "on": "An",
     "off": "Aus",
@@ -330,7 +332,9 @@
     "notesPlaceholder": "Notizen / Beschreibung (optional)",
     "notesAria": "Notizen für {{name}}",
     "essentialSuffix": "auf jeder Reise vorgeschlagen",
-    "nameTaken": "Ein anderer Artikel hat bereits diesen Namen."
+    "nameTaken": "Ein anderer Artikel hat bereits diesen Namen.",
+    "defaultItem": "Standardartikel",
+    "defaultRenameHint": "Integrierter Artikel — beim Umbenennen folgt er nicht mehr dem Standardnamen und dessen Übersetzungen."
   },
   "tagEditor": {
     "addTags": "Tags hinzufügen…",

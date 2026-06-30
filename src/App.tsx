@@ -3,6 +3,7 @@ import { Link, Navigate, Outlet, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import SettingsMenu from './components/SettingsMenu';
 import ThemeToggle from './components/ThemeToggle';
+import LanguagePicker from './components/LanguagePicker';
 import DevBar from './components/DevBar';
 import { GithubIcon } from './components/icons';
 import { useDevMode } from './lib/devMode';
@@ -58,6 +59,7 @@ export default function App() {
             {t('common.tagline')}
           </span>
           <div className="ml-auto flex items-center gap-1 sm:ml-3">
+            <LanguagePicker />
             <ThemeToggle />
             <a
               href={REPO_URL}

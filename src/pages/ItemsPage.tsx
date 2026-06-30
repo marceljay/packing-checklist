@@ -175,6 +175,9 @@ function LibraryItemEdit({
   const [weight, setWeight] = useState(initialWeight);
   const [essential, setEssential] = useState(item.essential === true);
   const [error, setError] = useState('');
+  // Built-in defaults show a translated name until edited; warn that renaming forks it.
+  const isDefault = item.custom === false;
+  const renamed = isDefault && name.trim() !== item.name;
 
   function save() {
     if (!name.trim()) return;
@@ -243,6 +246,12 @@ function LibraryItemEdit({
           title={t('items.weightTip')}
         />
       </div>
+      {isDefault && (
+        <p className="text-xs text-ink-faint">
+          <span className="font-mono text-[0.625rem] uppercase tracking-code text-vermilion">{t('items.defaultItem')}</span>
+          {renamed && <span className="ml-1.5">{t('items.defaultRenameHint')}</span>}
+        </p>
+      )}
       <TagEditor value={tags} onChange={setTags} suggestions={suggestions} ariaLabel={t('items.tagsAria', { name: item.name })} />
       <textarea
         className="input min-h-[3rem] resize-y"

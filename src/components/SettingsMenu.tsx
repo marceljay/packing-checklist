@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { importTripFromText, exportTrips, importAllTripsFromText, listTrips } from '../db/trips';
 import { listLibrary, replaceLibrary, applyLibraryImport, restoreDefaults } from '../db/library';
@@ -15,7 +15,6 @@ import {
 import { downloadText, downloadBlob, pickTextFile } from '../lib/file';
 import { useDevMode, setDevMode } from '../lib/devMode';
 import { useUnits, setUnits, type UnitSystem } from '../lib/units';
-import { SUPPORTED_LANGUAGES } from '../i18n';
 import { useLocalePath } from '../i18n/useLocalePath';
 import ExportDialog from './ExportDialog';
 import SettingsDialog from './SettingsDialog';
@@ -27,20 +26,11 @@ import ConfirmDialog from './ConfirmDialog';
  *  and export / import the whole item library. */
 export default function SettingsMenu() {
   const navigate = useNavigate();
-  const { pathname } = useLocation();
   const lp = useLocalePath();
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const devMode = useDevMode();
   const units = useUnits();
   const [open, setOpen] = useState(false);
-
-  const currentLang = SUPPORTED_LANGUAGES.find((l) => l.code === (i18n.resolvedLanguage ?? i18n.language)) ?? SUPPORTED_LANGUAGES[0];
-
-  /** Switch language and reflect it in the URL's `/:lang` segment, keeping the rest of the path. */
-  function chooseLanguage(code: string) {
-    void i18n.changeLanguage(code);
-    navigate(`/${code}${pathname.replace(/^\/[^/]+/, '')}`);
-  }
   const [showExport, setShowExport] = useState(false);
   const [showRestore, setShowRestore] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -199,25 +189,6 @@ export default function SettingsMenu() {
           >
             {t('settingsMenu.settings')}
           </MenuItem>
-          <div className="px-3 py-2 text-sm text-ink">
-            <span className="mb-1.5 block">{t('settingsMenu.language')}</span>
-            <div role="group" aria-label={t('settingsMenu.language')} className="flex flex-wrap gap-1">
-              {SUPPORTED_LANGUAGES.map((l) => (
-                <button
-                  key={l.code}
-                  aria-pressed={currentLang.code === l.code}
-                  onClick={() => chooseLanguage(l.code)}
-                  className={`rounded-full border px-2.5 py-0.5 text-xs transition-colors ${
-                    currentLang.code === l.code
-                      ? 'border-ink bg-ink text-paper-raised'
-                      : 'border-line text-ink-soft hover:text-ink'
-                  }`}
-                >
-                  {l.label}
-                </button>
-              ))}
-            </div>
-          </div>
           <div className="flex items-center justify-between px-3 py-2 text-sm text-ink">
             <span>{t('settingsMenu.temperature')}</span>
             <div

@@ -244,6 +244,9 @@ function EditForm({
   const initialWeight = item.weight != null ? String(item.weight) : '';
   const [weight, setWeight] = useState(initialWeight);
   const [error, setError] = useState('');
+  // A `d:`-prefixed id is a built-in default (shows a translated name until edited).
+  const isDefault = item.libraryId.startsWith('d:');
+  const renamed = isDefault && name.trim() !== item.name;
 
   function save() {
     if (!name.trim()) return;
@@ -290,6 +293,12 @@ function EditForm({
           title={t('itemRow.weightTip')}
         />
       </div>
+      {isDefault && (
+        <p className="text-xs text-ink-faint">
+          <span className="font-mono text-[0.625rem] uppercase tracking-code text-vermilion">{t('itemRow.defaultItem')}</span>
+          {renamed && <span className="ml-1.5">{t('itemRow.defaultRenameHint')}</span>}
+        </p>
+      )}
       <TagEditor value={tags} onChange={setTags} ariaLabel={t('itemRow.tagsAria', { name: item.name })} />
       <textarea
         rows={1}

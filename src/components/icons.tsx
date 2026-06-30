@@ -57,6 +57,17 @@ export function ChevronIcon({ className, size = 16 }: IconProps) {
   );
 }
 
+/** Globe — for the language picker. */
+export function GlobeIcon({ className, size = 16 }: IconProps) {
+  return (
+    <svg {...base(size)} className={className}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3 12h18" />
+      <path d="M12 3a14 14 0 0 1 0 18 14 14 0 0 1 0-18Z" />
+    </svg>
+  );
+}
+
 /** GitHub mark — a filled brand glyph (uses currentColor), not a line icon. */
 export function GithubIcon({ className, size = 18 }: IconProps) {
   return (

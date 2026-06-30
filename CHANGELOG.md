@@ -5,6 +5,14 @@ All notable changes to this project are documented here.
 ## [Unreleased]
 
 ### Added
+- **Language picker in the header.** A compact globe control next to the theme
+  toggle shows the active language as its code (EN/DE/…) and opens a menu of
+  native names; choosing one switches the UI and the URL's `/:lang` segment in
+  place. Replaces the language pills that lived inside the ⋯ settings menu.
+- **Rename warning on built-in items.** Editing a default item (in the library
+  or the checklist) now flags it as a *Default item* and, once you change its
+  name, warns that renaming stops it tracking the built-in name and its
+  translations (the rename forks it into a custom item).
 - **Translated default tags and categories.** The eight built-in categories and
   the built-in activity/weather tags now display in the chosen UI language across
   pickers, group headings, chips, suggestions, and the print sheet. Translation is
